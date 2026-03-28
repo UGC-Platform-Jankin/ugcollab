@@ -2,7 +2,9 @@ import Navbar from "@/components/landing/Navbar";
 import Hero from "@/components/landing/Hero";
 import HowItWorks from "@/components/landing/HowItWorks";
 import Features from "@/components/landing/Features";
-import Pricing from "@/components/landing/Pricing";
+import Reviews from "@/components/landing/Reviews";
+import About from "@/components/landing/About";
+import Contact from "@/components/landing/Contact";
 import CTA from "@/components/landing/CTA";
 import Footer from "@/components/landing/Footer";
 const Index = () => {
@@ -12,7 +14,9 @@ const Index = () => {
       <Hero />
       <HowItWorks />
       <Features />
-      <Pricing />
+      <Reviews />
+      <About />
+      <Contact />
       <CTA />
       <Footer />
     </div>
