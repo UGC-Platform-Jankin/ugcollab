@@ -15,9 +15,10 @@ const Navbar = () => {
           <span className="text-lg font-heading font-bold text-foreground">CreatorHub</span>
         </div>
         <div className="hidden md:flex items-center gap-8">
-          <a href="#how-it-works" className="text-sm text-muted-foreground hover:text-foreground transition-colors">How It Works</a>
           <a href="#features" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Features</a>
-          <a href="#pricing" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Pricing</a>
+          <a href="#reviews" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Reviews</a>
+          <a href="#about" className="text-sm text-muted-foreground hover:text-foreground transition-colors">About</a>
+          <a href="#contact" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Contact</a>
         </div>
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
