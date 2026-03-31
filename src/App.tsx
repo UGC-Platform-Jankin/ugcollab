@@ -9,8 +9,8 @@ import Auth from "./pages/Auth.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import DashboardLayout from "./components/dashboard/DashboardLayout.tsx";
 import Gigs from "./pages/dashboard/Gigs.tsx";
-import Socials from "./pages/dashboard/Socials.tsx";
 import Profile from "./pages/dashboard/Profile.tsx";
+import ProfileSetup from "./pages/dashboard/ProfileSetup.tsx";
 
 const queryClient = new QueryClient();
 
@@ -25,8 +25,8 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/dashboard" element={<DashboardLayout><Gigs /></DashboardLayout>} />
-            <Route path="/dashboard/socials" element={<DashboardLayout><Socials /></DashboardLayout>} />
             <Route path="/dashboard/profile" element={<DashboardLayout><Profile /></DashboardLayout>} />
+            <Route path="/dashboard/setup" element={<ProfileSetup />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

@@ -2,12 +2,11 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Briefcase, Link2, User, LogOut, LayoutDashboard } from "lucide-react";
+import { Briefcase, User, LogOut } from "lucide-react";
 
 
 const navItems = [
   { label: "Gigs", icon: Briefcase, path: "/dashboard" },
-  { label: "Socials", icon: Link2, path: "/dashboard/socials" },
   { label: "Profile", icon: User, path: "/dashboard/profile" },
 ];
 

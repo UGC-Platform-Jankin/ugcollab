@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
+import { supabase as sb } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
 import { useEffect } from "react";
@@ -22,7 +23,15 @@ const Auth = () => {
   const { user } = useAuth();
 
   useEffect(() => {
-    if (user) navigate("/dashboard");
+    if (user) {
+      sb.from("profiles").select("display_name").eq("user_id", user.id).single().then(({ data }) => {
+        if (!data?.display_name) {
+          navigate("/dashboard/setup");
+        } else {
+          navigate("/dashboard");
+        }
+      });
+    }
   }, [user, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {

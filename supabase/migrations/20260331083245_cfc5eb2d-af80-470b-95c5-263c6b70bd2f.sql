@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX IF NOT EXISTS social_connections_user_platform_idx ON public.social_connections (user_id, platform);
