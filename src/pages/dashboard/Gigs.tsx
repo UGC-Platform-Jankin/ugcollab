@@ -40,6 +40,7 @@ const Gigs = () => {
   const [activeMemberships, setActiveMemberships] = useState<any[]>([]);
   const [leavingCampaign, setLeavingCampaign] = useState<any>(null);
   const [leavingLoading, setLeavingLoading] = useState(false);
+  const [brandProfiles, setBrandProfiles] = useState<Record<string, any>>({});
 
   useEffect(() => {
     const fetchData = async () => {
