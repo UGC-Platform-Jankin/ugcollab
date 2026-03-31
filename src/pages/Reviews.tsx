@@ -119,7 +119,7 @@ const ReviewsPage = () => {
           </motion.div>
 
           {/* Submit review */}
-          {user && (
+          {user ? (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -129,11 +129,50 @@ const ReviewsPage = () => {
               <h3 className="font-heading font-semibold text-foreground mb-4">Leave a Review</h3>
               <div className="flex gap-1 mb-4">
                 {[1, 2, 3, 4, 5].map((s) => (
-                  <button key={s} onClick={() => setRating(s)}>
-                    <Star className={`h-5 w-5 ${s <= rating ? "fill-primary text-primary" : "text-muted-foreground"}`} />
+                  <button
+                    key={s}
+                    onClick={() => setRating(s)}
+                    onMouseEnter={() => setHoverRating(s)}
+                    onMouseLeave={() => setHoverRating(0)}
+                  >
+                    <Star className={`h-6 w-6 transition-colors ${s <= (hoverRating || rating) ? "fill-primary text-primary" : "text-muted-foreground"}`} />
                   </button>
                 ))}
+                <span className="ml-2 text-sm text-muted-foreground self-center">{hoverRating || rating}/5</span>
               </div>
+              <Textarea
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                placeholder="Share your experience with UGC Zone..."
+                className="bg-secondary border-border mb-2"
+                rows={4}
+                maxLength={1000}
+              />
+              <p className="text-xs text-muted-foreground mb-4">{content.length}/1000 characters</p>
+              <Button onClick={handleSubmit} disabled={submitting || !content.trim()} className="bg-gradient-coral text-primary-foreground gap-2">
+                <Send className="h-4 w-4" />
+                {submitting ? "Submitting..." : "Submit Review"}
+              </Button>
+              <p className="text-xs text-muted-foreground mt-2">Reviews are published after approval.</p>
+            </motion.div>
+          ) : (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="rounded-2xl border border-border bg-gradient-card p-6 mb-10 text-center"
+            >
+              <p className="text-muted-foreground mb-4">Log in to leave a review.</p>
+              <div className="flex gap-3 justify-center">
+                <Button variant="outline" asChild>
+                  <Link to="/auth">Creator Login</Link>
+                </Button>
+                <Button variant="outline" asChild>
+                  <Link to="/brand/auth">Brand Login</Link>
+                </Button>
+              </div>
+            </motion.div>
+          )}
               <Textarea
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
