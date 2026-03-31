@@ -58,7 +58,8 @@ const CreateCampaign = () => {
       expected_video_count: Number(expectedVideoCount),
       deadline: deadline ? new Date(deadline).toISOString() : null,
       requirements: requirements || null,
-    });
+      target_region: targetRegion,
+    } as any);
     setSubmitting(false);
 
     if (error) {
