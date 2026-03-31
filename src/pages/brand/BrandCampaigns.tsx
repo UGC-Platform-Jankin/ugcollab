@@ -65,12 +65,23 @@ const BrandCampaigns = () => {
     setViewingCreator(creatorUserId);
     setCreatorProfile(null);
     setCreatorSocials([]);
-    const [profileRes, socialsRes] = await Promise.all([
+    setCreatorApps([]);
+    const [profileRes, socialsRes, appsRes] = await Promise.all([
       supabase.from("profiles").select("*").eq("user_id", creatorUserId).single(),
       supabase.from("social_connections").select("*").eq("user_id", creatorUserId),
+      supabase.from("campaign_applications").select("id, campaign_id, status, created_at").eq("creator_user_id", creatorUserId),
     ]);
     setCreatorProfile(profileRes.data);
     setCreatorSocials(socialsRes.data || []);
+    // Enrich apps with campaign titles
+    const apps = appsRes.data || [];
+    if (apps.length > 0) {
+      const campIds = [...new Set(apps.map((a: any) => a.campaign_id))] as string[];
+      const { data: camps } = await supabase.from("campaigns").select("id, title").in("id", campIds);
+      const campMap: Record<string, string> = {};
+      (camps || []).forEach((c: any) => { campMap[c.id] = c.title; });
+      setCreatorApps(apps.map((a: any) => ({ ...a, _title: campMap[a.campaign_id] || "Campaign" })));
+    }
   };
 
   const handleApplicationAction = async (appId: string, status: "accepted" | "rejected", app: any) => {
