@@ -227,7 +227,7 @@ const Messages = () => {
   };
 
   if (loading) {
-    return <div className="flex items-center justify-center h-[calc(100vh-12rem)]"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
+    return <div className="flex items-center justify-center h-[calc(100vh-5rem)]"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
   }
 
   if (rooms.length === 0) {
