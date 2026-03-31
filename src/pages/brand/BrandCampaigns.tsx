@@ -631,6 +631,52 @@ const BrandCampaigns = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Remove Creator Confirmation Dialog */}
+      <AlertDialog open={!!removingCreator} onOpenChange={(open) => !open && setRemovingCreator(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove creator from campaign?</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <span className="block">
+                You are about to remove <strong>{removingCreator?._profile?.display_name || removingCreator?._profile?.username || "this creator"}</strong> from "{selectedCampaign?.title}".
+              </span>
+              <span className="block font-medium text-foreground">
+                Videos delivered so far: {removingCreator?.videos_delivered || 0} / {selectedCampaign?.expected_video_count || 0}
+              </span>
+              <span className="block text-sm">
+                They will be removed from the group chat but the private message thread will remain. This action cannot be undone.
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive">Yes, remove creator</Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Final confirmation</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Are you absolutely sure? <strong>{removingCreator?._profile?.display_name || "This creator"}</strong> has delivered <strong>{removingCreator?.videos_delivered || 0}</strong> video{(removingCreator?.videos_delivered || 0) !== 1 ? "s" : ""} so far. This removal is permanent.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Go back</AlertDialogCancel>
+                  <AlertDialogAction
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    onClick={handleRemoveCreator}
+                    disabled={removingLoading}
+                  >
+                    {removingLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Remove permanently"}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
