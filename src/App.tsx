@@ -43,6 +43,7 @@ const App = () => (
             <Route path="/brand/campaigns" element={<BrandLayout><BrandCampaigns /></BrandLayout>} />
             <Route path="/brand/campaigns/new" element={<CreateCampaign />} />
             <Route path="/brand/messages" element={<BrandLayout><Messages /></BrandLayout>} />
+            <Route path="/brand/creators" element={<BrandLayout><FindCreators /></BrandLayout>} />
             <Route path="/brand/profile" element={<BrandLayout><BrandProfileContent /></BrandLayout>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
