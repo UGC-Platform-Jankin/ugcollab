@@ -5,20 +5,22 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Building2, LogOut, Users, Megaphone, BarChart3, User, MessageCircle } from "lucide-react";
 import NotificationBell from "@/components/NotificationBell";
-
-const navItems = [
-  { label: "Overview", icon: BarChart3, path: "/brand/dashboard" },
-  { label: "Campaigns", icon: Megaphone, path: "/brand/campaigns" },
-  { label: "Messages", icon: MessageCircle, path: "/brand/messages" },
-  { label: "Find Creators", icon: Users, path: "/brand/creators" },
-  { label: "Profile", icon: User, path: "/brand/profile" },
-];
+import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 
 const BrandLayout = ({ children }: { children: React.ReactNode }) => {
   const { user, loading, signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [brandProfile, setBrandProfile] = useState<any>(null);
+  const unread = useUnreadMessages();
+
+  const navItems = [
+    { label: "Overview", icon: BarChart3, path: "/brand/dashboard", badge: 0 },
+    { label: "Campaigns", icon: Megaphone, path: "/brand/campaigns", badge: 0 },
+    { label: "Messages", icon: MessageCircle, path: "/brand/messages", badge: unread.total },
+    { label: "Find Creators", icon: Users, path: "/brand/creators", badge: 0 },
+    { label: "Profile", icon: User, path: "/brand/profile", badge: 0 },
+  ];
 
   useEffect(() => {
     if (!loading && !user) navigate("/brand/auth");
@@ -62,7 +64,13 @@ const BrandLayout = ({ children }: { children: React.ReactNode }) => {
                   isActive ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground hover:bg-secondary"
                 }`}
               >
-                <item.icon className="h-4 w-4" /> {item.label}
+                <item.icon className="h-4 w-4" />
+                <span className="flex-1">{item.label}</span>
+                {item.badge > 0 && (
+                  <span className="h-5 min-w-[20px] rounded-full bg-primary text-[11px] font-bold text-primary-foreground flex items-center justify-center px-1.5">
+                    {item.badge > 99 ? "99+" : item.badge}
+                  </span>
+                )}
               </Link>
             );
           })}

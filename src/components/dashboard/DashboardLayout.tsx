@@ -5,18 +5,20 @@ import { Button } from "@/components/ui/button";
 import { Briefcase, User, LogOut, MessageCircle, Shield } from "lucide-react";
 import NotificationBell from "@/components/NotificationBell";
 import { supabase } from "@/integrations/supabase/client";
-
-const navItems = [
-  { label: "Gigs", icon: Briefcase, path: "/dashboard" },
-  { label: "Messages", icon: MessageCircle, path: "/dashboard/messages" },
-  { label: "Profile", icon: User, path: "/dashboard/profile" },
-];
+import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 
 const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const { user, loading, signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [isAdmin, setIsAdmin] = useState(false);
+  const unread = useUnreadMessages();
+
+  const navItems = [
+    { label: "Gigs", icon: Briefcase, path: "/dashboard", badge: 0 },
+    { label: "Messages", icon: MessageCircle, path: "/dashboard/messages", badge: unread.total },
+    { label: "Profile", icon: User, path: "/dashboard/profile", badge: 0 },
+  ];
 
   useEffect(() => {
     if (!loading && !user) navigate("/auth");
@@ -41,7 +43,6 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <div className="min-h-screen bg-background flex">
-      {/* Sidebar */}
       <aside className="w-64 border-r border-border/50 bg-card/50 backdrop-blur-sm flex flex-col">
         <div className="p-6 border-b border-border/50">
           <Link to="/" className="flex items-center gap-2">
@@ -62,7 +63,12 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
                 }`}
               >
                 <item.icon className="h-4 w-4" />
-                {item.label}
+                <span className="flex-1">{item.label}</span>
+                {item.badge > 0 && (
+                  <span className="h-5 min-w-[20px] rounded-full bg-primary text-[11px] font-bold text-primary-foreground flex items-center justify-center px-1.5">
+                    {item.badge > 99 ? "99+" : item.badge}
+                  </span>
+                )}
               </Link>
             );
           })}
@@ -92,7 +98,6 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
         </div>
       </aside>
 
-      {/* Main content */}
       <main className="flex-1 overflow-auto">
         <div className="p-8">
           <div className="flex justify-end mb-4">
