@@ -168,6 +168,7 @@ const Messages = () => {
             lastMessage: lastMsg?.content?.replace(/\[CAMPAIGN_INVITE:[^\]]+\]/, "").trim() || "No messages yet",
             lastMessageTime: lastMsg?.created_at || room.created_at,
             isGroup: false,
+            unreadCount: unreadByRoom[room.id] || 0,
           };
         } else {
           meta[room.id] = {
