@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Camera, ArrowLeft } from "lucide-react";
 
@@ -17,6 +17,7 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user } = useAuth();
 
   useEffect(() => {
@@ -90,7 +91,7 @@ const Auth = () => {
           </div>
           <p className="text-muted-foreground text-sm mb-6">Sign in or create your creator account</p>
 
-          <Tabs defaultValue="login">
+          <Tabs defaultValue={searchParams.get("mode") === "signup" ? "signup" : "login"}>
             <TabsList className="grid w-full grid-cols-2 mb-4">
               <TabsTrigger value="login">Log In</TabsTrigger>
               <TabsTrigger value="signup">Sign Up</TabsTrigger>
