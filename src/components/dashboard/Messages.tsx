@@ -282,7 +282,12 @@ const Messages = () => {
                 )}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between">
-                    <p className="font-medium text-sm text-foreground truncate">{meta.displayName}</p>
+                    <p className="font-medium text-sm text-foreground truncate flex items-center gap-1.5">
+                      {meta.displayName}
+                      {meta.isGroup && (
+                        <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-normal">Group</span>
+                      )}
+                    </p>
                     <span className="text-[11px] text-muted-foreground shrink-0 ml-2">
                       {formatTime(meta.lastMessageTime)}
                     </span>
