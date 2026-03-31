@@ -28,6 +28,7 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ error: "Missing user_id" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     // Get the base URL for the callback
