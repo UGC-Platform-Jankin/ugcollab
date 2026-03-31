@@ -41,8 +41,8 @@ serve(async (req) => {
 
     if (platform === "instagram") {
       // Exchange code for short-lived token
-      const metaAppId = Deno.env.get("META_APP_ID")!;
-      const metaAppSecret = Deno.env.get("META_APP_SECRET")!;
+      const instaAppId = Deno.env.get("INSTAGRAM_APP_ID")!;
+      const instaAppSecret = Deno.env.get("INSTAGRAM_APP_SECRET")!;
 
       const tokenRes = await fetch("https://api.instagram.com/oauth/access_token", {
         method: "POST",
