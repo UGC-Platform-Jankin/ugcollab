@@ -8,7 +8,7 @@ const reviews = [
     role: "Brand Manager",
     company: "Glow Cosmetics",
     initials: "SL",
-    quote: "CreatorHub completely transformed how we run our UGC campaigns. The approval workflow alone saves us hours every week.",
+    quote: "UGC Zone completely transformed how we run our UGC campaigns. The approval workflow alone saves us hours every week.",
     rating: 5,
   },
   {
