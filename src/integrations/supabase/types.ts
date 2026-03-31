@@ -443,6 +443,38 @@ export type Database = {
         }
         Relationships: []
       }
+      posted_video_links: {
+        Row: {
+          created_at: string
+          id: string
+          platform: string
+          submission_id: string
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          platform: string
+          submission_id: string
+          url: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          platform?: string
+          submission_id?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "posted_video_links_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "video_submissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -577,6 +609,50 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      video_submissions: {
+        Row: {
+          campaign_id: string
+          created_at: string
+          creator_user_id: string
+          feedback: string | null
+          id: string
+          status: string
+          title: string
+          updated_at: string
+          video_url: string
+        }
+        Insert: {
+          campaign_id: string
+          created_at?: string
+          creator_user_id: string
+          feedback?: string | null
+          id?: string
+          status?: string
+          title: string
+          updated_at?: string
+          video_url: string
+        }
+        Update: {
+          campaign_id?: string
+          created_at?: string
+          creator_user_id?: string
+          feedback?: string | null
+          id?: string
+          status?: string
+          title?: string
+          updated_at?: string
+          video_url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "video_submissions_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
