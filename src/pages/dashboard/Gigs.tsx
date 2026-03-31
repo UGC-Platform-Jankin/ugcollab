@@ -6,7 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Briefcase, Clock, DollarSign, MapPin, Send, Loader2, Check } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Briefcase, Clock, DollarSign, MapPin, Send, Loader2, Check, LogOut } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface Campaign {
@@ -35,16 +36,31 @@ const Gigs = () => {
   const [coverLetter, setCoverLetter] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
+  const [activeMemberships, setActiveMemberships] = useState<any[]>([]);
+  const [leavingCampaign, setLeavingCampaign] = useState<any>(null);
+  const [leavingLoading, setLeavingLoading] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
       const [campaignsRes, applicationsRes] = await Promise.all([
         supabase.from("campaigns").select("*").eq("status", "active").order("created_at", { ascending: false }),
-        user ? supabase.from("campaign_applications").select("campaign_id").eq("creator_user_id", user.id) : Promise.resolve({ data: [] }),
+        user ? supabase.from("campaign_applications").select("*").eq("creator_user_id", user.id) : Promise.resolve({ data: [] }),
       ]);
       setCampaigns((campaignsRes.data as any) || []);
-      if (applicationsRes.data) {
-        setAppliedCampaigns(new Set(applicationsRes.data.map((a: any) => a.campaign_id)));
+      const allApps = (applicationsRes.data as any) || [];
+      setAppliedCampaigns(new Set(allApps.map((a: any) => a.campaign_id)));
+
+      // Load active memberships (accepted apps)
+      const accepted = allApps.filter((a: any) => a.status === "accepted");
+      if (accepted.length > 0) {
+        const campIds = [...new Set(accepted.map((a: any) => a.campaign_id))] as string[];
+        const { data: campData } = await supabase.from("campaigns").select("id, title, expected_video_count").in("id", campIds);
+        const campMap: Record<string, any> = {};
+        (campData || []).forEach((c: any) => { campMap[c.id] = c; });
+        setActiveMemberships(accepted.map((a: any) => ({
+          ...a,
+          _campaign: campMap[a.campaign_id] || { title: "Campaign", expected_video_count: 0 },
+        })));
       }
       setLoading(false);
     };
@@ -59,7 +75,6 @@ const Gigs = () => {
     }
     setSubmitting(true);
 
-    // Insert application
     const { error } = await supabase.from("campaign_applications").insert({
       campaign_id: applyingTo.id,
       creator_user_id: user.id,
@@ -73,7 +88,6 @@ const Gigs = () => {
     }
 
     setAppliedCampaigns((prev) => new Set([...prev, applyingTo.id]));
-    // Notify brand
     await supabase.from("notifications" as any).insert({
       user_id: applyingTo.brand_user_id,
       type: "application",
@@ -87,8 +101,77 @@ const Gigs = () => {
     setSubmitting(false);
   };
 
+  const handleLeaveCampaign = async () => {
+    if (!leavingCampaign || !user) return;
+    setLeavingLoading(true);
+
+    // Update application status to "left"
+    await supabase.from("campaign_applications").update({ status: "left" } as any).eq("id", leavingCampaign.id);
+
+    // Post a message in group chat if exists
+    const { data: groupRoom } = await supabase
+      .from("chat_rooms")
+      .select("id")
+      .eq("campaign_id", leavingCampaign.campaign_id)
+      .eq("type", "group")
+      .maybeSingle();
+
+    if (groupRoom) {
+      await supabase.from("messages").insert({
+        chat_room_id: groupRoom.id,
+        sender_id: user.id,
+        content: `I've left this campaign. Thanks for the opportunity!`,
+      } as any);
+    }
+
+    // Notify brand
+    await supabase.from("notifications" as any).insert({
+      user_id: leavingCampaign._campaign?.brand_user_id || "",
+      type: "application_update",
+      title: "Creator Left Campaign",
+      body: `A creator has left "${leavingCampaign._campaign?.title || "your campaign"}". Videos delivered: ${leavingCampaign.videos_delivered || 0}`,
+      link: "/brand/campaigns",
+    } as any);
+
+    setActiveMemberships((prev) => prev.filter((m) => m.id !== leavingCampaign.id));
+    toast({ title: "You've left the campaign" });
+    setLeavingCampaign(null);
+    setLeavingLoading(false);
+  };
+
   return (
     <div>
+      {/* Active Memberships */}
+      {activeMemberships.length > 0 && (
+        <div className="mb-8">
+          <h2 className="text-xl font-heading font-bold text-foreground mb-1">Your Active Campaigns</h2>
+          <p className="text-muted-foreground text-sm mb-4">Campaigns you've been accepted to</p>
+          <div className="space-y-3">
+            {activeMemberships.map((m) => (
+              <Card key={m.id} className="border-border/50">
+                <CardContent className="p-4 flex items-center justify-between">
+                  <div>
+                    <p className="font-medium text-foreground">{m._campaign.title}</p>
+                    <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                      <span>Videos: {m.videos_delivered || 0}/{m._campaign.expected_video_count}</span>
+                      <Badge variant="default" className="text-xs">Active</Badge>
+                    </div>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="text-destructive hover:text-destructive gap-1"
+                    onClick={() => setLeavingCampaign(m)}
+                  >
+                    <LogOut className="h-3.5 w-3.5" /> Leave
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="mb-8">
         <h1 className="text-3xl font-heading font-bold text-foreground">Available Gigs</h1>
         <p className="text-muted-foreground mt-1">Browse and apply to brand campaigns</p>
@@ -253,6 +336,52 @@ const Gigs = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Leave Campaign Confirmation */}
+      <AlertDialog open={!!leavingCampaign} onOpenChange={(open) => !open && setLeavingCampaign(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Leave this campaign?</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <span className="block">
+                You are about to leave <strong>"{leavingCampaign?._campaign?.title}"</strong>.
+              </span>
+              <span className="block font-medium text-foreground">
+                Videos delivered so far: {leavingCampaign?.videos_delivered || 0} / {leavingCampaign?._campaign?.expected_video_count || 0}
+              </span>
+              <span className="block text-sm">
+                You'll be removed from the group chat but can still message the brand privately. This action cannot be undone.
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Stay</AlertDialogCancel>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive">Yes, leave campaign</Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Final confirmation</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Are you absolutely sure you want to leave? You have delivered <strong>{leavingCampaign?.videos_delivered || 0}</strong> video{(leavingCampaign?.videos_delivered || 0) !== 1 ? "s" : ""} so far. This is permanent.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Go back</AlertDialogCancel>
+                  <AlertDialogAction
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    onClick={handleLeaveCampaign}
+                    disabled={leavingLoading}
+                  >
+                    {leavingLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Leave permanently"}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

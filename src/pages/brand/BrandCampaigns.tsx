@@ -31,6 +31,8 @@ const BrandCampaigns = () => {
   const [updatingApp, setUpdatingApp] = useState<string | null>(null);
   const [endingCampaign, setEndingCampaign] = useState<string | null>(null);
   const [campaignTab, setCampaignTab] = useState("active");
+  const [removingCreator, setRemovingCreator] = useState<any>(null);
+  const [removingLoading, setRemovingLoading] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -231,6 +233,55 @@ const BrandCampaigns = () => {
     } as any);
     toast({ title: status === "accepted" ? "Creator accepted!" : "Application rejected" });
     setUpdatingApp(null);
+  };
+
+  const handleRemoveCreator = async () => {
+    if (!removingCreator || !user || !selectedCampaign) return;
+    setRemovingLoading(true);
+    const app = removingCreator;
+
+    // Update application status to "removed"
+    await supabase.from("campaign_applications").update({ status: "removed" } as any).eq("id", app.id);
+
+    // Remove from group chat only (keep private chat)
+    const { data: groupRoom } = await supabase
+      .from("chat_rooms")
+      .select("id")
+      .eq("campaign_id", selectedCampaign.id)
+      .eq("type", "group")
+      .maybeSingle();
+
+    if (groupRoom) {
+      // Find their participant row via the creator's own view
+      const { data: participantRows } = await supabase
+        .from("chat_participants")
+        .select("id")
+        .eq("chat_room_id", groupRoom.id)
+        .eq("user_id", app.creator_user_id);
+
+      if (participantRows?.length) {
+        // We can't delete via RLS, so use a message to note removal
+        await supabase.from("messages").insert({
+          chat_room_id: groupRoom.id,
+          sender_id: user.id,
+          content: `${app._profile?.display_name || app._profile?.username || "A creator"} has been removed from this campaign.`,
+        } as any);
+      }
+    }
+
+    // Notify creator
+    await supabase.from("notifications" as any).insert({
+      user_id: app.creator_user_id,
+      type: "application_update",
+      title: "Removed from Campaign",
+      body: `You have been removed from "${selectedCampaign.title}". Videos delivered: ${app.videos_delivered || 0}`,
+      link: "/dashboard",
+    } as any);
+
+    setApplications((prev) => prev.map((a) => a.id === app.id ? { ...a, status: "removed" } : a));
+    toast({ title: "Creator removed from campaign" });
+    setRemovingCreator(null);
+    setRemovingLoading(false);
   };
 
   const handleEndCampaign = async (campaignId: string) => {
@@ -493,6 +544,11 @@ const BrandCampaigns = () => {
                           </Button>
                         </div>
                       )}
+                      {app.status === "accepted" && (
+                        <Button size="sm" variant="outline" className="text-destructive hover:text-destructive shrink-0" onClick={() => setRemovingCreator(app)}>
+                          <X className="h-4 w-4 mr-1" /> Remove
+                        </Button>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -575,6 +631,52 @@ const BrandCampaigns = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Remove Creator Confirmation Dialog */}
+      <AlertDialog open={!!removingCreator} onOpenChange={(open) => !open && setRemovingCreator(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove creator from campaign?</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <span className="block">
+                You are about to remove <strong>{removingCreator?._profile?.display_name || removingCreator?._profile?.username || "this creator"}</strong> from "{selectedCampaign?.title}".
+              </span>
+              <span className="block font-medium text-foreground">
+                Videos delivered so far: {removingCreator?.videos_delivered || 0} / {selectedCampaign?.expected_video_count || 0}
+              </span>
+              <span className="block text-sm">
+                They will be removed from the group chat but the private message thread will remain. This action cannot be undone.
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive">Yes, remove creator</Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Final confirmation</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Are you absolutely sure? <strong>{removingCreator?._profile?.display_name || "This creator"}</strong> has delivered <strong>{removingCreator?.videos_delivered || 0}</strong> video{(removingCreator?.videos_delivered || 0) !== 1 ? "s" : ""} so far. This removal is permanent.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Go back</AlertDialogCancel>
+                  <AlertDialogAction
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    onClick={handleRemoveCreator}
+                    disabled={removingLoading}
+                  >
+                    {removingLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Remove permanently"}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

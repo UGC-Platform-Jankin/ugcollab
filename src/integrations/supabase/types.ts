@@ -71,6 +71,7 @@ export type Database = {
           id: string
           status: string
           updated_at: string
+          videos_delivered: number
         }
         Insert: {
           campaign_id: string
@@ -80,6 +81,7 @@ export type Database = {
           id?: string
           status?: string
           updated_at?: string
+          videos_delivered?: number
         }
         Update: {
           campaign_id?: string
@@ -89,6 +91,7 @@ export type Database = {
           id?: string
           status?: string
           updated_at?: string
+          videos_delivered?: number
         }
         Relationships: [
           {
