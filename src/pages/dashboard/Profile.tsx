@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, Fragment } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,21 +7,22 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User, Lock, Save, Camera, Loader2, Instagram, Facebook, Video, Users, Eye, ExternalLink } from "lucide-react";
+import { User, Lock, Save, Camera, Loader2, Instagram, Facebook, Video, Users, Eye, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
-interface SocialConnection {
-  platform: string;
-  profile_url: string | null;
-  followers_count: number | null;
-  average_views: number | null;
+interface SocialForm {
+  profile_url: string;
+  followers_count: string;
+  average_views: string;
 }
 
-const socialIcons: Record<string, { icon: typeof Instagram; color: string; bg: string }> = {
-  instagram: { icon: Instagram, color: "text-pink-400", bg: "bg-pink-500/10" },
-  facebook: { icon: Facebook, color: "text-blue-400", bg: "bg-blue-500/10" },
-  tiktok: { icon: Video, color: "text-cyan-400", bg: "bg-cyan-500/10" },
-};
+const platforms = [
+  { key: "instagram", name: "Instagram", icon: Instagram, placeholder: "https://instagram.com/yourhandle", color: "text-pink-400", bg: "bg-pink-500/10" },
+  { key: "facebook", name: "Facebook", icon: Facebook, placeholder: "https://facebook.com/yourpage", color: "text-blue-400", bg: "bg-blue-500/10" },
+  { key: "tiktok", name: "TikTok", icon: Video, placeholder: "https://tiktok.com/@yourhandle", color: "text-cyan-400", bg: "bg-cyan-500/10" },
+] as const;
+
+const emptyForm: SocialForm = { profile_url: "", followers_count: "", average_views: "" };
 
 const Profile = () => {
   const { user } = useAuth();
@@ -31,6 +32,7 @@ const Profile = () => {
   const [saving, setSaving] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
+  const [savingSocial, setSavingSocial] = useState<string | null>(null);
 
   const [username, setUsername] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -40,14 +42,19 @@ const Profile = () => {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
-  const [socials, setSocials] = useState<SocialConnection[]>([]);
+  const [socialForms, setSocialForms] = useState<Record<string, SocialForm>>({
+    instagram: { ...emptyForm },
+    facebook: { ...emptyForm },
+    tiktok: { ...emptyForm },
+  });
+  const [socialIds, setSocialIds] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const fetchData = async () => {
       if (!user) return;
       const [profileRes, socialsRes] = await Promise.all([
         supabase.from("profiles").select("*").eq("user_id", user.id).single(),
-        supabase.from("social_connections").select("platform, profile_url, followers_count, average_views").eq("user_id", user.id),
+        supabase.from("social_connections").select("id, platform, profile_url, followers_count, average_views").eq("user_id", user.id),
       ]);
       if (profileRes.data) {
         setUsername(profileRes.data.username || "");
@@ -55,7 +62,20 @@ const Profile = () => {
         setBio(profileRes.data.bio || "");
         setAvatarUrl(profileRes.data.avatar_url || "");
       }
-      setSocials((socialsRes.data as SocialConnection[]) || []);
+      if (socialsRes.data) {
+        const newForms: Record<string, SocialForm> = { instagram: { ...emptyForm }, facebook: { ...emptyForm }, tiktok: { ...emptyForm } };
+        const newIds: Record<string, string> = {};
+        socialsRes.data.forEach((c: any) => {
+          newForms[c.platform] = {
+            profile_url: c.profile_url || "",
+            followers_count: c.followers_count?.toString() || "",
+            average_views: c.average_views?.toString() || "",
+          };
+          newIds[c.platform] = c.id;
+        });
+        setSocialForms(newForms);
+        setSocialIds(newIds);
+      }
       setLoading(false);
     };
     fetchData();
@@ -97,6 +117,47 @@ const Profile = () => {
       toast({ title: "Profile updated" });
     }
     setSaving(false);
+  };
+
+  const updateSocialField = (platform: string, field: keyof SocialForm, value: string) => {
+    setSocialForms((prev) => ({ ...prev, [platform]: { ...prev[platform], [field]: value } }));
+  };
+
+  const handleSaveSocial = async (platform: string) => {
+    if (!user) return;
+    setSavingSocial(platform);
+    const form = socialForms[platform];
+    const row = {
+      user_id: user.id,
+      platform,
+      profile_url: form.profile_url.trim(),
+      followers_count: parseInt(form.followers_count) || 0,
+      average_views: parseInt(form.average_views) || 0,
+    };
+    let error;
+    if (socialIds[platform]) {
+      ({ error } = await supabase.from("social_connections").update(row).eq("id", socialIds[platform]));
+    } else {
+      const { data, error: e } = await supabase.from("social_connections").insert(row).select("id").single();
+      error = e;
+      if (data) setSocialIds((prev) => ({ ...prev, [platform]: data.id }));
+    }
+    if (error) {
+      toast({ title: "Error saving", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: `${platform.charAt(0).toUpperCase() + platform.slice(1)} saved!` });
+    }
+    setSavingSocial(null);
+  };
+
+  const handleRemoveSocial = async (platform: string) => {
+    if (!socialIds[platform]) return;
+    const { error } = await supabase.from("social_connections").delete().eq("id", socialIds[platform]);
+    if (!error) {
+      setSocialForms((prev) => ({ ...prev, [platform]: { ...emptyForm } }));
+      setSocialIds((prev) => { const n = { ...prev }; delete n[platform]; return n; });
+      toast({ title: "Removed" });
+    }
   };
 
   const handleChangePassword = async () => {
@@ -205,53 +266,50 @@ const Profile = () => {
           </CardContent>
         </Card>
 
-        {/* Socials Overview */}
+        {/* Socials */}
         <Card className="border-border/50">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Users className="h-5 w-5" />
-              Connected Socials
+              Your Socials
             </CardTitle>
-            <CardDescription>Your linked social accounts and stats</CardDescription>
+            <CardDescription>Add your social media profiles and stats</CardDescription>
           </CardHeader>
-          <CardContent>
-            {socials.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No socials added yet. Go to the <a href="/dashboard/socials" className="text-primary hover:underline">Socials page</a> to add them.</p>
-            ) : (
-              <div className="space-y-3">
-                {socials.map((s) => {
-                  const cfg = socialIcons[s.platform] || { icon: ExternalLink, color: "text-muted-foreground", bg: "bg-muted" };
-                  const Icon = cfg.icon;
-                  return (
-                    <div key={s.platform} className="flex items-center justify-between py-2">
-                      <div className="flex items-center gap-3">
-                        <div className={`h-9 w-9 rounded-full ${cfg.bg} flex items-center justify-center`}>
-                          <Icon className={`h-4 w-4 ${cfg.color}`} />
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-foreground capitalize">{s.platform}</p>
-                          {s.profile_url && (
-                            <a href={s.profile_url} target="_blank" rel="noopener" className="text-xs text-primary hover:underline truncate max-w-[200px] block">
-                              {s.profile_url.replace(/^https?:\/\/(www\.)?/, "").slice(0, 35)}
-                            </a>
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                        <div className="flex items-center gap-1">
-                          <Users className="h-3.5 w-3.5" />
-                          <span>{formatNumber(s.followers_count)}</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Eye className="h-3.5 w-3.5" />
-                          <span>{formatNumber(s.average_views)}</span>
-                        </div>
-                      </div>
+          <CardContent className="space-y-6">
+            {platforms.map(({ key, name, icon: Icon, placeholder, color, bg }) => {
+              const form = socialForms[key];
+              const hasExisting = !!socialIds[key];
+              const isSaving = savingSocial === key;
+              return (
+                <div key={key} className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <div className={`h-8 w-8 rounded-full ${bg} flex items-center justify-center`}>
+                      <Icon className={`h-4 w-4 ${color}`} />
                     </div>
-                  );
-                })}
-              </div>
-            )}
+                    <h4 className="font-medium text-foreground text-sm">{name}</h4>
+                  </div>
+                  <div>
+                    <Input placeholder={placeholder} value={form.profile_url} onChange={(e) => updateSocialField(key, "profile_url", e.target.value)} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <Input type="number" placeholder="Followers" value={form.followers_count} onChange={(e) => updateSocialField(key, "followers_count", e.target.value)} />
+                    <Input type="number" placeholder="Avg Views" value={form.average_views} onChange={(e) => updateSocialField(key, "average_views", e.target.value)} />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button onClick={() => handleSaveSocial(key)} disabled={isSaving} size="sm">
+                      {isSaving ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Save className="h-4 w-4 mr-1" />}
+                      {hasExisting ? "Update" : "Save"}
+                    </Button>
+                    {hasExisting && (
+                      <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => handleRemoveSocial(key)}>
+                        <Trash2 className="h-4 w-4 mr-1" /> Remove
+                      </Button>
+                    )}
+                  </div>
+                  {key !== "tiktok" && <div className="border-b border-border/30" />}
+                </div>
+              );
+            })}
           </CardContent>
         </Card>
 
