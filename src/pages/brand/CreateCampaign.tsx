@@ -25,6 +25,7 @@ const CreateCampaign = () => {
   const [expectedVideoCount, setExpectedVideoCount] = useState("1");
   const [deadline, setDeadline] = useState("");
   const [requirements, setRequirements] = useState("");
+  const [targetRegion, setTargetRegion] = useState("Worldwide");
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
