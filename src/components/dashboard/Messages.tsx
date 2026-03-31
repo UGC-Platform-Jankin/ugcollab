@@ -89,7 +89,7 @@ const Messages = () => {
             .select("user_id")
             .eq("chat_room_id", room.id);
           const otherUserId = parts?.find((p: any) => p.user_id !== user.id)?.user_id;
-          let displayName = room.name || "Direct Message";
+          let displayName = "Direct Message";
           let avatarUrl: string | null = null;
           if (otherUserId) {
             // Try creator profile first
