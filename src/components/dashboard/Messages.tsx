@@ -89,7 +89,7 @@ const Messages = () => {
             .select("user_id")
             .eq("chat_room_id", room.id);
           const otherUserId = parts?.find((p: any) => p.user_id !== user.id)?.user_id;
-          let displayName = "Direct Message";
+          let displayName = room.name || "Chat";
           let avatarUrl: string | null = null;
           if (otherUserId) {
             // Try creator profile first
@@ -101,17 +101,19 @@ const Messages = () => {
             if (profile?.display_name || profile?.username) {
               displayName = profile.display_name || profile.username || displayName;
               avatarUrl = profile.avatar_url;
-            } else {
-              // Try brand profile
-              const { data: brand } = await supabase
-                .from("brand_profiles")
-                .select("business_name, logo_url")
-                .eq("user_id", otherUserId)
-                .maybeSingle();
-              if (brand) {
-                displayName = brand.business_name || displayName;
-                avatarUrl = brand.logo_url;
+            }
+            // Also try brand profile (might have both)
+            const { data: brand } = await supabase
+              .from("brand_profiles")
+              .select("business_name, logo_url")
+              .eq("user_id", otherUserId)
+              .maybeSingle();
+            if (brand?.business_name) {
+              // Prefer brand name if no creator display name was found
+              if (!profile?.display_name && !profile?.username) {
+                displayName = brand.business_name;
               }
+              avatarUrl = avatarUrl || brand.logo_url;
             }
           }
           meta[room.id] = {
