@@ -47,15 +47,18 @@ const BrandDashboard = () => {
           <p className="text-xs text-muted-foreground mt-1">Brand Portal</p>
         </div>
         <nav className="flex-1 p-4 space-y-1">
-          <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium bg-primary/10 text-primary">
+          <Link to="/brand/dashboard" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium bg-primary/10 text-primary">
             <BarChart3 className="h-4 w-4" /> Overview
-          </div>
-          <div onClick={() => navigate("/brand/campaigns/new")} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary cursor-pointer">
+          </Link>
+          <Link to="/brand/campaigns/new" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary">
             <Megaphone className="h-4 w-4" /> Campaigns
-          </div>
+          </Link>
           <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary cursor-pointer">
             <Users className="h-4 w-4" /> Find Creators
           </div>
+          <Link to="/brand/profile" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary">
+            <User className="h-4 w-4" /> Profile
+          </Link>
         </nav>
         <div className="p-4 border-t border-border/50">
           <Button

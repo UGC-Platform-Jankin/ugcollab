@@ -36,6 +36,7 @@ const App = () => (
             <Route path="/brand/setup" element={<BrandSetup />} />
             <Route path="/brand/dashboard" element={<BrandDashboard />} />
             <Route path="/brand/campaigns/new" element={<CreateCampaign />} />
+            <Route path="/brand/profile" element={<BrandProfile />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
