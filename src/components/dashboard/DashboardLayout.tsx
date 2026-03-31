@@ -3,6 +3,7 @@ import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Briefcase, Link2, User, LogOut, LayoutDashboard } from "lucide-react";
+import logo from "@/assets/logo.png";
 
 const navItems = [
   { label: "Gigs", icon: Briefcase, path: "/dashboard" },
