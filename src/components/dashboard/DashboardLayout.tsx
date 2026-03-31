@@ -2,11 +2,12 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Briefcase, User, LogOut } from "lucide-react";
+import { Briefcase, User, LogOut, MessageCircle } from "lucide-react";
 
 
 const navItems = [
   { label: "Gigs", icon: Briefcase, path: "/dashboard" },
+  { label: "Messages", icon: MessageCircle, path: "/dashboard/messages" },
   { label: "Profile", icon: User, path: "/dashboard/profile" },
 ];
 

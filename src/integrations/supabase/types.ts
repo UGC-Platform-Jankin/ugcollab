@@ -62,6 +62,44 @@ export type Database = {
         }
         Relationships: []
       }
+      campaign_applications: {
+        Row: {
+          campaign_id: string
+          cover_letter: string
+          created_at: string
+          creator_user_id: string
+          id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          campaign_id: string
+          cover_letter: string
+          created_at?: string
+          creator_user_id: string
+          id?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          campaign_id?: string
+          cover_letter?: string
+          created_at?: string
+          creator_user_id?: string
+          id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_applications_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       campaigns: {
         Row: {
           brand_user_id: string
@@ -115,6 +153,99 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      chat_participants: {
+        Row: {
+          chat_room_id: string
+          id: string
+          joined_at: string
+          user_id: string
+        }
+        Insert: {
+          chat_room_id: string
+          id?: string
+          joined_at?: string
+          user_id: string
+        }
+        Update: {
+          chat_room_id?: string
+          id?: string
+          joined_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_participants_chat_room_id_fkey"
+            columns: ["chat_room_id"]
+            isOneToOne: false
+            referencedRelation: "chat_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chat_rooms: {
+        Row: {
+          campaign_id: string | null
+          created_at: string
+          id: string
+          name: string | null
+          type: string
+        }
+        Insert: {
+          campaign_id?: string | null
+          created_at?: string
+          id?: string
+          name?: string | null
+          type?: string
+        }
+        Update: {
+          campaign_id?: string | null
+          created_at?: string
+          id?: string
+          name?: string | null
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_rooms_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messages: {
+        Row: {
+          chat_room_id: string
+          content: string
+          created_at: string
+          id: string
+          sender_id: string
+        }
+        Insert: {
+          chat_room_id: string
+          content: string
+          created_at?: string
+          id?: string
+          sender_id: string
+        }
+        Update: {
+          chat_room_id?: string
+          content?: string
+          created_at?: string
+          id?: string
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_chat_room_id_fkey"
+            columns: ["chat_room_id"]
+            isOneToOne: false
+            referencedRelation: "chat_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
