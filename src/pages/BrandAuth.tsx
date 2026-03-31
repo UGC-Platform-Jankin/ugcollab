@@ -3,18 +3,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { Building2 } from "lucide-react";
+import { Building2, ArrowLeft } from "lucide-react";
 
 const BrandAuth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [rememberMe, setRememberMe] = useState(true);
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -60,65 +58,77 @@ const BrandAuth = () => {
     setLoading(false);
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent, handler: (e: React.FormEvent) => void) => {
-    if (e.key === "Enter") handler(e);
-  };
-
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <div className="flex items-center gap-2 justify-center mb-8">
-          <Building2 className="h-5 w-5 text-primary" />
-          <span className="text-lg font-heading font-bold text-foreground">UGC Zone for Brands</span>
+    <div className="min-h-screen bg-background flex">
+      {/* Left decorative panel — blue-tinted for brands */}
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden items-center justify-center bg-gradient-to-br from-[hsl(220,80%,50%,0.1)] via-background to-background">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_30%_50%,hsl(220,80%,55%,0.12),transparent_60%)]" />
+        <div className="relative z-10 p-12 max-w-md">
+          <div className="w-16 h-16 rounded-2xl bg-[hsl(220,80%,55%,0.1)] flex items-center justify-center mb-8">
+            <Building2 className="w-8 h-8 text-[hsl(220,80%,65%)]" />
+          </div>
+          <h2 className="text-3xl font-heading font-bold text-foreground mb-4">
+            Find creators.<br />Grow your brand.
+          </h2>
+          <p className="text-muted-foreground leading-relaxed">
+            Access a curated network of UGC creators ready to produce authentic content for your brand. Launch campaigns in minutes.
+          </p>
         </div>
-        <Card className="border-border/50 bg-card">
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl font-heading">Brand Portal</CardTitle>
-            <CardDescription>Find UGC creators for your business</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Tabs defaultValue="login">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="login">Log In</TabsTrigger>
-                <TabsTrigger value="signup">Sign Up</TabsTrigger>
-              </TabsList>
-              <TabsContent value="login">
-                <form onSubmit={handleLogin} className="space-y-4 mt-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="brand-login-email">Email</Label>
-                    <Input id="brand-login-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} onKeyDown={(e) => handleKeyDown(e, handleLogin)} required />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="brand-login-password">Password</Label>
-                    <Input id="brand-login-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => handleKeyDown(e, handleLogin)} required />
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <input type="checkbox" id="brand-remember" checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} className="rounded border-border" />
-                    <Label htmlFor="brand-remember" className="text-sm text-muted-foreground cursor-pointer">Stay logged in</Label>
-                  </div>
-                  <Button type="submit" className="w-full bg-gradient-coral" disabled={loading}>
-                    {loading ? "Signing in..." : "Sign In"}
-                  </Button>
-                </form>
-              </TabsContent>
-              <TabsContent value="signup">
-                <form onSubmit={handleSignup} className="space-y-4 mt-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="brand-signup-email">Business Email</Label>
-                    <Input id="brand-signup-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="brand-signup-password">Password</Label>
-                    <Input id="brand-signup-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
-                  </div>
-                  <Button type="submit" className="w-full bg-gradient-coral" disabled={loading}>
-                    {loading ? "Creating account..." : "Create Brand Account"}
-                  </Button>
-                </form>
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
+      </div>
+
+      {/* Right auth panel */}
+      <div className="flex-1 flex items-center justify-center p-6">
+        <div className="w-full max-w-md">
+          <Link to="/get-started" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-6 transition-colors">
+            <ArrowLeft className="w-4 h-4" /> Back
+          </Link>
+          <div className="flex items-center gap-2 mb-2">
+            <Building2 className="h-5 w-5 text-[hsl(220,80%,65%)]" />
+            <span className="text-lg font-heading font-bold text-foreground">Brand Portal</span>
+          </div>
+          <p className="text-muted-foreground text-sm mb-6">Find UGC creators for your business</p>
+
+          <Tabs defaultValue="login">
+            <TabsList className="grid w-full grid-cols-2 mb-4">
+              <TabsTrigger value="login">Log In</TabsTrigger>
+              <TabsTrigger value="signup">Sign Up</TabsTrigger>
+            </TabsList>
+            <TabsContent value="login">
+              <form onSubmit={handleLogin} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="brand-login-email">Email</Label>
+                  <Input id="brand-login-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="brand-login-password">Password</Label>
+                  <Input id="brand-login-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+                </div>
+                <Button type="submit" className="w-full bg-[hsl(220,80%,55%)] hover:bg-[hsl(220,80%,50%)] text-primary-foreground" disabled={loading}>
+                  {loading ? "Signing in..." : "Sign In"}
+                </Button>
+              </form>
+            </TabsContent>
+            <TabsContent value="signup">
+              <form onSubmit={handleSignup} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="brand-signup-email">Business Email</Label>
+                  <Input id="brand-signup-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="brand-signup-password">Password</Label>
+                  <Input id="brand-signup-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+                </div>
+                <Button type="submit" className="w-full bg-[hsl(220,80%,55%)] hover:bg-[hsl(220,80%,50%)] text-primary-foreground" disabled={loading}>
+                  {loading ? "Creating account..." : "Create Brand Account"}
+                </Button>
+              </form>
+            </TabsContent>
+          </Tabs>
+
+          <p className="text-center text-xs text-muted-foreground mt-6">
+            Are you a creator? <Link to="/auth" className="text-primary hover:underline">Sign in here</Link>
+          </p>
+        </div>
       </div>
     </div>
   );
