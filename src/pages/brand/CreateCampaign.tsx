@@ -238,9 +238,16 @@ const CreateCampaign = () => {
                 </div>
               </div>
 
+              {/* Max Creators */}
+              <div className="space-y-2">
+                <Label htmlFor="maxCreators">Max Number of Influencers *</Label>
+                <Input id="maxCreators" type="number" min="1" max="100" value={maxCreators} onChange={(e) => setMaxCreators(e.target.value)} required />
+                <p className="text-xs text-muted-foreground">Campaign will auto-close when all spots are filled</p>
+              </div>
+
               {/* Expected Videos */}
               <div className="space-y-2">
-                <Label htmlFor="videoCount">Expected Number of Videos *</Label>
+                <Label htmlFor="videoCount">Expected Number of Videos per Creator *</Label>
                 <Input id="videoCount" type="number" min="1" max="100" value={expectedVideoCount} onChange={(e) => setExpectedVideoCount(e.target.value)} required />
               </div>
 
