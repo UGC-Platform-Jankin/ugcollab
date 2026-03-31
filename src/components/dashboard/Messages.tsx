@@ -34,6 +34,7 @@ interface RoomMeta {
   lastMessage: string;
   lastMessageTime: string;
   isGroup: boolean;
+  unreadCount: number;
 }
 
 const Messages = () => {
