@@ -29,6 +29,8 @@ const ReviewsPage = () => {
   const [rating, setRating] = useState(5);
   const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [reviewerType, setReviewerType] = useState<"creator" | "brand">("creator");
+  const [hoverRating, setHoverRating] = useState(0);
 
   useEffect(() => {
     const fetchReviews = async () => {
@@ -58,25 +60,45 @@ const ReviewsPage = () => {
     fetchReviews();
   }, []);
 
+  // Detect if user is a brand
+  useEffect(() => {
+    if (!user) return;
+    supabase.from("brand_profiles").select("id").eq("user_id", user.id).maybeSingle().then(({ data }) => {
+      if (data) setReviewerType("brand");
+    });
+  }, [user]);
+
   const handleSubmit = async () => {
-    if (!user || !content.trim()) return;
+    if (!user) return;
+    const trimmed = content.trim();
+    if (!trimmed) {
+      toast({ title: "Please write a review", variant: "destructive" });
+      return;
+    }
+    if (trimmed.length < 10) {
+      toast({ title: "Review too short", description: "Please write at least 10 characters.", variant: "destructive" });
+      return;
+    }
+    if (trimmed.length > 1000) {
+      toast({ title: "Review too long", description: "Please keep your review under 1000 characters.", variant: "destructive" });
+      return;
+    }
     setSubmitting(true);
     const { error } = await supabase.from("reviews" as any).insert({
       user_id: user.id,
-      content: content.trim(),
+      content: trimmed,
       rating,
-      reviewer_type: "creator",
+      reviewer_type: reviewerType,
     } as any);
     setSubmitting(false);
     if (error) {
       toast({ title: "Error", description: "Failed to submit review.", variant: "destructive" });
     } else {
-      toast({ title: "Review submitted", description: "Your review will be visible after approval." });
+      toast({ title: "Review submitted!", description: "Your review will be visible after approval." });
       setContent("");
       setRating(5);
     }
   };
-
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
