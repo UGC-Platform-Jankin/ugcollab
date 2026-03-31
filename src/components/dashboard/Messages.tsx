@@ -269,11 +269,11 @@ const Messages = () => {
                 )}
               >
                 {meta.isGroup ? (
-                  <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                  <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0 ring-2 ring-primary/20">
                     <Users className="h-5 w-5 text-primary" />
                   </div>
                 ) : (
-                  <Avatar className="h-12 w-12 shrink-0">
+                  <Avatar className="h-12 w-12 shrink-0 ring-2 ring-border/30">
                     <AvatarImage src={meta.avatarUrl || undefined} />
                     <AvatarFallback className="bg-secondary text-sm font-medium">
                       {meta.displayName.charAt(0).toUpperCase()}
