@@ -1,4 +1,4 @@
-
+import { Link } from "react-router-dom";
 
 const Footer = () => {
   return (
@@ -7,31 +7,38 @@ const Footer = () => {
         <div className="grid md:grid-cols-4 gap-12">
           <div className="md:col-span-1">
             <div className="flex items-center gap-2 mb-4">
-              <span className="text-lg font-heading font-bold">UGC Zone</span>
+              <Link to="/" className="text-lg font-heading font-bold">UGC Zone</Link>
             </div>
             <p className="text-sm text-muted-foreground leading-relaxed">
               The UGC campaign platform for Hong Kong and London.
             </p>
           </div>
 
-          {[
-            { title: "Platform", links: ["For Brands", "For Creators", "Pricing", "Roadmap"] },
-            { title: "Company", links: ["About", "Blog", "Careers", "Contact"] },
-            { title: "Legal", links: ["Privacy", "Terms", "Cookie Policy"] },
-          ].map((col) => (
-            <div key={col.title}>
-              <h4 className="text-sm font-semibold mb-4">{col.title}</h4>
-              <ul className="space-y-3">
-                {col.links.map((link) => (
-                  <li key={link}>
-                    <a href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                      {link}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
+          <div>
+            <h4 className="text-sm font-semibold mb-4">Platform</h4>
+            <ul className="space-y-3">
+              <li><Link to="/get-started" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Get Started</Link></li>
+              <li><a href="/#features" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Features</a></li>
+              <li><Link to="/reviews" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Reviews</Link></li>
+              <li><a href="/#brands" className="text-sm text-muted-foreground hover:text-foreground transition-colors">For Brands</a></li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="text-sm font-semibold mb-4">Company</h4>
+            <ul className="space-y-3">
+              <li><a href="/#about" className="text-sm text-muted-foreground hover:text-foreground transition-colors">About</a></li>
+              <li><a href="/#contact" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Contact</a></li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="text-sm font-semibold mb-4">Legal</h4>
+            <ul className="space-y-3">
+              <li><a href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Privacy</a></li>
+              <li><a href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Terms</a></li>
+            </ul>
+          </div>
         </div>
 
         <div className="mt-16 pt-8 border-t border-border flex flex-col sm:flex-row justify-between items-center gap-4">
