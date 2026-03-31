@@ -69,14 +69,19 @@ const BrandDashboard = () => {
 
       <main className="flex-1 overflow-auto">
         <div className="p-8">
-          <div className="flex items-center gap-4 mb-8">
-            {brandProfile.logo_url && (
-              <img src={brandProfile.logo_url} alt="Logo" className="h-12 w-12 rounded-xl object-cover border border-border" />
-            )}
-            <div>
-              <h1 className="text-2xl font-heading font-bold text-foreground">{brandProfile.business_name}</h1>
-              <p className="text-sm text-muted-foreground">{brandProfile.business_type} · {brandProfile.country}</p>
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center gap-4">
+              {brandProfile.logo_url && (
+                <img src={brandProfile.logo_url} alt="Logo" className="h-12 w-12 rounded-xl object-cover border border-border" />
+              )}
+              <div>
+                <h1 className="text-2xl font-heading font-bold text-foreground">{brandProfile.business_name}</h1>
+                <p className="text-sm text-muted-foreground">{brandProfile.business_type} · {brandProfile.country}</p>
+              </div>
             </div>
+            <Button onClick={() => navigate("/brand/campaigns/new")} className="gap-2">
+              <Plus className="h-4 w-4" /> Create Campaign
+            </Button>
           </div>
 
           <div className="grid gap-6 md:grid-cols-3">
