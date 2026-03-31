@@ -289,9 +289,14 @@ const FindCreators = () => {
 
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-muted-foreground">{totalFollowers(creator).toLocaleString()} total followers</span>
-                  <Button size="sm" className="gap-1" onClick={() => setInviteCreator(creator)}>
-                    <Send className="h-3.5 w-3.5" /> Invite
-                  </Button>
+                  <div className="flex gap-1.5">
+                    <Button size="sm" variant="outline" className="gap-1" onClick={() => handleViewCreator(creator)}>
+                      <Eye className="h-3.5 w-3.5" /> View
+                    </Button>
+                    <Button size="sm" className="gap-1" onClick={() => setInviteCreator(creator)}>
+                      <Send className="h-3.5 w-3.5" /> Invite
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
