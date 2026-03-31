@@ -23,6 +23,7 @@ const BrandCampaigns = () => {
   const [viewingCreator, setViewingCreator] = useState<any>(null);
   const [creatorProfile, setCreatorProfile] = useState<any>(null);
   const [creatorSocials, setCreatorSocials] = useState<any[]>([]);
+  const [creatorApps, setCreatorApps] = useState<any[]>([]);
   const [updatingApp, setUpdatingApp] = useState<string | null>(null);
 
   useEffect(() => {
