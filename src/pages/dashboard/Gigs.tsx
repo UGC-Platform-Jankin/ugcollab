@@ -357,6 +357,9 @@ const Gigs = () => {
           <AlertDialogFooter>
             <AlertDialogCancel>Stay</AlertDialogCancel>
             <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive">Yes, leave campaign</Button>
+              </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
                   <AlertDialogTitle>Final confirmation</AlertDialogTitle>
@@ -375,9 +378,6 @@ const Gigs = () => {
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
-              <Button variant="destructive" asChild>
-                <AlertDialogAction>Yes, leave campaign</AlertDialogAction>
-              </Button>
             </AlertDialog>
           </AlertDialogFooter>
         </AlertDialogContent>
