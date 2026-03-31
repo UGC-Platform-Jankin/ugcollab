@@ -3,7 +3,7 @@ import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Briefcase, Link2, User, LogOut, LayoutDashboard } from "lucide-react";
-import logo from "@/assets/logo.png";
+
 
 const navItems = [
   { label: "Gigs", icon: Briefcase, path: "/dashboard" },
@@ -36,7 +36,6 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
       <aside className="w-64 border-r border-border/50 bg-card/50 backdrop-blur-sm flex flex-col">
         <div className="p-6 border-b border-border/50">
           <Link to="/" className="flex items-center gap-2">
-            <img src={logo} alt="UGC Zone" className="h-8 w-8" />
             <span className="text-lg font-heading font-bold text-foreground">UGC Zone</span>
           </Link>
         </div>

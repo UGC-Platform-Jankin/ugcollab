@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import logo from "@/assets/logo.png";
+
 import { useEffect } from "react";
 
 const Auth = () => {
@@ -59,7 +59,6 @@ const Auth = () => {
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="flex items-center gap-2 justify-center mb-8">
-          <img src={logo} alt="UGC Zone" className="h-8 w-8" />
           <span className="text-lg font-heading font-bold text-foreground">UGC Zone</span>
         </div>
         <Card className="border-border/50 bg-card">

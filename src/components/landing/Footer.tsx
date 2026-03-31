@@ -1,4 +1,4 @@
-import logo from "@/assets/logo.png";
+
 
 const Footer = () => {
   return (
@@ -7,7 +7,6 @@ const Footer = () => {
         <div className="grid md:grid-cols-4 gap-12">
           <div className="md:col-span-1">
             <div className="flex items-center gap-2 mb-4">
-              <img src={logo} alt="UGC Zone" className="h-8 w-8" />
               <span className="text-lg font-heading font-bold">UGC Zone</span>
             </div>
             <p className="text-sm text-muted-foreground leading-relaxed">
