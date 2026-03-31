@@ -177,6 +177,8 @@ const Messages = () => {
             lastMessage: lastMsg?.content || "No messages yet",
             lastMessageTime: lastMsg?.created_at || room.created_at,
             isGroup: true,
+            unreadCount: unreadByRoom[room.id] || 0,
+          };
           };
         }
       }
