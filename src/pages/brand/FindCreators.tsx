@@ -9,10 +9,19 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { Users, Search, Send, Loader2, Instagram, Facebook, Video } from "lucide-react";
+import { Users, Search, Send, Loader2, Instagram, Facebook, Video, Filter, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const platformIcons: Record<string, any> = { instagram: Instagram, facebook: Facebook, tiktok: Video };
+const platformOptions = ["instagram", "tiktok", "facebook"];
+const followerRanges = [
+  { label: "Any", min: 0, max: Infinity },
+  { label: "0 – 1K", min: 0, max: 1000 },
+  { label: "1K – 10K", min: 1000, max: 10000 },
+  { label: "10K – 50K", min: 10000, max: 50000 },
+  { label: "50K – 100K", min: 50000, max: 100000 },
+  { label: "100K+", min: 100000, max: Infinity },
+];
 
 interface Creator {
   user_id: string;
@@ -30,6 +39,8 @@ const FindCreators = () => {
   const [filtered, setFiltered] = useState<Creator[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [platformFilter, setPlatformFilter] = useState<string>("all");
+  const [followerFilter, setFollowerFilter] = useState<number>(0);
   const [campaigns, setCampaigns] = useState<any[]>([]);
   const [inviteCreator, setInviteCreator] = useState<Creator | null>(null);
   const [selectedCampaignId, setSelectedCampaignId] = useState("");
@@ -45,7 +56,7 @@ const FindCreators = () => {
         supabase.from("campaigns").select("id, title").eq("brand_user_id", user.id).eq("status", "active"),
       ]);
 
-      const profiles = (profilesRes.data || []).filter((p: any) => p.user_id !== user.id);
+      const profiles = profilesRes.data || [];
       const socials = socialsRes.data || [];
       const socialMap: Record<string, any[]> = {};
       socials.forEach((s: any) => {
@@ -67,24 +78,40 @@ const FindCreators = () => {
   }, [user]);
 
   useEffect(() => {
-    if (!search.trim()) {
-      setFiltered(creators);
-    } else {
+    let result = creators;
+    
+    // Search filter
+    if (search.trim()) {
       const q = search.toLowerCase();
-      setFiltered(creators.filter((c) =>
+      result = result.filter((c) =>
         (c.display_name || "").toLowerCase().includes(q) ||
         (c.username || "").toLowerCase().includes(q) ||
         c.socials.some((s) => (s.platform_username || "").toLowerCase().includes(q))
-      ));
+      );
     }
-  }, [search, creators]);
+
+    // Platform filter
+    if (platformFilter !== "all") {
+      result = result.filter((c) => c.socials.some((s) => s.platform === platformFilter));
+    }
+
+    // Follower filter
+    const range = followerRanges[followerFilter];
+    if (range && range.min > 0) {
+      result = result.filter((c) => {
+        const total = c.socials.reduce((sum, s) => sum + (s.followers_count || 0), 0);
+        return total >= range.min && total < range.max;
+      });
+    }
+
+    setFiltered(result);
+  }, [search, creators, platformFilter, followerFilter]);
 
   const handleInvite = async () => {
     if (!user || !inviteCreator || !selectedCampaignId) return;
     setSending(true);
 
-    // Insert invite
-    const { error } = await supabase.from("campaign_invites" as any).insert({
+    const { error } = await supabase.from("campaign_invites").insert({
       campaign_id: selectedCampaignId,
       brand_user_id: user.id,
       creator_user_id: inviteCreator.user_id,
@@ -110,7 +137,6 @@ const FindCreators = () => {
         { chat_room_id: privateRoom.id, user_id: inviteCreator.user_id },
       ] as any);
 
-      // Send invite message in the DM
       const campaign = campaigns.find((c) => c.id === selectedCampaignId);
       const msgContent = `🎯 **Campaign Invite: ${campaign?.title || "Campaign"}**\n\n${inviteMessage || "You've been invited to apply to this campaign!"}\n\n[CAMPAIGN_INVITE:${selectedCampaignId}]`;
       await supabase.from("messages").insert({
@@ -120,8 +146,7 @@ const FindCreators = () => {
       } as any);
     }
 
-    // Create notification for creator
-    await supabase.from("notifications" as any).insert({
+    await supabase.from("notifications").insert({
       user_id: inviteCreator.user_id,
       type: "invite",
       title: "Campaign Invite",
@@ -137,6 +162,7 @@ const FindCreators = () => {
   };
 
   const totalFollowers = (c: Creator) => c.socials.reduce((sum, s) => sum + (s.followers_count || 0), 0);
+  const hasActiveFilters = platformFilter !== "all" || followerFilter !== 0 || search.trim() !== "";
 
   if (loading) {
     return <div className="flex items-center justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
@@ -149,14 +175,50 @@ const FindCreators = () => {
         <p className="text-muted-foreground text-sm">Browse creators and invite them to your campaigns</p>
       </div>
 
-      <div className="relative mb-6">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Search by name, username, or social handle..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="pl-10"
-        />
+      {/* Search & Filters */}
+      <div className="space-y-3 mb-6">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search by name, username, or social handle..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2">
+            <Filter className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm text-muted-foreground">Filters:</span>
+          </div>
+          <Select value={platformFilter} onValueChange={setPlatformFilter}>
+            <SelectTrigger className="w-[150px] h-9 text-sm">
+              <SelectValue placeholder="Platform" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Platforms</SelectItem>
+              {platformOptions.map((p) => (
+                <SelectItem key={p} value={p} className="capitalize">{p.charAt(0).toUpperCase() + p.slice(1)}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={String(followerFilter)} onValueChange={(v) => setFollowerFilter(Number(v))}>
+            <SelectTrigger className="w-[150px] h-9 text-sm">
+              <SelectValue placeholder="Followers" />
+            </SelectTrigger>
+            <SelectContent>
+              {followerRanges.map((r, i) => (
+                <SelectItem key={i} value={String(i)}>{r.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {hasActiveFilters && (
+            <Button variant="ghost" size="sm" className="h-9 text-xs gap-1" onClick={() => { setSearch(""); setPlatformFilter("all"); setFollowerFilter(0); }}>
+              <X className="h-3 w-3" /> Clear
+            </Button>
+          )}
+          <span className="text-xs text-muted-foreground ml-auto">{filtered.length} creator{filtered.length !== 1 ? "s" : ""}</span>
+        </div>
       </div>
 
       {filtered.length === 0 ? (
@@ -164,6 +226,7 @@ const FindCreators = () => {
           <CardContent className="flex flex-col items-center justify-center py-16">
             <Users className="h-8 w-8 text-muted-foreground mb-2" />
             <p className="text-muted-foreground text-sm">No creators found</p>
+            {hasActiveFilters && <p className="text-xs text-muted-foreground mt-1">Try adjusting your filters</p>}
           </CardContent>
         </Card>
       ) : (
@@ -183,7 +246,7 @@ const FindCreators = () => {
                   </div>
                 </div>
 
-                {creator.socials.length > 0 && (
+                {creator.socials.length > 0 ? (
                   <div className="space-y-1.5 mb-3">
                     {creator.socials.map((s, i) => {
                       const Icon = platformIcons[s.platform] || Users;
@@ -196,6 +259,8 @@ const FindCreators = () => {
                       );
                     })}
                   </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground mb-3">No socials connected</p>
                 )}
 
                 <div className="flex items-center justify-between">
