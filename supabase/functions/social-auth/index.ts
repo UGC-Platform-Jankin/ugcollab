@@ -41,24 +41,26 @@ serve(async (req) => {
 
     let authUrl: string;
 
-    if (platform === "instagram" || platform === "facebook") {
-      const metaAppId = Deno.env.get("META_APP_ID");
-      if (!metaAppId) {
+    if (platform === "instagram") {
+      const instaAppId = Deno.env.get("INSTAGRAM_APP_ID");
+      if (!instaAppId) {
         return new Response(
-          JSON.stringify({ error: "META_APP_ID not configured. Please add your Meta App ID as a secret." }),
+          JSON.stringify({ error: "INSTAGRAM_APP_ID not configured." }),
           { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-
-      if (platform === "instagram") {
-        // Instagram Basic Display API
-        const scopes = "instagram_business_basic,instagram_business_manage_messages";
-        authUrl = `https://www.instagram.com/oauth/authorize?enable_fb_login=0&force_authentication=1&client_id=${metaAppId}&redirect_uri=${encodeURIComponent(callbackUrl)}&response_type=code&scope=${scopes}&state=${state}`;
-      } else {
-        // Facebook Login
-        const scopes = "public_profile,pages_show_list,pages_read_engagement";
-        authUrl = `https://www.facebook.com/v21.0/dialog/oauth?client_id=${metaAppId}&redirect_uri=${encodeURIComponent(callbackUrl)}&scope=${scopes}&state=${state}&response_type=code`;
+      const scopes = "instagram_business_basic,instagram_business_manage_messages";
+      authUrl = `https://www.instagram.com/oauth/authorize?enable_fb_login=0&force_authentication=1&client_id=${instaAppId}&redirect_uri=${encodeURIComponent(callbackUrl)}&response_type=code&scope=${scopes}&state=${state}`;
+    } else if (platform === "facebook") {
+      const metaAppId = Deno.env.get("META_APP_ID");
+      if (!metaAppId) {
+        return new Response(
+          JSON.stringify({ error: "META_APP_ID not configured." }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
       }
+      const scopes = "public_profile,pages_show_list,pages_read_engagement";
+      authUrl = `https://www.facebook.com/v21.0/dialog/oauth?client_id=${metaAppId}&redirect_uri=${encodeURIComponent(callbackUrl)}&scope=${scopes}&state=${state}&response_type=code`;
     } else if (platform === "tiktok") {
       const tiktokClientKey = Deno.env.get("TIKTOK_CLIENT_KEY");
       if (!tiktokClientKey) {
