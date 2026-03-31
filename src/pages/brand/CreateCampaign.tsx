@@ -43,18 +43,21 @@ const regionOptions = [
 const CreateCampaign = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
 
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
-  const [isFreeProduct, setIsFreeProduct] = useState(false);
-  const [pricePerVideo, setPricePerVideo] = useState("");
-  const [expectedVideoCount, setExpectedVideoCount] = useState("1");
-  const [campaignLengthDays, setCampaignLengthDays] = useState("");
-  const [requirements, setRequirements] = useState("");
-  const [selectedRegions, setSelectedRegions] = useState<string[]>(["Worldwide"]);
-  const [maxCreators, setMaxCreators] = useState("10");
+  const reuse = (location.state as any)?.reuse;
+
+  const [title, setTitle] = useState(reuse?.title || "");
+  const [description, setDescription] = useState(reuse?.description || "");
+  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(reuse?.platforms || []);
+  const [isFreeProduct, setIsFreeProduct] = useState(reuse?.is_free_product || false);
+  const [pricePerVideo, setPricePerVideo] = useState(reuse?.price_per_video?.toString() || "");
+  const [expectedVideoCount, setExpectedVideoCount] = useState(reuse?.expected_video_count?.toString() || "1");
+  const [campaignLengthDays, setCampaignLengthDays] = useState(reuse?.campaign_length_days?.toString() || "");
+  const [requirements, setRequirements] = useState(reuse?.requirements || "");
+  const [selectedRegions, setSelectedRegions] = useState<string[]>(reuse?.target_regions || ["Worldwide"]);
+  const [maxCreators, setMaxCreators] = useState(reuse?.max_creators?.toString() || "10");
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
