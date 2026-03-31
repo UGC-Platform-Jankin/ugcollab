@@ -49,6 +49,17 @@ const Gigs = () => {
         user ? supabase.from("campaign_applications").select("*").eq("creator_user_id", user.id) : Promise.resolve({ data: [] }),
       ]);
       setCampaigns((campaignsRes.data as any) || []);
+      
+      // Fetch brand profiles for all campaigns
+      const allCampaigns = (campaignsRes.data as any) || [];
+      const brandUserIds = [...new Set(allCampaigns.map((c: any) => c.brand_user_id))] as string[];
+      if (brandUserIds.length > 0) {
+        const { data: brands } = await supabase.from("brand_profiles").select("user_id, business_name, logo_url").in("user_id", brandUserIds);
+        const brandMap: Record<string, any> = {};
+        (brands || []).forEach((b: any) => { brandMap[b.user_id] = b; });
+        setBrandProfiles(brandMap);
+      }
+
       const allApps = (applicationsRes.data as any) || [];
       setAppliedCampaigns(new Set(allApps.map((a: any) => a.campaign_id)));
 
