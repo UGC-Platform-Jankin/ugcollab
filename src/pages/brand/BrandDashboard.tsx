@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useLocation } from "react-router-dom";
 import { Building2, LogOut, Users, Megaphone, BarChart3, Plus, User, MessageCircle } from "lucide-react";
+import NotificationBell from "@/components/NotificationBell";
 
 const BrandDashboard = () => {
   const { user, loading, signOut } = useAuth();
