@@ -66,51 +66,51 @@ export type Database = {
         Row: {
           brand_user_id: string
           budget: number | null
+          campaign_length_days: number | null
           created_at: string
-          deadline: string | null
           description: string | null
           expected_video_count: number
           id: string
           is_free_product: boolean
-          platform: string | null
+          platforms: string[] | null
           price_per_video: number | null
           requirements: string | null
           status: string
-          target_region: string
+          target_regions: string[]
           title: string
           updated_at: string
         }
         Insert: {
           brand_user_id: string
           budget?: number | null
+          campaign_length_days?: number | null
           created_at?: string
-          deadline?: string | null
           description?: string | null
           expected_video_count?: number
           id?: string
           is_free_product?: boolean
-          platform?: string | null
+          platforms?: string[] | null
           price_per_video?: number | null
           requirements?: string | null
           status?: string
-          target_region?: string
+          target_regions?: string[]
           title: string
           updated_at?: string
         }
         Update: {
           brand_user_id?: string
           budget?: number | null
+          campaign_length_days?: number | null
           created_at?: string
-          deadline?: string | null
           description?: string | null
           expected_video_count?: number
           id?: string
           is_free_product?: boolean
-          platform?: string | null
+          platforms?: string[] | null
           price_per_video?: number | null
           requirements?: string | null
           status?: string
-          target_region?: string
+          target_regions?: string[]
           title?: string
           updated_at?: string
         }
