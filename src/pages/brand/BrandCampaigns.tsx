@@ -149,13 +149,51 @@ const BrandCampaigns = () => {
           <Button variant="ghost" size="sm" onClick={() => { setSelectedCampaign(null); setApplications([]); }} className="mb-4">
             ← Back to campaigns
           </Button>
-          <div className="mb-6">
-            <h2 className="text-xl font-heading font-bold text-foreground">{selectedCampaign.title}</h2>
-            <div className="flex gap-2 mt-1">
-              {selectedCampaign.platforms?.map((p: string) => <Badge key={p} variant="secondary" className="capitalize text-xs">{p}</Badge>)}
-              <Badge variant="outline" className="text-xs">{selectedCampaign.is_free_product ? "Free Product" : `HK$${selectedCampaign.price_per_video}/video`}</Badge>
-            </div>
-          </div>
+
+          {/* Campaign Details */}
+          <Card className="border-border/50 mb-6">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-xl font-heading">{selectedCampaign.title}</CardTitle>
+                <Badge variant={selectedCampaign.status === "active" ? "default" : "secondary"} className="capitalize">{selectedCampaign.status}</Badge>
+              </div>
+              <div className="flex gap-2 flex-wrap mt-1">
+                {selectedCampaign.platforms?.map((p: string) => <Badge key={p} variant="secondary" className="capitalize text-xs">{p}</Badge>)}
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <p className="text-xs font-medium text-muted-foreground uppercase mb-1">Description</p>
+                <p className="text-sm text-foreground whitespace-pre-wrap">{selectedCampaign.description}</p>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="p-3 rounded-lg bg-secondary/50">
+                  <p className="text-xs text-muted-foreground">Compensation</p>
+                  <p className="text-sm font-medium text-foreground">{selectedCampaign.is_free_product ? "Free Product" : `HK$${selectedCampaign.price_per_video}/video`}</p>
+                </div>
+                <div className="p-3 rounded-lg bg-secondary/50">
+                  <p className="text-xs text-muted-foreground">Videos Expected</p>
+                  <p className="text-sm font-medium text-foreground">{selectedCampaign.expected_video_count}</p>
+                </div>
+                {selectedCampaign.campaign_length_days && (
+                  <div className="p-3 rounded-lg bg-secondary/50">
+                    <p className="text-xs text-muted-foreground">Campaign Length</p>
+                    <p className="text-sm font-medium text-foreground">{selectedCampaign.campaign_length_days} days</p>
+                  </div>
+                )}
+                <div className="p-3 rounded-lg bg-secondary/50">
+                  <p className="text-xs text-muted-foreground">Target Regions</p>
+                  <p className="text-sm font-medium text-foreground">{selectedCampaign.target_regions?.join(", ") || "Worldwide"}</p>
+                </div>
+              </div>
+              {selectedCampaign.requirements && (
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground uppercase mb-1">Requirements</p>
+                  <p className="text-sm text-foreground">{selectedCampaign.requirements}</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
           <h3 className="font-medium text-foreground mb-3 flex items-center gap-2"><Users className="h-4 w-4" /> Applications</h3>
           {loadingApps ? (
