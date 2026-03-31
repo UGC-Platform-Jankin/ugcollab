@@ -179,7 +179,6 @@ const Messages = () => {
             isGroup: true,
             unreadCount: unreadByRoom[room.id] || 0,
           };
-          };
         }
       }
 
