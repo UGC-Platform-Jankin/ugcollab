@@ -25,6 +25,7 @@ const CreateCampaign = () => {
   const [expectedVideoCount, setExpectedVideoCount] = useState("1");
   const [deadline, setDeadline] = useState("");
   const [requirements, setRequirements] = useState("");
+  const [targetRegion, setTargetRegion] = useState("Worldwide");
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -57,7 +58,8 @@ const CreateCampaign = () => {
       expected_video_count: Number(expectedVideoCount),
       deadline: deadline ? new Date(deadline).toISOString() : null,
       requirements: requirements || null,
-    });
+      target_region: targetRegion,
+    } as any);
     setSubmitting(false);
 
     if (error) {
@@ -143,6 +145,35 @@ const CreateCampaign = () => {
                     <Input id="price" type="number" min="1" step="1" placeholder="e.g. 500" value={pricePerVideo} onChange={(e) => setPricePerVideo(e.target.value)} />
                   </div>
                 )}
+              </div>
+
+              {/* Target Region */}
+              <div className="space-y-2">
+                <Label>Target Creator Region *</Label>
+                <Select value={targetRegion} onValueChange={setTargetRegion}>
+                  <SelectTrigger><SelectValue placeholder="Select region" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Worldwide">🌍 Worldwide</SelectItem>
+                    <SelectItem value="Hong Kong">🇭🇰 Hong Kong</SelectItem>
+                    <SelectItem value="United Kingdom">🇬🇧 United Kingdom</SelectItem>
+                    <SelectItem value="United States">🇺🇸 United States</SelectItem>
+                    <SelectItem value="Singapore">🇸🇬 Singapore</SelectItem>
+                    <SelectItem value="Australia">🇦🇺 Australia</SelectItem>
+                    <SelectItem value="Canada">🇨🇦 Canada</SelectItem>
+                    <SelectItem value="Japan">🇯🇵 Japan</SelectItem>
+                    <SelectItem value="South Korea">🇰🇷 South Korea</SelectItem>
+                    <SelectItem value="Malaysia">🇲🇾 Malaysia</SelectItem>
+                    <SelectItem value="Thailand">🇹🇭 Thailand</SelectItem>
+                    <SelectItem value="Philippines">🇵🇭 Philippines</SelectItem>
+                    <SelectItem value="Indonesia">🇮🇩 Indonesia</SelectItem>
+                    <SelectItem value="Vietnam">🇻🇳 Vietnam</SelectItem>
+                    <SelectItem value="Taiwan">🇹🇼 Taiwan</SelectItem>
+                    <SelectItem value="China">🇨🇳 China</SelectItem>
+                    <SelectItem value="India">🇮🇳 India</SelectItem>
+                    <SelectItem value="Germany">🇩🇪 Germany</SelectItem>
+                    <SelectItem value="France">🇫🇷 France</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               {/* Expected Videos */}

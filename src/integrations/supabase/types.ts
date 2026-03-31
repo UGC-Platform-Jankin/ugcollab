@@ -76,6 +76,7 @@ export type Database = {
           price_per_video: number | null
           requirements: string | null
           status: string
+          target_region: string
           title: string
           updated_at: string
         }
@@ -92,6 +93,7 @@ export type Database = {
           price_per_video?: number | null
           requirements?: string | null
           status?: string
+          target_region?: string
           title: string
           updated_at?: string
         }
@@ -108,6 +110,7 @@ export type Database = {
           price_per_video?: number | null
           requirements?: string | null
           status?: string
+          target_region?: string
           title?: string
           updated_at?: string
         }
