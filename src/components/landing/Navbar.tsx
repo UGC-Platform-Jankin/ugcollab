@@ -13,7 +13,6 @@ const Navbar = () => {
     >
       <div className="container flex h-16 items-center justify-between">
         <div className="flex items-center gap-2">
-          <img src={logo} alt="UGC Zone" className="h-8 w-8" />
           <span className="text-lg font-heading font-bold text-foreground">UGC Zone</span>
         </div>
         <div className="hidden md:flex items-center gap-8">
