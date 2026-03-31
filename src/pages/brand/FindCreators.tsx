@@ -347,6 +347,118 @@ const FindCreators = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Creator Full Profile Sheet */}
+      <Sheet open={!!viewingCreator} onOpenChange={(open) => { if (!open) setViewingCreator(null); }}>
+        <SheetContent className="w-96 sm:w-[28rem] bg-card border-border/50 p-0">
+          <SheetHeader className="p-4 border-b border-border/30">
+            <SheetTitle className="text-base font-heading">Creator Profile</SheetTitle>
+          </SheetHeader>
+          <ScrollArea className="h-[calc(100vh-4rem)]">
+            {viewingCreator && (
+              <div className="p-5 space-y-5">
+                {/* Avatar + Name */}
+                <div className="flex flex-col items-center text-center">
+                  <Avatar className="h-24 w-24 ring-2 ring-border/30">
+                    <AvatarImage src={viewingCreator.avatar_url || undefined} />
+                    <AvatarFallback className="bg-secondary text-2xl font-semibold">
+                      {(viewingCreator.display_name || "?").charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <h3 className="text-xl font-heading font-bold text-foreground mt-3">
+                    {viewingCreator.display_name || "Creator"}
+                  </h3>
+                  {viewingCreator.username && (
+                    <p className="text-sm text-muted-foreground">@{viewingCreator.username}</p>
+                  )}
+                </div>
+
+                {/* Bio */}
+                {viewingCreator.bio && (
+                  <>
+                    <Separator />
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground mb-1">About</p>
+                      <p className="text-sm text-foreground leading-relaxed">{viewingCreator.bio}</p>
+                    </div>
+                  </>
+                )}
+
+                {/* Social Platforms */}
+                {creatorSocialDetails.length > 0 && (
+                  <>
+                    <Separator />
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground mb-3">Platforms</p>
+                      <div className="space-y-3">
+                        {creatorSocialDetails.map((s: any) => {
+                          const Icon = platformIcons[s.platform] || Users;
+                          const color = platformColors[s.platform] || "text-foreground";
+                          return (
+                            <div key={s.id} className="flex items-center justify-between p-3 rounded-lg bg-secondary/30">
+                              <div className="flex items-center gap-2.5">
+                                <Icon className={`h-5 w-5 ${color}`} />
+                                <div>
+                                  <p className="text-sm font-medium capitalize text-foreground">{s.platform}</p>
+                                  {s.platform_username && <p className="text-xs text-muted-foreground">@{s.platform_username}</p>}
+                                </div>
+                              </div>
+                              <div className="text-right text-xs">
+                                <p className="text-foreground font-medium">{formatCount(s.followers_count)} followers</p>
+                                {s.average_views != null && <p className="text-muted-foreground">{formatCount(s.average_views)} avg views</p>}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      {creatorSocialDetails.filter((s: any) => s.profile_url).length > 0 && (
+                        <div className="mt-3 space-y-1.5">
+                          {creatorSocialDetails.filter((s: any) => s.profile_url).map((s: any) => {
+                            const Icon = platformIcons[s.platform] || Globe;
+                            const color = platformColors[s.platform] || "text-primary";
+                            return (
+                              <a key={s.id} href={s.profile_url} target="_blank" rel="noopener noreferrer" className={`flex items-center gap-1.5 text-xs ${color} hover:underline`}>
+                                <Icon className="h-3 w-3" /> View {s.platform} profile →
+                              </a>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
+
+                {/* Past Collaborations */}
+                {creatorCollabs.length > 0 && (
+                  <>
+                    <Separator />
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground mb-2">Past Collaborations</p>
+                      <div className="space-y-2">
+                        {creatorCollabs.map((c: any) => (
+                          <div key={c.id} className="flex items-start gap-2.5 p-2.5 rounded-lg bg-secondary/30">
+                            <Briefcase className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                            <div>
+                              <p className="text-sm font-medium text-foreground">{c.brand_name}</p>
+                              {c.description && <p className="text-xs text-muted-foreground mt-0.5">{c.description}</p>}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {/* Invite button */}
+                <Separator />
+                <Button className="w-full gap-2" onClick={() => { setViewingCreator(null); setInviteCreator(viewingCreator); }}>
+                  <Send className="h-4 w-4" /> Invite to Campaign
+                </Button>
+              </div>
+            )}
+          </ScrollArea>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 };
