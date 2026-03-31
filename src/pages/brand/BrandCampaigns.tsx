@@ -23,6 +23,7 @@ const BrandCampaigns = () => {
   const [viewingCreator, setViewingCreator] = useState<any>(null);
   const [creatorProfile, setCreatorProfile] = useState<any>(null);
   const [creatorSocials, setCreatorSocials] = useState<any[]>([]);
+  const [creatorApps, setCreatorApps] = useState<any[]>([]);
   const [updatingApp, setUpdatingApp] = useState<string | null>(null);
 
   useEffect(() => {
@@ -64,12 +65,23 @@ const BrandCampaigns = () => {
     setViewingCreator(creatorUserId);
     setCreatorProfile(null);
     setCreatorSocials([]);
-    const [profileRes, socialsRes] = await Promise.all([
+    setCreatorApps([]);
+    const [profileRes, socialsRes, appsRes] = await Promise.all([
       supabase.from("profiles").select("*").eq("user_id", creatorUserId).single(),
       supabase.from("social_connections").select("*").eq("user_id", creatorUserId),
+      supabase.from("campaign_applications").select("id, campaign_id, status, created_at").eq("creator_user_id", creatorUserId),
     ]);
     setCreatorProfile(profileRes.data);
     setCreatorSocials(socialsRes.data || []);
+    // Enrich apps with campaign titles
+    const apps = appsRes.data || [];
+    if (apps.length > 0) {
+      const campIds = [...new Set(apps.map((a: any) => a.campaign_id))] as string[];
+      const { data: camps } = await supabase.from("campaigns").select("id, title").in("id", campIds);
+      const campMap: Record<string, string> = {};
+      (camps || []).forEach((c: any) => { campMap[c.id] = c.title; });
+      setCreatorApps(apps.map((a: any) => ({ ...a, _title: campMap[a.campaign_id] || "Campaign" })));
+    }
   };
 
   const handleApplicationAction = async (appId: string, status: "accepted" | "rejected", app: any) => {
@@ -302,33 +314,73 @@ const BrandCampaigns = () => {
           {!creatorProfile ? (
             <div className="flex items-center justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
           ) : (
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <Avatar className="h-14 w-14">
+            <div className="space-y-5">
+              {/* Header */}
+              <div className="flex items-center gap-4">
+                <Avatar className="h-16 w-16">
                   <AvatarImage src={creatorProfile.avatar_url} />
-                  <AvatarFallback className="bg-secondary">{(creatorProfile.display_name || "U").charAt(0).toUpperCase()}</AvatarFallback>
+                  <AvatarFallback className="bg-secondary text-xl">{(creatorProfile.display_name || "U").charAt(0).toUpperCase()}</AvatarFallback>
                 </Avatar>
                 <div>
-                  <p className="font-medium text-foreground">{creatorProfile.display_name || creatorProfile.username || "Creator"}</p>
+                  <p className="text-lg font-heading font-bold text-foreground">{creatorProfile.display_name || creatorProfile.username || "Creator"}</p>
                   {creatorProfile.username && <p className="text-sm text-muted-foreground">@{creatorProfile.username}</p>}
+                  <p className="text-xs text-muted-foreground mt-0.5">Joined {new Date(creatorProfile.created_at).toLocaleDateString()}</p>
                 </div>
               </div>
-              {creatorProfile.bio && <p className="text-sm text-muted-foreground">{creatorProfile.bio}</p>}
-              {creatorSocials.length > 0 && (
-                <div className="space-y-2">
-                  <p className="text-xs font-medium text-muted-foreground uppercase">Socials</p>
-                  {creatorSocials.map((s: any) => {
-                    const Icon = platformIcons[s.platform] || Users;
-                    return (
-                      <div key={s.id} className="flex items-center gap-3 p-2 rounded-lg bg-secondary/50 text-sm">
-                        <Icon className="h-4 w-4" />
-                        <span className="capitalize font-medium">{s.platform}</span>
-                        <span className="text-muted-foreground ml-auto">{s.followers_count?.toLocaleString() || 0} followers</span>
+
+              {/* Bio */}
+              <div>
+                <p className="text-xs font-medium text-muted-foreground uppercase mb-1">Bio</p>
+                <p className="text-sm text-foreground">{creatorProfile.bio || "No bio provided"}</p>
+              </div>
+
+              {/* Socials */}
+              <div>
+                <p className="text-xs font-medium text-muted-foreground uppercase mb-2">Connected Platforms</p>
+                {creatorSocials.length > 0 ? (
+                  <div className="space-y-2">
+                    {creatorSocials.map((s: any) => {
+                      const Icon = platformIcons[s.platform] || Users;
+                      return (
+                        <div key={s.id} className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50 text-sm">
+                          <Icon className="h-4 w-4 text-primary" />
+                          <div className="flex-1">
+                            <span className="capitalize font-medium text-foreground">{s.platform}</span>
+                            {s.platform_username && <span className="text-muted-foreground ml-2">@{s.platform_username}</span>}
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm font-medium text-foreground">{(s.followers_count || 0).toLocaleString()}</p>
+                            <p className="text-xs text-muted-foreground">followers</p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                    <div className="flex justify-between px-1 pt-1 text-xs text-muted-foreground">
+                      <span>Total followers</span>
+                      <span className="font-medium text-foreground">{creatorSocials.reduce((sum: number, s: any) => sum + (s.followers_count || 0), 0).toLocaleString()}</span>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">No platforms connected yet</p>
+                )}
+              </div>
+
+              {/* Application History */}
+              <div>
+                <p className="text-xs font-medium text-muted-foreground uppercase mb-2">Campaign History</p>
+                {creatorApps.length > 0 ? (
+                  <div className="space-y-1.5">
+                    {creatorApps.map((a: any) => (
+                      <div key={a.id} className="flex items-center justify-between p-2 rounded-lg bg-secondary/50 text-sm">
+                        <span className="text-foreground truncate flex-1 mr-2">{a._title}</span>
+                        <Badge variant={a.status === "accepted" ? "default" : a.status === "pending" ? "outline" : "destructive"} className="text-xs capitalize shrink-0">{a.status}</Badge>
                       </div>
-                    );
-                  })}
-                </div>
-              )}
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">No campaign applications yet</p>
+                )}
+              </div>
             </div>
           )}
         </DialogContent>
