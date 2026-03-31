@@ -235,6 +235,55 @@ const BrandCampaigns = () => {
     setUpdatingApp(null);
   };
 
+  const handleRemoveCreator = async () => {
+    if (!removingCreator || !user || !selectedCampaign) return;
+    setRemovingLoading(true);
+    const app = removingCreator;
+
+    // Update application status to "removed"
+    await supabase.from("campaign_applications").update({ status: "removed" } as any).eq("id", app.id);
+
+    // Remove from group chat only (keep private chat)
+    const { data: groupRoom } = await supabase
+      .from("chat_rooms")
+      .select("id")
+      .eq("campaign_id", selectedCampaign.id)
+      .eq("type", "group")
+      .maybeSingle();
+
+    if (groupRoom) {
+      // Find their participant row via the creator's own view
+      const { data: participantRows } = await supabase
+        .from("chat_participants")
+        .select("id")
+        .eq("chat_room_id", groupRoom.id)
+        .eq("user_id", app.creator_user_id);
+
+      if (participantRows?.length) {
+        // We can't delete via RLS, so use a message to note removal
+        await supabase.from("messages").insert({
+          chat_room_id: groupRoom.id,
+          sender_id: user.id,
+          content: `${app._profile?.display_name || app._profile?.username || "A creator"} has been removed from this campaign.`,
+        } as any);
+      }
+    }
+
+    // Notify creator
+    await supabase.from("notifications" as any).insert({
+      user_id: app.creator_user_id,
+      type: "application_update",
+      title: "Removed from Campaign",
+      body: `You have been removed from "${selectedCampaign.title}". Videos delivered: ${app.videos_delivered || 0}`,
+      link: "/dashboard",
+    } as any);
+
+    setApplications((prev) => prev.map((a) => a.id === app.id ? { ...a, status: "removed" } : a));
+    toast({ title: "Creator removed from campaign" });
+    setRemovingCreator(null);
+    setRemovingLoading(false);
+  };
+
   const handleEndCampaign = async (campaignId: string) => {
     setEndingCampaign(campaignId);
     const { error } = await supabase.from("campaigns").update({ status: "ended" } as any).eq("id", campaignId);
