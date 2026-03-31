@@ -77,7 +77,9 @@ const BrandDashboard = () => {
 
       <main className="flex-1 overflow-auto">
         <div className="p-8">
-          <div className="flex items-center justify-between mb-8">
+          <div className="flex justify-end mb-4">
+            <NotificationBell />
+          </div>
             <div className="flex items-center gap-4">
               {brandProfile.logo_url && (
                 <img src={brandProfile.logo_url} alt="Logo" className="h-12 w-12 rounded-xl object-cover border border-border" />
