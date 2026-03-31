@@ -53,7 +53,7 @@ const Reviews = () => {
             Trusted by <span className="text-gradient">brands & creators</span>
           </h2>
           <p className="text-muted-foreground text-lg max-w-lg mx-auto leading-relaxed">
-            See what our early users have to say about CreatorHub.
+            See what our early users have to say about UGC Zone.
           </p>
         </motion.div>
 

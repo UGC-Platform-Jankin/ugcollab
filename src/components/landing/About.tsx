@@ -32,10 +32,10 @@ const About = () => {
         >
           <p className="text-sm font-medium text-primary mb-3 tracking-wider uppercase">About Us</p>
           <h2 className="text-4xl md:text-5xl font-heading font-bold mb-4">
-            The team behind <span className="text-gradient">CreatorHub</span>
+            The team behind <span className="text-gradient">UGC Zone</span>
           </h2>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto leading-relaxed">
-            We're a small team with deep experience in UGC campaigns, influencer marketing, and product development. CreatorHub exists because we couldn't find a platform that truly served both brands and creators.
+            We're a small team with deep experience in UGC campaigns, influencer marketing, and product development. UGC Zone exists because we couldn't find a platform that truly served both brands and creators.
           </p>
         </motion.div>
 

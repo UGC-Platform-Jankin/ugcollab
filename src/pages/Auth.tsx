@@ -59,8 +59,8 @@ const Auth = () => {
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="flex items-center gap-2 justify-center mb-8">
-          <div className="h-8 w-8 rounded-lg bg-gradient-coral" />
-          <span className="text-lg font-heading font-bold text-foreground">CreatorHub</span>
+          <img src={logo} alt="UGC Zone" className="h-8 w-8" />
+          <span className="text-lg font-heading font-bold text-foreground">UGC Zone</span>
         </div>
         <Card className="border-border/50 bg-card">
           <CardHeader className="text-center">

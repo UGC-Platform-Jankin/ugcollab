@@ -77,7 +77,7 @@ const Contact = () => {
                 <Mail className="h-5 w-5 text-primary" />
                 <h3 className="font-heading font-semibold text-foreground">Email</h3>
               </div>
-              <p className="text-sm text-muted-foreground">hello@creatorhub.io</p>
+              <p className="text-sm text-muted-foreground">hello@ugczone.io</p>
             </div>
 
             <div className="rounded-2xl border border-border bg-gradient-card p-8">

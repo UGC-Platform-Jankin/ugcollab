@@ -22,7 +22,7 @@ const CTA = () => {
               Ready to transform your <span className="text-gradient">UGC workflow</span>?
             </h2>
             <p className="text-lg text-muted-foreground max-w-lg mb-10">
-              Join the brands and creators already using CreatorHub to streamline campaigns across Hong Kong and London.
+              Join the brands and creators already using UGC Zone to streamline campaigns across Hong Kong and London.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
               <Button size="lg" className="bg-gradient-coral text-primary-foreground hover:opacity-90 transition-opacity gap-2 text-base px-8 h-12 shadow-glow">
