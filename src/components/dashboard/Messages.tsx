@@ -91,30 +91,40 @@ const Messages = () => {
             .eq("chat_room_id", room.id);
 
           const otherUserId = parts?.find((p: any) => p.user_id !== user.id)?.user_id;
-          const lookupUserId = otherUserId || user.id;
-          const [{ data: profile }, { data: brand }] = await Promise.all([
-            supabase
-              .from("profiles")
-              .select("display_name, username, avatar_url")
-              .eq("user_id", lookupUserId)
-              .maybeSingle(),
-            supabase
-              .from("brand_profiles")
-              .select("business_name, logo_url")
-              .eq("user_id", lookupUserId)
-              .maybeSingle(),
-          ]);
 
-          const creatorName = profile?.display_name || profile?.username || null;
-          const brandName = brand?.business_name || null;
+          let displayName = room.name || "Chat";
+          let avatarUrl: string | null = null;
+
+          if (otherUserId) {
+            const [{ data: profile }, { data: brand }] = await Promise.all([
+              supabase.from("profiles").select("display_name, username, avatar_url").eq("user_id", otherUserId).maybeSingle(),
+              supabase.from("brand_profiles").select("business_name, logo_url").eq("user_id", otherUserId).maybeSingle(),
+            ]);
+            const creatorName = profile?.display_name || profile?.username || null;
+            const brandName = brand?.business_name || null;
+            displayName = isBrandView
+              ? creatorName || brandName || room.name || "Chat"
+              : brandName || creatorName || room.name || "Chat";
+            avatarUrl = isBrandView
+              ? profile?.avatar_url || brand?.logo_url || null
+              : brand?.logo_url || profile?.avatar_url || null;
+          } else if (room.campaign_id) {
+            // No other participant — resolve name from campaign
+            const { data: campaign } = await supabase.from("campaigns").select("brand_user_id, title").eq("id", room.campaign_id).maybeSingle();
+            if (campaign) {
+              if (isBrandView) {
+                displayName = room.name || campaign.title || "Chat";
+              } else {
+                const { data: brand } = await supabase.from("brand_profiles").select("business_name, logo_url").eq("user_id", campaign.brand_user_id).maybeSingle();
+                displayName = brand?.business_name || room.name || "Chat";
+                avatarUrl = brand?.logo_url || null;
+              }
+            }
+          }
 
           meta[room.id] = {
-            displayName: isBrandView
-              ? creatorName || brandName || room.name || "Chat"
-              : brandName || creatorName || room.name || "Chat",
-            avatarUrl: isBrandView
-              ? profile?.avatar_url || brand?.logo_url || null
-              : brand?.logo_url || profile?.avatar_url || null,
+            displayName,
+            avatarUrl,
             lastMessage: lastMsg?.content?.replace(/\[CAMPAIGN_INVITE:[^\]]+\]/, "").trim() || "No messages yet",
             lastMessageTime: lastMsg?.created_at || room.created_at,
             isGroup: false,
