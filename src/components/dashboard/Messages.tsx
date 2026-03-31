@@ -232,7 +232,7 @@ const Messages = () => {
 
   if (rooms.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-[calc(100vh-12rem)] text-center">
+      <div className="flex flex-col items-center justify-center h-[calc(100vh-5rem)] text-center">
         <div className="h-20 w-20 rounded-full bg-secondary flex items-center justify-center mb-4">
           <MessageCircle className="h-10 w-10 text-muted-foreground" />
         </div>
