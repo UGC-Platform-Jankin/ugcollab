@@ -259,6 +259,63 @@ export type Database = {
           },
         ]
       }
+      creator_spotlights: {
+        Row: {
+          created_at: string
+          creator_user_id: string
+          display_order: number
+          headline: string | null
+          id: string
+          visible: boolean
+        }
+        Insert: {
+          created_at?: string
+          creator_user_id: string
+          display_order?: number
+          headline?: string | null
+          id?: string
+          visible?: boolean
+        }
+        Update: {
+          created_at?: string
+          creator_user_id?: string
+          display_order?: number
+          headline?: string | null
+          id?: string
+          visible?: boolean
+        }
+        Relationships: []
+      }
+      homepage_brands: {
+        Row: {
+          brand_name: string
+          created_at: string
+          display_order: number
+          id: string
+          logo_url: string | null
+          visible: boolean
+          website_url: string | null
+        }
+        Insert: {
+          brand_name: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          logo_url?: string | null
+          visible?: boolean
+          website_url?: string | null
+        }
+        Update: {
+          brand_name?: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          logo_url?: string | null
+          visible?: boolean
+          website_url?: string | null
+        }
+        Relationships: []
+      }
       message_reads: {
         Row: {
           id: string
@@ -419,6 +476,36 @@ export type Database = {
         }
         Relationships: []
       }
+      reviews: {
+        Row: {
+          approved: boolean
+          content: string
+          created_at: string
+          id: string
+          rating: number
+          reviewer_type: string
+          user_id: string
+        }
+        Insert: {
+          approved?: boolean
+          content: string
+          created_at?: string
+          id?: string
+          rating?: number
+          reviewer_type?: string
+          user_id: string
+        }
+        Update: {
+          approved?: boolean
+          content?: string
+          created_at?: string
+          id?: string
+          rating?: number
+          reviewer_type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       social_connections: {
         Row: {
           access_token: string | null
@@ -473,15 +560,40 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       is_chat_participant: { Args: { _chat_room_id: string }; Returns: boolean }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "moderator" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -608,6 +720,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "moderator", "user"],
+    },
   },
 } as const
