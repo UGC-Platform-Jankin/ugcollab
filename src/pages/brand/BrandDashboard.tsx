@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useLocation } from "react-router-dom";
+import { Badge } from "@/components/ui/badge";
 import { Building2, LogOut, Users, Megaphone, BarChart3, Plus, User, MessageCircle } from "lucide-react";
 import NotificationBell from "@/components/NotificationBell";
 
@@ -12,6 +12,9 @@ const BrandDashboard = () => {
   const { user, loading, signOut } = useAuth();
   const navigate = useNavigate();
   const [brandProfile, setBrandProfile] = useState<any>(null);
+  const [activeCampaigns, setActiveCampaigns] = useState(0);
+  const [creatorsApplied, setCreatorsApplied] = useState(0);
+  const [recentApps, setRecentApps] = useState<any[]>([]);
 
   useEffect(() => {
     if (!loading && !user) navigate("/brand/auth");
@@ -24,6 +27,39 @@ const BrandDashboard = () => {
           navigate("/brand/setup");
         } else {
           setBrandProfile(data);
+        }
+      });
+
+      // Fetch stats
+      supabase.from("campaigns").select("id, title, status").eq("brand_user_id", user.id).then(({ data: campaigns }) => {
+        const allCampaigns = campaigns || [];
+        const active = allCampaigns.filter((c: any) => c.status === "active");
+        setActiveCampaigns(active.length);
+
+        if (allCampaigns.length > 0) {
+          const campaignIds = allCampaigns.map((c: any) => c.id);
+          supabase.from("campaign_applications").select("*").in("campaign_id", campaignIds).order("created_at", { ascending: false }).then(({ data: apps }) => {
+            setCreatorsApplied((apps || []).length);
+            // Enrich recent apps with campaign title and creator profile
+            const recent = (apps || []).slice(0, 5);
+            const creatorIds = [...new Set(recent.map((a: any) => a.creator_user_id))] as string[];
+            if (creatorIds.length > 0) {
+              supabase.from("profiles").select("*").in("user_id", creatorIds).then(({ data: profiles }) => {
+                const profileMap: Record<string, any> = {};
+                (profiles || []).forEach((p: any) => { profileMap[p.user_id] = p; });
+                const campaignMap: Record<string, string> = {};
+                allCampaigns.forEach((c: any) => { campaignMap[c.id] = c.title; });
+                setRecentApps(recent.map((a: any) => ({
+                  ...a,
+                  _creatorName: profileMap[a.creator_user_id]?.display_name || profileMap[a.creator_user_id]?.username || "Creator",
+                  _creatorAvatar: profileMap[a.creator_user_id]?.avatar_url,
+                  _campaignTitle: campaignMap[a.campaign_id] || "Campaign",
+                })));
+              });
+            } else {
+              setRecentApps([]);
+            }
+          });
         }
       });
     }
@@ -99,19 +135,19 @@ const BrandDashboard = () => {
             <Card className="border-border/50">
               <CardHeader className="pb-2">
                 <CardDescription>Active Campaigns</CardDescription>
-                <CardTitle className="text-3xl font-heading">0</CardTitle>
+                <CardTitle className="text-3xl font-heading">{activeCampaigns}</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-xs text-muted-foreground">Create your first campaign to find creators</p>
+                <p className="text-xs text-muted-foreground">{activeCampaigns === 0 ? "Create your first campaign to find creators" : `${activeCampaigns} campaign${activeCampaigns > 1 ? "s" : ""} running`}</p>
               </CardContent>
             </Card>
             <Card className="border-border/50">
               <CardHeader className="pb-2">
                 <CardDescription>Creators Applied</CardDescription>
-                <CardTitle className="text-3xl font-heading">0</CardTitle>
+                <CardTitle className="text-3xl font-heading">{creatorsApplied}</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-xs text-muted-foreground">Creators will appear here once you post campaigns</p>
+                <p className="text-xs text-muted-foreground">{creatorsApplied === 0 ? "Creators will appear here once you post campaigns" : `${creatorsApplied} total application${creatorsApplied > 1 ? "s" : ""}`}</p>
               </CardContent>
             </Card>
             <Card className="border-border/50">
@@ -124,6 +160,39 @@ const BrandDashboard = () => {
               </CardContent>
             </Card>
           </div>
+
+          {/* Recent Applications */}
+          <Card className="mt-8 border-border/50">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2"><Users className="h-5 w-5" /> Recent Applications</CardTitle>
+              <CardDescription>Latest creator applications across your campaigns</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {recentApps.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-6">No applications yet. Create a campaign to start receiving applications.</p>
+              ) : (
+                <div className="space-y-3">
+                  {recentApps.map((app) => (
+                    <div key={app.id} className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50">
+                      <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm shrink-0 overflow-hidden">
+                        {app._creatorAvatar ? (
+                          <img src={app._creatorAvatar} alt="" className="h-full w-full object-cover rounded-full" />
+                        ) : (
+                          app._creatorName.charAt(0).toUpperCase()
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-foreground">{app._creatorName}</p>
+                        <p className="text-xs text-muted-foreground truncate">Applied to <span className="text-primary">{app._campaignTitle}</span></p>
+                      </div>
+                      <Badge variant={app.status === "pending" ? "outline" : app.status === "accepted" ? "default" : "destructive"} className="text-xs capitalize shrink-0">{app.status}</Badge>
+                      <span className="text-xs text-muted-foreground shrink-0">{new Date(app.created_at).toLocaleDateString()}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
           <Card className="mt-8 border-border/50">
             <CardHeader>
