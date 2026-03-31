@@ -1,21 +1,22 @@
 import { motion } from "framer-motion";
 import { Globe, Users, Zap } from "lucide-react";
+import platformImage from "@/assets/platform-dashboard.jpg";
 
 const values = [
   {
     icon: Globe,
     title: "Two Markets, One Platform",
-    description: "Built for the unique dynamics of Hong Kong and London, two cities where UGC demand is growing fast but no dominant platform exists.",
+    description: "Built for Hong Kong and London — two cities where UGC demand is growing fast but no dominant platform exists.",
   },
   {
     icon: Users,
     title: "Creator-First Approach",
-    description: "We believe great content starts with happy creators. Fair pay, clear briefs, and structured feedback are at the core of everything we build.",
+    description: "Fair pay, clear briefs, and structured messaging. Great content starts with happy creators.",
   },
   {
     icon: Zap,
     title: "Built from Experience",
-    description: "UGC Zone was born from running real UGC campaigns. We know the pain points because we've lived them — and we built the solution.",
+    description: "UGC Zone was born from running real UGC campaigns. We know the pain points because we've lived them.",
   },
 ];
 
@@ -35,8 +36,18 @@ const About = () => {
             The team behind <span className="text-gradient">UGC Zone</span>
           </h2>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto leading-relaxed">
-            We're a small team with deep experience in UGC campaigns, influencer marketing, and product development. UGC Zone exists because we couldn't find a platform that truly served both brands and creators.
+            We're a small team with deep experience in UGC campaigns, influencer marketing, and product development.
           </p>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+          className="mb-16 rounded-2xl overflow-hidden border border-border shadow-glow"
+        >
+          <img src={platformImage} alt="UGC Zone platform dashboard" loading="lazy" width={1280} height={720} className="w-full h-auto" />
         </motion.div>
 
         <div className="grid md:grid-cols-3 gap-6">

@@ -6,21 +6,21 @@ import {
 } from "lucide-react";
 
 const brandFeatures = [
-  { icon: Layout, title: "Campaign Builder", desc: "Create campaigns with budgets, timelines and detailed briefs." },
-  { icon: Search, title: "Creator Discovery", desc: "Browse, filter and compare creators by niche, reach and rates." },
-  { icon: MessageSquare, title: "Direct Messaging", desc: "Communicate with creators directly inside the platform." },
-  { icon: Video, title: "Content Dashboard", desc: "Review all submitted videos in one centralised dashboard." },
-  { icon: FileCheck, title: "Approval Workflow", desc: "Approve, request revisions and track content versions." },
-  { icon: BarChart3, title: "Performance Analytics", desc: "Track campaign ROI, engagement and content performance." },
+  { icon: Layout, title: "Campaign Management", desc: "Create campaigns with budgets, creator limits, target regions and detailed briefs." },
+  { icon: Search, title: "Find Creators", desc: "Browse creators with verified social stats, follower counts and past work." },
+  { icon: MessageSquare, title: "Built-in Messaging", desc: "Private DMs and campaign group chats with file sharing, voice messages and read receipts." },
+  { icon: Video, title: "Application Review", desc: "Review creator applications, accept or decline with one click." },
+  { icon: FileCheck, title: "Campaign Controls", desc: "End campaigns, remove creators, and reuse past campaign templates." },
+  { icon: BarChart3, title: "Brand Dashboard", desc: "Overview of active campaigns, creator count, and content pipeline." },
 ];
 
 const creatorFeatures = [
-  { icon: Star, title: "Creator Profile", desc: "Showcase your work with integrated social media stats." },
-  { icon: TrendingUp, title: "Campaign Feed", desc: "Discover paid opportunities matched to your niche." },
-  { icon: Upload, title: "Easy Uploads", desc: "Submit content with a streamlined upload experience." },
-  { icon: Clock, title: "Status Tracking", desc: "See real-time approval status and revision requests." },
-  { icon: Shield, title: "Secure Payments", desc: "Get paid reliably when your content is approved." },
-  { icon: Wallet, title: "Earnings Dashboard", desc: "Track your income, invoices and payment history." },
+  { icon: Star, title: "Creator Profile", desc: "Showcase your bio, connected socials, follower stats and past brand collaborations." },
+  { icon: TrendingUp, title: "Gig Discovery", desc: "Browse active campaigns with brand info, budgets and requirements." },
+  { icon: Upload, title: "Easy Applications", desc: "Apply to campaigns with a cover letter and track your application status." },
+  { icon: Clock, title: "Real-time Chat", desc: "Message brands directly with attachments, voice notes and link sharing." },
+  { icon: Shield, title: "Social Connections", desc: "Link your Instagram, TikTok and other platforms to verify your reach." },
+  { icon: Wallet, title: "Track Deliverables", desc: "Monitor your videos delivered and campaign progress in one place." },
 ];
 
 const Features = () => {

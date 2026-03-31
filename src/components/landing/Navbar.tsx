@@ -2,7 +2,6 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 
-
 const Navbar = () => {
   return (
     <motion.nav
@@ -13,14 +12,14 @@ const Navbar = () => {
     >
       <div className="container flex h-16 items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="text-lg font-heading font-bold text-foreground">UGC Zone</span>
+          <Link to="/" className="text-lg font-heading font-bold text-foreground">UGC Zone</Link>
         </div>
         <div className="hidden md:flex items-center gap-8">
-          <a href="#features" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Features</a>
-          <a href="#reviews" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Reviews</a>
-          <a href="#about" className="text-sm text-muted-foreground hover:text-foreground transition-colors">About</a>
-          <a href="#brands" className="text-sm text-muted-foreground hover:text-foreground transition-colors">For Brands</a>
-          <a href="#contact" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Contact</a>
+          <a href="/#features" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Features</a>
+          <Link to="/reviews" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Reviews</Link>
+          <a href="/#about" className="text-sm text-muted-foreground hover:text-foreground transition-colors">About</a>
+          <a href="/#brands" className="text-sm text-muted-foreground hover:text-foreground transition-colors">For Brands</a>
+          <a href="/#contact" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Contact</a>
         </div>
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground" asChild>

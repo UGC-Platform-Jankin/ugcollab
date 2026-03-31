@@ -1,10 +1,10 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate, useLocation, Link } from "react-router-dom";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Briefcase, User, LogOut, MessageCircle } from "lucide-react";
+import { Briefcase, User, LogOut, MessageCircle, Shield } from "lucide-react";
 import NotificationBell from "@/components/NotificationBell";
-
+import { supabase } from "@/integrations/supabase/client";
 
 const navItems = [
   { label: "Gigs", icon: Briefcase, path: "/dashboard" },
@@ -16,10 +16,18 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const { user, loading, signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) navigate("/auth");
   }, [user, loading, navigate]);
+
+  useEffect(() => {
+    if (!user) return;
+    supabase.from("user_roles" as any).select("role").eq("user_id", user.id).eq("role", "admin").then(({ data }) => {
+      if (data && (data as any[]).length > 0) setIsAdmin(true);
+    });
+  }, [user]);
 
   if (loading) {
     return (
@@ -58,6 +66,19 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
               </Link>
             );
           })}
+          {isAdmin && (
+            <Link
+              to="/dashboard/admin"
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                location.pathname === "/dashboard/admin"
+                  ? "bg-primary/10 text-primary"
+                  : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+              }`}
+            >
+              <Shield className="h-4 w-4" />
+              Admin
+            </Link>
+          )}
         </nav>
         <div className="p-4 border-t border-border/50">
           <Button
