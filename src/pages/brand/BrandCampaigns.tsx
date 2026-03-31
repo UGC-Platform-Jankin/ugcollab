@@ -191,10 +191,11 @@ const BrandCampaigns = () => {
       }
 
       if (!privateRoomId) {
+        const creatorName = app._profile?.display_name || app._profile?.username || "Creator";
         const { data: privateRoom, error: privateError } = await supabase.from("chat_rooms").insert({
           type: "private",
           campaign_id: selectedCampaign.id,
-          name: null,
+          name: creatorName,
         } as any).select("id").single();
 
         if (privateError) {
