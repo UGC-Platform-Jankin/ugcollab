@@ -30,6 +30,9 @@ const App = () => (
             <Route path="/dashboard" element={<DashboardLayout><Gigs /></DashboardLayout>} />
             <Route path="/dashboard/profile" element={<DashboardLayout><Profile /></DashboardLayout>} />
             <Route path="/dashboard/setup" element={<ProfileSetup />} />
+            <Route path="/brand/auth" element={<BrandAuth />} />
+            <Route path="/brand/setup" element={<BrandSetup />} />
+            <Route path="/brand/dashboard" element={<BrandDashboard />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

@@ -19,11 +19,15 @@ const Navbar = () => {
           <a href="#features" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Features</a>
           <a href="#reviews" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Reviews</a>
           <a href="#about" className="text-sm text-muted-foreground hover:text-foreground transition-colors">About</a>
+          <a href="#brands" className="text-sm text-muted-foreground hover:text-foreground transition-colors">For Brands</a>
           <a href="#contact" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Contact</a>
         </div>
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground" asChild>
-            <Link to="/auth">Log in</Link>
+            <Link to="/auth">Creator Login</Link>
+          </Button>
+          <Button variant="outline" size="sm" className="border-primary/30 text-primary hover:bg-primary/10" asChild>
+            <Link to="/brand/auth">Brand Login</Link>
           </Button>
           <Button size="sm" className="bg-gradient-coral text-primary-foreground hover:opacity-90 transition-opacity" asChild>
             <Link to="/auth">Get Started</Link>
