@@ -236,18 +236,42 @@ const BrandCampaigns = () => {
             <div className="space-y-3">
               {applications.map((app) => (
                 <Card key={app.id} className="border-border/50">
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Badge variant={app.status === "pending" ? "outline" : app.status === "accepted" ? "default" : "destructive"} className="text-xs capitalize">{app.status}</Badge>
-                          <span className="text-xs text-muted-foreground">{new Date(app.created_at).toLocaleDateString()}</span>
-                        </div>
-                        <p className="text-sm text-muted-foreground line-clamp-3">{app.cover_letter}</p>
-                        <Button variant="link" size="sm" className="px-0 mt-1 h-auto" onClick={() => viewCreatorProfile(app.creator_user_id)}>
-                          View Creator Profile →
-                        </Button>
-                      </div>
+                   <CardContent className="p-4">
+                     <div className="flex items-start justify-between gap-4">
+                       <div className="flex-1 min-w-0">
+                         <div className="flex items-center gap-3 mb-3">
+                           <Avatar className="h-10 w-10">
+                             <AvatarImage src={app._profile?.avatar_url} />
+                             <AvatarFallback className="bg-secondary text-xs">{(app._profile?.display_name || "U").charAt(0).toUpperCase()}</AvatarFallback>
+                           </Avatar>
+                           <div className="flex-1 min-w-0">
+                             <div className="flex items-center gap-2">
+                               <p className="font-medium text-foreground text-sm">{app._profile?.display_name || app._profile?.username || "Creator"}</p>
+                               <Badge variant={app.status === "pending" ? "outline" : app.status === "accepted" ? "default" : "destructive"} className="text-xs capitalize">{app.status}</Badge>
+                             </div>
+                             <div className="flex items-center gap-2 mt-0.5">
+                               {app._profile?.username && <span className="text-xs text-muted-foreground">@{app._profile.username}</span>}
+                               <span className="text-xs text-muted-foreground">{new Date(app.created_at).toLocaleDateString()}</span>
+                             </div>
+                           </div>
+                         </div>
+                         {app._socials?.length > 0 && (
+                           <div className="flex gap-1.5 mb-2 flex-wrap">
+                             {app._socials.map((s: any) => {
+                               const Icon = platformIcons[s.platform] || Users;
+                               return (
+                                 <Badge key={s.id} variant="secondary" className="text-xs gap-1">
+                                   <Icon className="h-3 w-3" /> {s.platform} · {s.followers_count?.toLocaleString() || 0}
+                                 </Badge>
+                               );
+                             })}
+                           </div>
+                         )}
+                         <p className="text-sm text-muted-foreground line-clamp-3">{app.cover_letter}</p>
+                         <Button variant="link" size="sm" className="px-0 mt-1 h-auto" onClick={() => viewCreatorProfile(app.creator_user_id)}>
+                           View Full Profile →
+                         </Button>
+                       </div>
                       {app.status === "pending" && (
                         <div className="flex gap-2 shrink-0">
                           <Button size="sm" variant="outline" className="text-green-500 hover:text-green-400" disabled={updatingApp === app.id} onClick={() => handleApplicationAction(app.id, "accepted", app)}>
