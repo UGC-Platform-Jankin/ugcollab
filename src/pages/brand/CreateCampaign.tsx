@@ -1,5 +1,5 @@
 import { useAuth } from "@/contexts/AuthContext";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -43,17 +43,21 @@ const regionOptions = [
 const CreateCampaign = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
 
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
-  const [isFreeProduct, setIsFreeProduct] = useState(false);
-  const [pricePerVideo, setPricePerVideo] = useState("");
-  const [expectedVideoCount, setExpectedVideoCount] = useState("1");
-  const [campaignLengthDays, setCampaignLengthDays] = useState("");
-  const [requirements, setRequirements] = useState("");
-  const [selectedRegions, setSelectedRegions] = useState<string[]>(["Worldwide"]);
+  const reuse = (location.state as any)?.reuse;
+
+  const [title, setTitle] = useState(reuse?.title || "");
+  const [description, setDescription] = useState(reuse?.description || "");
+  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(reuse?.platforms || []);
+  const [isFreeProduct, setIsFreeProduct] = useState(reuse?.is_free_product || false);
+  const [pricePerVideo, setPricePerVideo] = useState(reuse?.price_per_video?.toString() || "");
+  const [expectedVideoCount, setExpectedVideoCount] = useState(reuse?.expected_video_count?.toString() || "1");
+  const [campaignLengthDays, setCampaignLengthDays] = useState(reuse?.campaign_length_days?.toString() || "");
+  const [requirements, setRequirements] = useState(reuse?.requirements || "");
+  const [selectedRegions, setSelectedRegions] = useState<string[]>(reuse?.target_regions || ["Worldwide"]);
+  const [maxCreators, setMaxCreators] = useState(reuse?.max_creators?.toString() || "10");
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -112,6 +116,7 @@ const CreateCampaign = () => {
       campaign_length_days: campaignLengthDays ? Number(campaignLengthDays) : null,
       requirements: requirements || null,
       target_regions: selectedRegions,
+      max_creators: Number(maxCreators) || 10,
     } as any);
     setSubmitting(false);
 
@@ -236,9 +241,16 @@ const CreateCampaign = () => {
                 </div>
               </div>
 
+              {/* Max Creators */}
+              <div className="space-y-2">
+                <Label htmlFor="maxCreators">Max Number of Influencers *</Label>
+                <Input id="maxCreators" type="number" min="1" max="100" value={maxCreators} onChange={(e) => setMaxCreators(e.target.value)} required />
+                <p className="text-xs text-muted-foreground">Campaign will auto-close when all spots are filled</p>
+              </div>
+
               {/* Expected Videos */}
               <div className="space-y-2">
-                <Label htmlFor="videoCount">Expected Number of Videos *</Label>
+                <Label htmlFor="videoCount">Expected Number of Videos per Creator *</Label>
                 <Input id="videoCount" type="number" min="1" max="100" value={expectedVideoCount} onChange={(e) => setExpectedVideoCount(e.target.value)} required />
               </div>
 

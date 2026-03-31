@@ -148,6 +148,7 @@ export type Database = {
           expected_video_count: number
           id: string
           is_free_product: boolean
+          max_creators: number
           platforms: string[] | null
           price_per_video: number | null
           requirements: string | null
@@ -165,6 +166,7 @@ export type Database = {
           expected_video_count?: number
           id?: string
           is_free_product?: boolean
+          max_creators?: number
           platforms?: string[] | null
           price_per_video?: number | null
           requirements?: string | null
@@ -182,6 +184,7 @@ export type Database = {
           expected_video_count?: number
           id?: string
           is_free_product?: boolean
+          max_creators?: number
           platforms?: string[] | null
           price_per_video?: number | null
           requirements?: string | null
