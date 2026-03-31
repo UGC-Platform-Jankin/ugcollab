@@ -100,32 +100,37 @@ const Messages = () => {
             .select("user_id")
             .eq("chat_room_id", room.id);
 
-          const otherUserId = parts?.find((p: any) => p.user_id !== user.id)?.user_id;
-
-          let displayName = room.name || "Chat";
+          let displayName = "Chat";
           let avatarUrl: string | null = null;
 
-          if (otherUserId) {
+          // Get ALL other participants (not me)
+          const otherUserIds = (parts || []).filter((p: any) => p.user_id !== user.id).map((p: any) => p.user_id);
+          
+          if (otherUserIds.length > 0) {
+            const otherUserId = otherUserIds[0];
             const [{ data: profile }, { data: brand }] = await Promise.all([
               supabase.from("profiles").select("display_name, username, avatar_url").eq("user_id", otherUserId).maybeSingle(),
               supabase.from("brand_profiles").select("business_name, logo_url").eq("user_id", otherUserId).maybeSingle(),
             ]);
-            const creatorName = profile?.display_name || profile?.username || null;
-            const brandName = brand?.business_name || null;
-            displayName = isBrandView
-              ? creatorName || brandName || room.name || "Chat"
-              : brandName || creatorName || room.name || "Chat";
-            avatarUrl = isBrandView
-              ? profile?.avatar_url || brand?.logo_url || null
-              : brand?.logo_url || profile?.avatar_url || null;
+
+            // If I'm a brand viewing this, show the creator's name
+            // If I'm a creator viewing this, show the brand's name
+            if (isBrandView) {
+              displayName = profile?.display_name || profile?.username || "Creator";
+              avatarUrl = profile?.avatar_url || null;
+            } else {
+              displayName = brand?.business_name || profile?.display_name || profile?.username || "User";
+              avatarUrl = brand?.logo_url || profile?.avatar_url || null;
+            }
           } else if (room.campaign_id) {
+            // Fallback: same user testing - resolve via campaign
             const { data: campaign } = await supabase.from("campaigns").select("brand_user_id, title").eq("id", room.campaign_id).maybeSingle();
             if (campaign) {
               if (isBrandView) {
                 displayName = room.name || campaign.title || "Chat";
               } else {
                 const { data: brand } = await supabase.from("brand_profiles").select("business_name, logo_url").eq("user_id", campaign.brand_user_id).maybeSingle();
-                displayName = brand?.business_name || room.name || "Chat";
+                displayName = brand?.business_name || "Brand";
                 avatarUrl = brand?.logo_url || null;
               }
             }
