@@ -84,7 +84,31 @@ const Messages = () => {
       const fetchedRooms = (roomsData as any) || [];
       setRooms(fetchedRooms);
 
-      const meta: Record<string, RoomMeta> = {};
+      // Fetch unread counts: messages not sent by me, not in message_reads
+      const { data: allMsgs } = await supabase
+        .from("messages")
+        .select("id, chat_room_id")
+        .in("chat_room_id", roomIds)
+        .neq("sender_id", user.id);
+
+      let readMsgIds = new Set<string>();
+      if (allMsgs && allMsgs.length > 0) {
+        const msgIds = allMsgs.map((m: any) => m.id);
+        const { data: reads } = await supabase
+          .from("message_reads" as any)
+          .select("message_id")
+          .eq("user_id", user.id)
+          .in("message_id", msgIds);
+        (reads || []).forEach((r: any) => readMsgIds.add(r.message_id));
+      }
+
+      const unreadByRoom: Record<string, number> = {};
+      (allMsgs || []).forEach((m: any) => {
+        if (!readMsgIds.has(m.id)) {
+          unreadByRoom[m.chat_room_id] = (unreadByRoom[m.chat_room_id] || 0) + 1;
+        }
+      });
+
       for (const room of fetchedRooms) {
         const { data: lastMsgs } = await supabase
           .from("messages")
