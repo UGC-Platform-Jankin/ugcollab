@@ -6,11 +6,14 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/AuthContext";
 import Index from "./pages/Index.tsx";
 import Auth from "./pages/Auth.tsx";
+import BrandAuth from "./pages/BrandAuth.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import DashboardLayout from "./components/dashboard/DashboardLayout.tsx";
 import Gigs from "./pages/dashboard/Gigs.tsx";
 import Profile from "./pages/dashboard/Profile.tsx";
 import ProfileSetup from "./pages/dashboard/ProfileSetup.tsx";
+import BrandSetup from "./pages/brand/BrandSetup.tsx";
+import BrandDashboard from "./pages/brand/BrandDashboard.tsx";
 
 const queryClient = new QueryClient();
 
@@ -27,6 +30,9 @@ const App = () => (
             <Route path="/dashboard" element={<DashboardLayout><Gigs /></DashboardLayout>} />
             <Route path="/dashboard/profile" element={<DashboardLayout><Profile /></DashboardLayout>} />
             <Route path="/dashboard/setup" element={<ProfileSetup />} />
+            <Route path="/brand/auth" element={<BrandAuth />} />
+            <Route path="/brand/setup" element={<BrandSetup />} />
+            <Route path="/brand/dashboard" element={<BrandDashboard />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

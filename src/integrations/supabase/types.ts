@@ -14,6 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
+      brand_profiles: {
+        Row: {
+          business_name: string
+          business_type: string
+          country: string | null
+          created_at: string
+          description: string | null
+          facebook_url: string | null
+          id: string
+          instagram_url: string | null
+          logo_url: string | null
+          tiktok_url: string | null
+          updated_at: string
+          user_id: string
+          website_url: string | null
+        }
+        Insert: {
+          business_name: string
+          business_type: string
+          country?: string | null
+          created_at?: string
+          description?: string | null
+          facebook_url?: string | null
+          id?: string
+          instagram_url?: string | null
+          logo_url?: string | null
+          tiktok_url?: string | null
+          updated_at?: string
+          user_id: string
+          website_url?: string | null
+        }
+        Update: {
+          business_name?: string
+          business_type?: string
+          country?: string | null
+          created_at?: string
+          description?: string | null
+          facebook_url?: string | null
+          id?: string
+          instagram_url?: string | null
+          logo_url?: string | null
+          tiktok_url?: string | null
+          updated_at?: string
+          user_id?: string
+          website_url?: string | null
+        }
+        Relationships: []
+      }
       campaigns: {
         Row: {
           brand_user_id: string
