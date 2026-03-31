@@ -26,6 +26,7 @@ interface Message {
 
 const Messages = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [rooms, setRooms] = useState<ChatRoom[]>([]);
   const [selectedRoom, setSelectedRoom] = useState<ChatRoom | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
