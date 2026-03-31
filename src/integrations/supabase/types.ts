@@ -100,6 +100,44 @@ export type Database = {
           },
         ]
       }
+      campaign_invites: {
+        Row: {
+          brand_user_id: string
+          campaign_id: string
+          created_at: string
+          creator_user_id: string
+          id: string
+          message: string | null
+          status: string
+        }
+        Insert: {
+          brand_user_id: string
+          campaign_id: string
+          created_at?: string
+          creator_user_id: string
+          id?: string
+          message?: string | null
+          status?: string
+        }
+        Update: {
+          brand_user_id?: string
+          campaign_id?: string
+          created_at?: string
+          creator_user_id?: string
+          id?: string
+          message?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_invites_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       campaigns: {
         Row: {
           brand_user_id: string
@@ -246,6 +284,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      notifications: {
+        Row: {
+          body: string | null
+          created_at: string
+          id: string
+          link: string | null
+          read: boolean
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          link?: string | null
+          read?: boolean
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          link?: string | null
+          read?: boolean
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
