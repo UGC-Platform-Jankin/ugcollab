@@ -1,14 +1,15 @@
 import { useEffect, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Megaphone, Users, Check, X, Loader2, Clock, Eye, Instagram, Facebook, Video } from "lucide-react";
+import { Megaphone, Users, Check, X, Loader2, Clock, Eye, Instagram, Facebook, Video, Copy, StopCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const platformIcons: Record<string, any> = { instagram: Instagram, facebook: Facebook, tiktok: Video };
@@ -17,6 +18,7 @@ const BrandCampaigns = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const location = useLocation();
+  const navigate = useNavigate();
   const [campaigns, setCampaigns] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCampaign, setSelectedCampaign] = useState<any>(null);
@@ -27,6 +29,8 @@ const BrandCampaigns = () => {
   const [creatorSocials, setCreatorSocials] = useState<any[]>([]);
   const [creatorApps, setCreatorApps] = useState<any[]>([]);
   const [updatingApp, setUpdatingApp] = useState<string | null>(null);
+  const [endingCampaign, setEndingCampaign] = useState<string | null>(null);
+  const [campaignTab, setCampaignTab] = useState("active");
 
   useEffect(() => {
     if (!user) return;
@@ -34,25 +38,26 @@ const BrandCampaigns = () => {
       const allCampaigns = (data as any) || [];
       setCampaigns(allCampaigns);
       setLoading(false);
-      // Auto-open campaign from navigation state
       const state = location.state as any;
       if (state?.openCampaignId) {
         const target = allCampaigns.find((c: any) => c.id === state.openCampaignId);
         if (target) {
           setSelectedCampaign(target);
+          setCampaignTab(target.status === "active" ? "active" : "ended");
           loadApplications(target.id);
         }
-        // Clear the state so it doesn't re-trigger
         window.history.replaceState({}, "");
       }
     });
   }, [user]);
 
+  const activeCampaigns = campaigns.filter((c) => c.status === "active");
+  const endedCampaigns = campaigns.filter((c) => c.status !== "active");
+
   const loadApplications = async (campaignId: string) => {
     setLoadingApps(true);
     const { data } = await supabase.from("campaign_applications").select("*").eq("campaign_id", campaignId).order("created_at", { ascending: false });
     const apps = (data as any) || [];
-    // Fetch creator profiles and socials for all applications
     const creatorIds = [...new Set(apps.map((a: any) => a.creator_user_id))];
     if (creatorIds.length > 0) {
       const [profilesRes, socialsRes] = await Promise.all([
@@ -87,7 +92,6 @@ const BrandCampaigns = () => {
     ]);
     setCreatorProfile(profileRes.data);
     setCreatorSocials(socialsRes.data || []);
-    // Enrich apps with campaign titles
     const apps = appsRes.data || [];
     if (apps.length > 0) {
       const campIds = [...new Set(apps.map((a: any) => a.campaign_id))] as string[];
@@ -99,7 +103,9 @@ const BrandCampaigns = () => {
   };
 
   const handleApplicationAction = async (appId: string, status: "accepted" | "rejected", app: any) => {
+    if (!user || !selectedCampaign) return;
     setUpdatingApp(appId);
+
     const { error } = await supabase.from("campaign_applications").update({ status } as any).eq("id", appId);
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -107,35 +113,43 @@ const BrandCampaigns = () => {
       return;
     }
 
-    // If accepted, create group chat (if not exists) and private chat, add participants
-    if (status === "accepted" && user && selectedCampaign) {
-      // Find or create group chat for this campaign
-      let { data: existingGroup } = await supabase
-        .from("chat_rooms")
-        .select("id")
-        .eq("campaign_id", selectedCampaign.id)
-        .eq("type", "group")
-        .single();
+    if (status === "accepted") {
+      const maxCreators = selectedCampaign.max_creators || 10;
 
-      let groupId: string;
-      if (!existingGroup) {
-        const { data: newGroup } = await supabase.from("chat_rooms").insert({
-          type: "group",
-          campaign_id: selectedCampaign.id,
-          name: selectedCampaign.title,
-        } as any).select("id").single();
-        groupId = newGroup!.id;
-        // Add brand to group
-        await supabase.from("chat_participants").insert({ chat_room_id: groupId, user_id: user.id } as any);
-      } else {
-        groupId = existingGroup.id;
+      // Only create group chat if max_creators > 1
+      if (maxCreators > 1) {
+        let { data: existingGroup } = await supabase
+          .from("chat_rooms")
+          .select("id")
+          .eq("campaign_id", selectedCampaign.id)
+          .eq("type", "group")
+          .maybeSingle();
+
+        let groupId: string;
+        if (!existingGroup) {
+          const { data: newGroup, error: groupError } = await supabase.from("chat_rooms").insert({
+            type: "group",
+            campaign_id: selectedCampaign.id,
+            name: selectedCampaign.title,
+          } as any).select("id").single();
+          if (groupError || !newGroup) {
+            console.error("Failed to create group chat:", groupError);
+          } else {
+            groupId = newGroup.id;
+            await supabase.from("chat_participants").insert({ chat_room_id: groupId, user_id: user.id } as any);
+          }
+        } else {
+          groupId = existingGroup.id;
+        }
+
+        // Add creator to group
+        if (groupId!) {
+          await supabase.from("chat_participants").insert({ chat_room_id: groupId!, user_id: app.creator_user_id } as any);
+        }
       }
 
-      // Add creator to group
-      await supabase.from("chat_participants").insert({ chat_room_id: groupId, user_id: app.creator_user_id } as any);
-
-      // Create private chat
-      const { data: privateRoom } = await supabase.from("chat_rooms").insert({
+      // Always create private chat
+      const { data: privateRoom, error: privateError } = await supabase.from("chat_rooms").insert({
         type: "private",
         campaign_id: selectedCampaign.id,
         name: null,
@@ -147,9 +161,19 @@ const BrandCampaigns = () => {
           { chat_room_id: privateRoom.id, user_id: app.creator_user_id },
         ] as any);
       }
+
+      // Check if campaign is now full and auto-end
+      const acceptedCount = applications.filter((a) => a.status === "accepted").length + 1; // +1 for the one we just accepted
+      if (acceptedCount >= maxCreators) {
+        await supabase.from("campaigns").update({ status: "ended" } as any).eq("id", selectedCampaign.id);
+        setSelectedCampaign({ ...selectedCampaign, status: "ended" });
+        setCampaigns((prev) => prev.map((c) => c.id === selectedCampaign.id ? { ...c, status: "ended" } : c));
+        toast({ title: "Campaign auto-closed", description: `All ${maxCreators} influencer spot${maxCreators > 1 ? "s" : ""} filled!` });
+      }
     }
 
     setApplications((prev) => prev.map((a) => a.id === appId ? { ...a, status } : a));
+
     // Notify creator
     await supabase.from("notifications" as any).insert({
       user_id: app.creator_user_id,
@@ -162,9 +186,82 @@ const BrandCampaigns = () => {
     setUpdatingApp(null);
   };
 
+  const handleEndCampaign = async (campaignId: string) => {
+    setEndingCampaign(campaignId);
+    const { error } = await supabase.from("campaigns").update({ status: "ended" } as any).eq("id", campaignId);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      setCampaigns((prev) => prev.map((c) => c.id === campaignId ? { ...c, status: "ended" } : c));
+      if (selectedCampaign?.id === campaignId) {
+        setSelectedCampaign({ ...selectedCampaign, status: "ended" });
+      }
+      toast({ title: "Campaign ended" });
+    }
+    setEndingCampaign(null);
+  };
+
+  const handleReuseCampaign = (campaign: any) => {
+    navigate("/brand/campaigns/new", {
+      state: {
+        reuse: {
+          title: campaign.title,
+          description: campaign.description,
+          platforms: campaign.platforms,
+          is_free_product: campaign.is_free_product,
+          price_per_video: campaign.price_per_video,
+          expected_video_count: campaign.expected_video_count,
+          campaign_length_days: campaign.campaign_length_days,
+          requirements: campaign.requirements,
+          target_regions: campaign.target_regions,
+          max_creators: campaign.max_creators,
+        },
+      },
+    });
+  };
+
+  const acceptedCount = (campaignId: string) => {
+    if (selectedCampaign?.id === campaignId) {
+      return applications.filter((a) => a.status === "accepted").length;
+    }
+    return 0;
+  };
+
   if (loading) {
     return <div className="space-y-4">{[1, 2].map((i) => <Card key={i} className="border-border/50 animate-pulse"><CardContent className="p-6"><div className="h-16 bg-muted rounded" /></CardContent></Card>)}</div>;
   }
+
+  const renderCampaignList = (list: any[]) => {
+    if (list.length === 0) {
+      return (
+        <Card className="border-border/50 border-dashed">
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <Megaphone className="h-8 w-8 text-muted-foreground mb-2" />
+            <p className="text-muted-foreground text-sm">No campaigns here</p>
+          </CardContent>
+        </Card>
+      );
+    }
+    return (
+      <div className="space-y-3">
+        {list.map((c) => (
+          <Card key={c.id} className="border-border/50 hover:border-primary/30 transition-colors cursor-pointer" onClick={() => { setSelectedCampaign(c); loadApplications(c.id); }}>
+            <CardContent className="p-4 flex items-center justify-between">
+              <div>
+                <h3 className="font-medium text-foreground">{c.title}</h3>
+                <div className="flex gap-2 mt-1 items-center flex-wrap">
+                  <Badge variant={c.status === "active" ? "default" : "secondary"} className="text-xs capitalize">{c.status}</Badge>
+                  {c.platforms?.map((p: string) => <Badge key={p} variant="outline" className="text-xs capitalize">{p}</Badge>)}
+                  <span className="text-xs text-muted-foreground">Max {c.max_creators || 10} creators</span>
+                </div>
+              </div>
+              <Button variant="ghost" size="sm"><Eye className="h-4 w-4 mr-1" /> View</Button>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  };
 
   return (
     <div>
@@ -174,31 +271,14 @@ const BrandCampaigns = () => {
             <h2 className="text-xl font-heading font-bold text-foreground">Your Campaigns</h2>
             <p className="text-sm text-muted-foreground">View applications and manage your campaigns</p>
           </div>
-          {campaigns.length === 0 ? (
-            <Card className="border-border/50 border-dashed">
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <Megaphone className="h-8 w-8 text-muted-foreground mb-2" />
-                <p className="text-muted-foreground text-sm">No campaigns yet</p>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-3">
-              {campaigns.map((c) => (
-                <Card key={c.id} className="border-border/50 hover:border-primary/30 transition-colors cursor-pointer" onClick={() => { setSelectedCampaign(c); loadApplications(c.id); }}>
-                  <CardContent className="p-4 flex items-center justify-between">
-                    <div>
-                      <h3 className="font-medium text-foreground">{c.title}</h3>
-                      <div className="flex gap-2 mt-1 items-center">
-                        <Badge variant={c.status === "active" ? "default" : "secondary"} className="text-xs capitalize">{c.status}</Badge>
-                        {c.platforms?.map((p: string) => <Badge key={p} variant="outline" className="text-xs capitalize">{p}</Badge>)}
-                      </div>
-                    </div>
-                    <Button variant="ghost" size="sm"><Eye className="h-4 w-4 mr-1" /> View</Button>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
+          <Tabs value={campaignTab} onValueChange={setCampaignTab}>
+            <TabsList className="mb-4">
+              <TabsTrigger value="active">Active ({activeCampaigns.length})</TabsTrigger>
+              <TabsTrigger value="ended">Ended ({endedCampaigns.length})</TabsTrigger>
+            </TabsList>
+            <TabsContent value="active">{renderCampaignList(activeCampaigns)}</TabsContent>
+            <TabsContent value="ended">{renderCampaignList(endedCampaigns)}</TabsContent>
+          </Tabs>
         </>
       ) : (
         <>
@@ -211,7 +291,9 @@ const BrandCampaigns = () => {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="text-xl font-heading">{selectedCampaign.title}</CardTitle>
-                <Badge variant={selectedCampaign.status === "active" ? "default" : "secondary"} className="capitalize">{selectedCampaign.status}</Badge>
+                <div className="flex items-center gap-2">
+                  <Badge variant={selectedCampaign.status === "active" ? "default" : "secondary"} className="capitalize">{selectedCampaign.status}</Badge>
+                </div>
               </div>
               <div className="flex gap-2 flex-wrap mt-1">
                 {selectedCampaign.platforms?.map((p: string) => <Badge key={p} variant="secondary" className="capitalize text-xs">{p}</Badge>)}
@@ -228,8 +310,12 @@ const BrandCampaigns = () => {
                   <p className="text-sm font-medium text-foreground">{selectedCampaign.is_free_product ? "Free Product" : `HK$${selectedCampaign.price_per_video}/video`}</p>
                 </div>
                 <div className="p-3 rounded-lg bg-secondary/50">
-                  <p className="text-xs text-muted-foreground">Videos Expected</p>
+                  <p className="text-xs text-muted-foreground">Videos per Creator</p>
                   <p className="text-sm font-medium text-foreground">{selectedCampaign.expected_video_count}</p>
+                </div>
+                <div className="p-3 rounded-lg bg-secondary/50">
+                  <p className="text-xs text-muted-foreground">Influencer Spots</p>
+                  <p className="text-sm font-medium text-foreground">{applications.filter((a) => a.status === "accepted").length}/{selectedCampaign.max_creators || 10}</p>
                 </div>
                 {selectedCampaign.campaign_length_days && (
                   <div className="p-3 rounded-lg bg-secondary/50">
@@ -248,6 +334,56 @@ const BrandCampaigns = () => {
                   <p className="text-sm text-foreground">{selectedCampaign.requirements}</p>
                 </div>
               )}
+
+              {/* Action buttons */}
+              <div className="flex gap-2 pt-2">
+                <Button variant="outline" size="sm" className="gap-1.5" onClick={() => handleReuseCampaign(selectedCampaign)}>
+                  <Copy className="h-3.5 w-3.5" /> Reuse Campaign
+                </Button>
+                {selectedCampaign.status === "active" && (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="outline" size="sm" className="gap-1.5 text-destructive hover:text-destructive">
+                        <StopCircle className="h-3.5 w-3.5" /> End Campaign
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>End this campaign?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Are you sure you want to end "{selectedCampaign.title}"? This will stop accepting new applications. This action cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="destructive">Yes, end campaign</Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Final confirmation</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This is your last chance. Are you absolutely sure you want to end this campaign permanently?
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Go back</AlertDialogCancel>
+                              <AlertDialogAction
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                onClick={() => handleEndCampaign(selectedCampaign.id)}
+                                disabled={endingCampaign === selectedCampaign.id}
+                              >
+                                {endingCampaign === selectedCampaign.id ? <Loader2 className="h-4 w-4 animate-spin" /> : "End permanently"}
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                )}
+              </div>
             </CardContent>
           </Card>
 
@@ -300,7 +436,7 @@ const BrandCampaigns = () => {
                            View Full Profile →
                          </Button>
                        </div>
-                      {app.status === "pending" && (
+                      {app.status === "pending" && selectedCampaign.status === "active" && (
                         <div className="flex gap-2 shrink-0">
                           <Button size="sm" variant="outline" className="text-green-500 hover:text-green-400" disabled={updatingApp === app.id} onClick={() => handleApplicationAction(app.id, "accepted", app)}>
                             {updatingApp === app.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
@@ -329,7 +465,6 @@ const BrandCampaigns = () => {
             <div className="flex items-center justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
           ) : (
             <div className="space-y-5">
-              {/* Header */}
               <div className="flex items-center gap-4">
                 <Avatar className="h-16 w-16">
                   <AvatarImage src={creatorProfile.avatar_url} />
@@ -341,14 +476,10 @@ const BrandCampaigns = () => {
                   <p className="text-xs text-muted-foreground mt-0.5">Joined {new Date(creatorProfile.created_at).toLocaleDateString()}</p>
                 </div>
               </div>
-
-              {/* Bio */}
               <div>
                 <p className="text-xs font-medium text-muted-foreground uppercase mb-1">Bio</p>
                 <p className="text-sm text-foreground">{creatorProfile.bio || "No bio provided"}</p>
               </div>
-
-              {/* Socials */}
               <div>
                 <p className="text-xs font-medium text-muted-foreground uppercase mb-2">Connected Platforms</p>
                 {creatorSocials.length > 0 ? (
@@ -378,8 +509,6 @@ const BrandCampaigns = () => {
                   <p className="text-sm text-muted-foreground">No platforms connected yet</p>
                 )}
               </div>
-
-              {/* Application History */}
               <div>
                 <p className="text-xs font-medium text-muted-foreground uppercase mb-2">Campaign History</p>
                 {creatorApps.length > 0 ? (
