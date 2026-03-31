@@ -173,7 +173,11 @@ const BrandDashboard = () => {
               ) : (
                 <div className="space-y-3">
                   {recentApps.map((app) => (
-                    <div key={app.id} className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50">
+                    <div
+                      key={app.id}
+                      className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50 hover:bg-secondary/80 cursor-pointer transition-colors"
+                      onClick={() => navigate("/brand/campaigns", { state: { openCampaignId: app.campaign_id } })}
+                    >
                       <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm shrink-0 overflow-hidden">
                         {app._creatorAvatar ? (
                           <img src={app._creatorAvatar} alt="" className="h-full w-full object-cover rounded-full" />
