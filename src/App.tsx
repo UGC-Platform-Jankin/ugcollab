@@ -23,6 +23,7 @@ import BrandCampaigns from "./pages/brand/BrandCampaigns.tsx";
 import FindCreators from "./pages/brand/FindCreators.tsx";
 import ReviewsPage from "./pages/Reviews.tsx";
 import AdminPanel from "./pages/dashboard/AdminPanel.tsx";
+import AboutPage from "./pages/AboutPage.tsx";
 
 const queryClient = new QueryClient();
 
