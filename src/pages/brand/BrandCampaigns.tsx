@@ -115,8 +115,8 @@ const BrandCampaigns = () => {
 
     if (status === "accepted") {
       const maxCreators = selectedCampaign.max_creators || 10;
+      let groupRoomId: string | null = null;
 
-      // Only create group chat if max_creators > 1
       if (maxCreators > 1) {
         let { data: existingGroup } = await supabase
           .from("chat_rooms")
@@ -125,45 +125,93 @@ const BrandCampaigns = () => {
           .eq("type", "group")
           .maybeSingle();
 
-        let groupId: string;
         if (!existingGroup) {
           const { data: newGroup, error: groupError } = await supabase.from("chat_rooms").insert({
             type: "group",
             campaign_id: selectedCampaign.id,
             name: selectedCampaign.title,
           } as any).select("id").single();
+
           if (groupError || !newGroup) {
             console.error("Failed to create group chat:", groupError);
           } else {
-            groupId = newGroup.id;
-            await supabase.from("chat_participants").insert({ chat_room_id: groupId, user_id: user.id } as any);
+            groupRoomId = newGroup.id;
+            await supabase.from("chat_participants").insert({ chat_room_id: groupRoomId, user_id: user.id } as any);
+            await supabase.from("messages").insert({
+              chat_room_id: groupRoomId,
+              sender_id: user.id,
+              content: `Welcome to the ${selectedCampaign.title} campaign group chat. This space is for the brand and accepted creators to coordinate together.`,
+            } as any);
           }
         } else {
-          groupId = existingGroup.id;
+          groupRoomId = existingGroup.id;
         }
 
-        // Add creator to group
-        if (groupId!) {
-          await supabase.from("chat_participants").insert({ chat_room_id: groupId!, user_id: app.creator_user_id } as any);
+        if (groupRoomId) {
+          await supabase.from("chat_participants").upsert({ chat_room_id: groupRoomId, user_id: app.creator_user_id } as any, { onConflict: "chat_room_id,user_id" });
+          await supabase.from("messages").insert({
+            chat_room_id: groupRoomId,
+            sender_id: user.id,
+            content: `${app._profile?.display_name || app._profile?.username || "A creator"} has joined the campaign group chat.`,
+          } as any);
         }
       }
 
-      // Always create private chat
-      const { data: privateRoom, error: privateError } = await supabase.from("chat_rooms").insert({
-        type: "private",
-        campaign_id: selectedCampaign.id,
-        name: null,
-      } as any).select("id").single();
+      const { data: existingPrivateParticipant } = await supabase
+        .from("chat_participants")
+        .select("chat_room_id")
+        .eq("user_id", app.creator_user_id);
 
-      if (privateRoom) {
-        await supabase.from("chat_participants").insert([
-          { chat_room_id: privateRoom.id, user_id: user.id },
-          { chat_room_id: privateRoom.id, user_id: app.creator_user_id },
-        ] as any);
+      let privateRoomId: string | null = null;
+
+      if (existingPrivateParticipant?.length) {
+        const existingRoomIds = existingPrivateParticipant.map((row: any) => row.chat_room_id);
+        const { data: existingPrivateRooms } = await supabase
+          .from("chat_rooms")
+          .select("id")
+          .eq("campaign_id", selectedCampaign.id)
+          .eq("type", "private")
+          .in("id", existingRoomIds);
+
+        if (existingPrivateRooms?.length) {
+          for (const room of existingPrivateRooms) {
+            const { data: roomParticipants } = await supabase
+              .from("chat_participants")
+              .select("user_id")
+              .eq("chat_room_id", room.id);
+            const participantIds = (roomParticipants || []).map((p: any) => p.user_id);
+            if (participantIds.includes(user.id) && participantIds.includes(app.creator_user_id)) {
+              privateRoomId = room.id;
+              break;
+            }
+          }
+        }
       }
 
-      // Check if campaign is now full and auto-end
-      const acceptedCount = applications.filter((a) => a.status === "accepted").length + 1; // +1 for the one we just accepted
+      if (!privateRoomId) {
+        const { data: privateRoom, error: privateError } = await supabase.from("chat_rooms").insert({
+          type: "private",
+          campaign_id: selectedCampaign.id,
+          name: null,
+        } as any).select("id").single();
+
+        if (privateError) {
+          console.error("Failed to create private chat:", privateError);
+        } else if (privateRoom) {
+          privateRoomId = privateRoom.id;
+          const participantIds = [...new Set([user.id, app.creator_user_id])];
+          await supabase.from("chat_participants").insert(
+            participantIds.map((participantId) => ({ chat_room_id: privateRoom.id, user_id: participantId })) as any
+          );
+          await supabase.from("messages").insert({
+            chat_room_id: privateRoom.id,
+            sender_id: user.id,
+            content: `Hi ${app._profile?.display_name || app._profile?.username || "there"}! Welcome to ${selectedCampaign.title}. This private chat is now open so we can discuss the campaign details one-on-one.`,
+          } as any);
+        }
+      }
+
+      const acceptedCount = applications.filter((a) => a.status === "accepted").length + 1;
       if (acceptedCount >= maxCreators) {
         await supabase.from("campaigns").update({ status: "ended" } as any).eq("id", selectedCampaign.id);
         setSelectedCampaign({ ...selectedCampaign, status: "ended" });
@@ -174,7 +222,6 @@ const BrandCampaigns = () => {
 
     setApplications((prev) => prev.map((a) => a.id === appId ? { ...a, status } : a));
 
-    // Notify creator
     await supabase.from("notifications" as any).insert({
       user_id: app.creator_user_id,
       type: "application_update",

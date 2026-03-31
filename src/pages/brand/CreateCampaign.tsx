@@ -105,7 +105,7 @@ const CreateCampaign = () => {
     }
 
     setSubmitting(true);
-    const { error } = await supabase.from("campaigns").insert({
+    const { data: insertedCampaign, error } = await supabase.from("campaigns").insert({
       brand_user_id: user.id,
       title,
       description,
@@ -117,12 +117,29 @@ const CreateCampaign = () => {
       requirements: requirements || null,
       target_regions: selectedRegions,
       max_creators: Number(maxCreators) || 10,
-    } as any);
+    } as any).select("id, title, max_creators").single();
     setSubmitting(false);
 
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
+      if ((insertedCampaign?.max_creators || 0) > 1) {
+        const { data: groupRoom } = await supabase.from("chat_rooms").insert({
+          type: "group",
+          campaign_id: insertedCampaign.id,
+          name: insertedCampaign.title,
+        } as any).select("id").single();
+
+        if (groupRoom) {
+          await supabase.from("chat_participants").insert({ chat_room_id: groupRoom.id, user_id: user.id } as any);
+          await supabase.from("messages").insert({
+            chat_room_id: groupRoom.id,
+            sender_id: user.id,
+            content: `Welcome to the ${insertedCampaign.title} campaign group chat. Accepted creators will be added here automatically so everyone can coordinate together.`,
+          } as any);
+        }
+      }
+
       toast({ title: "Campaign created!", description: "Your campaign is now live." });
       navigate("/brand/dashboard");
     }
