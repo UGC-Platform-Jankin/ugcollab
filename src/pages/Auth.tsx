@@ -16,6 +16,7 @@ const Auth = () => {
   const [password, setPassword] = useState("");
   const [username, setUsername] = useState("");
   const [loading, setLoading] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -81,6 +82,16 @@ const Auth = () => {
                   <div className="space-y-2">
                     <Label htmlFor="login-password">Password</Label>
                     <Input id="login-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="remember-me"
+                      checked={rememberMe}
+                      onChange={(e) => setRememberMe(e.target.checked)}
+                      className="rounded border-border"
+                    />
+                    <Label htmlFor="remember-me" className="text-sm text-muted-foreground cursor-pointer">Stay logged in</Label>
                   </div>
                   <Button type="submit" className="w-full bg-gradient-coral" disabled={loading}>
                     {loading ? "Signing in..." : "Sign In"}
