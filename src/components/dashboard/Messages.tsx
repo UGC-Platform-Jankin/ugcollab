@@ -486,7 +486,16 @@ const Messages = () => {
             return (
               <button
                 key={room.id}
-                onClick={() => setSelectedRoom(room)}
+                onClick={() => {
+                  setSelectedRoom(room);
+                  // Clear unread count locally when opening chat
+                  if (meta.unreadCount > 0) {
+                    setRoomMeta((prev) => ({
+                      ...prev,
+                      [room.id]: { ...prev[room.id], unreadCount: 0 },
+                    }));
+                  }
+                }}
                 className={cn(
                   "w-full flex items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-secondary/50",
                   isSelected && "bg-secondary/80",
