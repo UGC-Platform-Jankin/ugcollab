@@ -17,6 +17,8 @@ const BrandLayout = ({ children }: { children: React.ReactNode }) => {
   const navItems = [
     { label: "Overview", icon: BarChart3, path: "/brand/dashboard", badge: 0 },
     { label: "Campaigns", icon: Megaphone, path: "/brand/campaigns", badge: 0 },
+    { label: "Video Review", icon: Video, path: "/brand/video-review", badge: 0 },
+    { label: "Posted Videos", icon: Link2, path: "/brand/posted-videos", badge: 0 },
     { label: "Messages", icon: MessageCircle, path: "/brand/messages", badge: unread.total },
     { label: "Find Creators", icon: Users, path: "/brand/creators", badge: 0 },
     { label: "Profile", icon: User, path: "/brand/profile", badge: 0 },

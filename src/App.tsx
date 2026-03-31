@@ -15,12 +15,16 @@ import Gigs from "./pages/dashboard/Gigs.tsx";
 import Profile from "./pages/dashboard/Profile.tsx";
 import ProfileSetup from "./pages/dashboard/ProfileSetup.tsx";
 import Messages from "./components/dashboard/Messages.tsx";
+import VideoSubmissions from "./pages/dashboard/VideoSubmissions.tsx";
+import PostedVideos from "./pages/dashboard/PostedVideos.tsx";
 import BrandSetup from "./pages/brand/BrandSetup.tsx";
 import BrandDashboard from "./pages/brand/BrandDashboard.tsx";
 import CreateCampaign from "./pages/brand/CreateCampaign.tsx";
 import BrandProfileContent from "./pages/brand/BrandProfile.tsx";
 import BrandCampaigns from "./pages/brand/BrandCampaigns.tsx";
 import FindCreators from "./pages/brand/FindCreators.tsx";
+import VideoReview from "./pages/brand/VideoReview.tsx";
+import BrandPostedVideos from "./pages/brand/BrandPostedVideos.tsx";
 import ReviewsPage from "./pages/Reviews.tsx";
 import AdminPanel from "./pages/dashboard/AdminPanel.tsx";
 import AboutPage from "./pages/AboutPage.tsx";
@@ -44,6 +48,8 @@ const App = () => (
             <Route path="/dashboard/messages" element={<DashboardLayout><Messages /></DashboardLayout>} />
             <Route path="/dashboard/profile" element={<DashboardLayout><Profile /></DashboardLayout>} />
             <Route path="/dashboard/admin" element={<DashboardLayout><AdminPanel /></DashboardLayout>} />
+            <Route path="/dashboard/videos" element={<DashboardLayout><VideoSubmissions /></DashboardLayout>} />
+            <Route path="/dashboard/posted-videos" element={<DashboardLayout><PostedVideos /></DashboardLayout>} />
             <Route path="/dashboard/setup" element={<ProfileSetup />} />
             <Route path="/brand/auth" element={<BrandAuth />} />
             <Route path="/brand/setup" element={<BrandSetup />} />
@@ -53,6 +59,8 @@ const App = () => (
             <Route path="/brand/messages" element={<BrandLayout><Messages /></BrandLayout>} />
             <Route path="/brand/creators" element={<BrandLayout><FindCreators /></BrandLayout>} />
             <Route path="/brand/profile" element={<BrandLayout><BrandProfileContent /></BrandLayout>} />
+            <Route path="/brand/video-review" element={<BrandLayout><VideoReview /></BrandLayout>} />
+            <Route path="/brand/posted-videos" element={<BrandLayout><BrandPostedVideos /></BrandLayout>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

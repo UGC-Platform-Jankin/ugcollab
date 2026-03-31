@@ -16,6 +16,8 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
 
   const navItems = [
     { label: "Gigs", icon: Briefcase, path: "/dashboard", badge: 0 },
+    { label: "Videos", icon: Video, path: "/dashboard/videos", badge: 0 },
+    { label: "Posted Videos", icon: Link2, path: "/dashboard/posted-videos", badge: 0 },
     { label: "Messages", icon: MessageCircle, path: "/dashboard/messages", badge: unread.total },
     { label: "Profile", icon: User, path: "/dashboard/profile", badge: 0 },
   ];
