@@ -109,6 +109,7 @@ const Messages = () => {
         }
       });
 
+      const meta: Record<string, RoomMeta> = {};
       for (const room of fetchedRooms) {
         const { data: lastMsgs } = await supabase
           .from("messages")
