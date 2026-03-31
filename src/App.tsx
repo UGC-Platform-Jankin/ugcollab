@@ -7,6 +7,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import Index from "./pages/Index.tsx";
 import Auth from "./pages/Auth.tsx";
 import BrandAuth from "./pages/BrandAuth.tsx";
+import GetStarted from "./pages/GetStarted.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import DashboardLayout from "./components/dashboard/DashboardLayout.tsx";
 import BrandLayout from "./components/brand/BrandLayout.tsx";

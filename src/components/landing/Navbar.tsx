@@ -30,7 +30,7 @@ const Navbar = () => {
             <Link to="/brand/auth">Brand Login</Link>
           </Button>
           <Button size="sm" className="bg-gradient-coral text-primary-foreground hover:opacity-90 transition-opacity" asChild>
-            <Link to="/auth">Get Started</Link>
+            <Link to="/get-started">Get Started</Link>
           </Button>
         </div>
       </div>
