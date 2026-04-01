@@ -2,7 +2,6 @@ import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Instagram } from "lucide-react";
 import creatorsImage from "@/assets/creators-collab.jpg";
 
 interface SpotlightCreator {
@@ -78,7 +77,8 @@ const CreatorSpotlight = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: i * 0.1 }}
-                className="rounded-2xl border border-border bg-gradient-card p-6 text-center"
+                whileHover={{ y: -6, transition: { duration: 0.3 } }}
+                className="rounded-2xl border border-border bg-gradient-card p-6 text-center hover:border-primary/30 hover:shadow-glow transition-all duration-300"
               >
                 <Avatar className="h-20 w-20 mx-auto mb-4 ring-2 ring-primary/20">
                   <AvatarImage src={c.profile?.avatar_url || undefined} />

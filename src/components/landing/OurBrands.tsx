@@ -1,7 +1,6 @@
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import brandsImage from "@/assets/brands-network.jpg";
 
 interface HomepageBrand {
   id: string;
@@ -56,14 +55,15 @@ const OurBrands = () => {
                 whileInView={{ opacity: 1, scale: 1 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.4, delay: i * 0.05 }}
+                whileHover={{ scale: 1.1, y: -4 }}
                 className="group flex flex-col items-center gap-3"
               >
                 {brand.logo_url ? (
-                  <div className="h-20 w-20 rounded-2xl border border-border bg-card overflow-hidden flex items-center justify-center p-2 group-hover:border-primary/40 transition-colors">
+                  <div className="h-20 w-20 rounded-2xl border border-border bg-card overflow-hidden flex items-center justify-center p-2 group-hover:border-primary/40 group-hover:shadow-glow transition-all duration-300">
                     <img src={brand.logo_url} alt={brand.brand_name} className="max-h-full max-w-full object-contain" />
                   </div>
                 ) : (
-                  <div className="h-20 w-20 rounded-2xl border border-border bg-gradient-card flex items-center justify-center group-hover:border-primary/40 transition-colors">
+                  <div className="h-20 w-20 rounded-2xl border border-border bg-gradient-card flex items-center justify-center group-hover:border-primary/40 group-hover:shadow-glow transition-all duration-300">
                     <span className="text-2xl font-heading font-bold text-primary">{brand.brand_name.charAt(0)}</span>
                   </div>
                 )}
@@ -73,13 +73,14 @@ const OurBrands = () => {
           </div>
         ) : (
           <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            whileInView={{ opacity: 1, scale: 1 }}
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="max-w-3xl mx-auto rounded-2xl overflow-hidden border border-border shadow-glow"
+            className="text-center py-12"
           >
-            <img src={brandsImage} alt="Brand partners network" loading="lazy" width={1280} height={512} className="w-full h-auto" />
+            <div className="inline-flex items-center gap-3 rounded-2xl border border-dashed border-border bg-gradient-card px-8 py-6">
+              <p className="text-muted-foreground">Brand partnerships launching soon. Stay tuned!</p>
+            </div>
           </motion.div>
         )}
       </div>

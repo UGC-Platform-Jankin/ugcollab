@@ -9,18 +9,18 @@ const brandFeatures = [
   { icon: Layout, title: "Campaign Management", desc: "Create campaigns with budgets, creator limits, target regions and detailed briefs." },
   { icon: Search, title: "Find Creators", desc: "Browse creators with verified social stats, follower counts and past work." },
   { icon: MessageSquare, title: "Built-in Messaging", desc: "Private DMs and campaign group chats with file sharing, voice messages and read receipts." },
-  { icon: Video, title: "Application Review", desc: "Review creator applications, accept or decline with one click." },
-  { icon: FileCheck, title: "Campaign Controls", desc: "End campaigns, remove creators, and reuse past campaign templates." },
+  { icon: Video, title: "Video Review", desc: "Review creator video submissions, approve or request revisions with feedback." },
+  { icon: FileCheck, title: "Campaign Controls", desc: "End campaigns, remove creators, and manage your content pipeline." },
   { icon: BarChart3, title: "Brand Dashboard", desc: "Overview of active campaigns, creator count, and content pipeline." },
 ];
 
 const creatorFeatures = [
   { icon: Star, title: "Creator Profile", desc: "Showcase your bio, connected socials, follower stats and past brand collaborations." },
   { icon: TrendingUp, title: "Gig Discovery", desc: "Browse active campaigns with brand info, budgets and requirements." },
-  { icon: Upload, title: "Easy Applications", desc: "Apply to campaigns with a cover letter and track your application status." },
+  { icon: Upload, title: "Video Submissions", desc: "Submit videos for review, get feedback, and re-upload after amendments." },
   { icon: Clock, title: "Real-time Chat", desc: "Message brands directly with attachments, voice notes and link sharing." },
   { icon: Shield, title: "Social Connections", desc: "Link your Instagram, TikTok and other platforms to verify your reach." },
-  { icon: Wallet, title: "Track Deliverables", desc: "Monitor your videos delivered and campaign progress in one place." },
+  { icon: Wallet, title: "Posted Videos", desc: "Submit your live video links across multiple platforms after approval." },
 ];
 
 const Features = () => {
@@ -28,8 +28,20 @@ const Features = () => {
   const features = activeTab === "brands" ? brandFeatures : creatorFeatures;
 
   return (
-    <section id="features" className="py-32 relative">
-      <div className="container">
+    <section id="features" className="py-32 relative overflow-hidden">
+      {/* Background elements */}
+      <motion.div
+        animate={{ rotate: 360 }}
+        transition={{ duration: 120, repeat: Infinity, ease: "linear" }}
+        className="absolute -right-64 -top-64 w-[500px] h-[500px] rounded-full border border-primary/5"
+      />
+      <motion.div
+        animate={{ rotate: -360 }}
+        transition={{ duration: 90, repeat: Infinity, ease: "linear" }}
+        className="absolute -left-32 -bottom-32 w-[300px] h-[300px] rounded-full border border-primary/5"
+      />
+
+      <div className="container relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -79,12 +91,16 @@ const Features = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, delay: index * 0.05 }}
-                className="group rounded-2xl border border-border bg-gradient-card p-8 hover:border-primary/30 transition-colors"
+                whileHover={{ y: -5, transition: { duration: 0.2 } }}
+                className="group rounded-2xl border border-border bg-gradient-card p-8 hover:border-primary/30 hover:shadow-glow transition-all duration-300"
               >
-                <div className="mb-5 inline-flex items-center justify-center h-10 w-10 rounded-lg bg-primary/10">
+                <motion.div
+                  whileHover={{ scale: 1.15, rotate: 5 }}
+                  className="mb-5 inline-flex items-center justify-center h-10 w-10 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors"
+                >
                   <feature.icon className="h-5 w-5 text-primary" />
-                </div>
-                <h3 className="text-lg font-heading font-semibold mb-2">{feature.title}</h3>
+                </motion.div>
+                <h3 className="text-lg font-heading font-semibold mb-2 group-hover:text-primary transition-colors">{feature.title}</h3>
                 <p className="text-sm text-muted-foreground leading-relaxed">{feature.desc}</p>
               </motion.div>
             ))}
