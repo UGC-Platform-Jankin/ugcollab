@@ -108,14 +108,12 @@ const CreatorSpotlight = () => {
           </div>
         ) : (
           <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            whileInView={{ opacity: 1, scale: 1 }}
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="max-w-4xl mx-auto rounded-2xl overflow-hidden border border-border shadow-glow"
+            className="text-center py-12"
           >
-            <img src={creatorsImage} alt="UGC creators collaborating" loading="lazy" width={1280} height={720} className="w-full h-auto" />
-            <div className="p-6 text-center bg-gradient-card">
+            <div className="inline-flex items-center gap-3 rounded-2xl border border-dashed border-border bg-gradient-card px-8 py-6">
               <p className="text-muted-foreground">Creator spotlights coming soon. Join now to be featured!</p>
             </div>
           </motion.div>
