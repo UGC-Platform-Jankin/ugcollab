@@ -6,10 +6,6 @@ import { useRef } from "react";
 
 import heroBg from "@/assets/hero-bg.jpg";
 
-const floatingStats = [
-  { label: "Campaign ROI", value: "+340%", delay: 0 },
-  { label: "Active Creators", value: "Growing", delay: 2 },
-];
 
 const Hero = () => {
   const ref = useRef<HTMLElement>(null);
