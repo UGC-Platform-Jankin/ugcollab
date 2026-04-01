@@ -95,7 +95,7 @@ const Hero = () => {
                 The all-in-one platform to launch UGC campaigns, manage creators, review content and handle payments, all in one place.
               </p>
 
-              <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.98 }}>
                   <Button size="lg" className="bg-gradient-coral text-primary-foreground hover:opacity-90 transition-opacity gap-2 text-base px-8 h-12 shadow-glow" asChild>
                     <Link to="/get-started">Start Free <ArrowRight className="h-4 w-4" /></Link>
