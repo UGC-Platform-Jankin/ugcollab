@@ -127,46 +127,6 @@ const Hero = () => {
             </motion.div>
           </motion.div>
 
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
-            className="relative hidden lg:block"
-          >
-            <motion.div
-              whileHover={{ scale: 1.02 }}
-              transition={{ type: "spring", stiffness: 300 }}
-              className="relative rounded-2xl overflow-hidden border border-border shadow-glow"
-            >
-              <img src={heroImage} alt="UGC campaign platform dashboard" className="w-full h-auto" />
-              <div className="absolute inset-0 bg-gradient-to-t from-background/60 to-transparent" />
-            </motion.div>
-
-            {/* Floating stats cards */}
-            <motion.div
-              animate={{ y: [0, -10, 0] }}
-              transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-              className="absolute -bottom-6 -left-6 rounded-xl border border-border bg-card p-4 shadow-glow backdrop-blur-sm"
-            >
-              <div className="flex items-center gap-2">
-                <TrendingUp className="h-4 w-4 text-primary" />
-                <p className="text-xs text-muted-foreground">Campaign ROI</p>
-              </div>
-              <p className="text-2xl font-heading font-bold text-gradient">+340%</p>
-            </motion.div>
-
-            <motion.div
-              animate={{ y: [0, 8, 0] }}
-              transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-              className="absolute -top-4 -right-4 rounded-xl border border-border bg-card p-4 shadow-glow backdrop-blur-sm"
-            >
-              <div className="flex items-center gap-2">
-                <Users className="h-4 w-4 text-primary" />
-                <p className="text-xs text-muted-foreground">Active Creators</p>
-              </div>
-              <p className="text-lg font-heading font-bold text-foreground">Growing Daily</p>
-            </motion.div>
-          </motion.div>
         </div>
       </div>
 
