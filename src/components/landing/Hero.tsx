@@ -58,7 +58,7 @@ const Hero = () => {
       ))}
 
       <div className="container relative z-10">
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
+        <div className="max-w-3xl mx-auto text-center">
           <motion.div style={{ y: textY }}>
             <motion.div
               initial={{ opacity: 0, y: 40 }}
