@@ -1,6 +1,6 @@
 import { motion, useScroll, useTransform } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Play, Sparkles, TrendingUp, Users } from "lucide-react";
+import { ArrowRight, Play, Sparkles, TrendingUp } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useRef } from "react";
 import heroImage from "@/assets/hero-abstract.jpg";
