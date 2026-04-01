@@ -113,7 +113,7 @@ const Hero = () => {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 1 }}
-                className="flex items-center gap-6 pt-4"
+                className="flex items-center justify-center gap-6 pt-4"
               >
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Sparkles className="h-4 w-4 text-primary" />
