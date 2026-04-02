@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { MessageCircle, Send, Loader2, ArrowLeft, Users, Paperclip, Image, Mic, X, FileText, CheckCheck, Check as CheckIcon } from "lucide-react";
+import { MessageCircle, Send, Loader2, ArrowLeft, Users, Paperclip, Image, Mic, X, FileText, CheckCheck, Check as CheckIcon, Download, Play, Pause } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import ChatProfilePanel from "./ChatProfilePanel";
@@ -36,6 +36,71 @@ interface RoomMeta {
   isGroup: boolean;
   unreadCount: number;
 }
+
+// WhatsApp-style voice message player
+const VoiceMessage = ({ url, isMe }: { url: string; isMe: boolean }) => {
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const [playing, setPlaying] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [duration, setDuration] = useState(0);
+
+  const toggle = () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (playing) { audio.pause(); } else { audio.play(); }
+    setPlaying(!playing);
+  };
+
+  const formatDur = (s: number) => {
+    const m = Math.floor(s / 60);
+    const sec = Math.floor(s % 60);
+    return `${m}:${sec.toString().padStart(2, "0")}`;
+  };
+
+  return (
+    <div className={cn(
+      "flex items-center gap-2.5 mt-1 px-3 py-2 rounded-2xl min-w-[200px] max-w-[260px]",
+      isMe ? "bg-primary-foreground/10" : "bg-secondary/80"
+    )}>
+      <audio
+        ref={audioRef}
+        src={url}
+        preload="metadata"
+        onLoadedMetadata={() => setDuration(audioRef.current?.duration || 0)}
+        onTimeUpdate={() => {
+          const a = audioRef.current;
+          if (a && a.duration) setProgress((a.currentTime / a.duration) * 100);
+        }}
+        onEnded={() => { setPlaying(false); setProgress(0); }}
+      />
+      <button
+        onClick={toggle}
+        className={cn(
+          "h-9 w-9 rounded-full flex items-center justify-center shrink-0 transition-colors",
+          isMe ? "bg-primary-foreground/20 hover:bg-primary-foreground/30" : "bg-primary/10 hover:bg-primary/20"
+        )}
+      >
+        {playing ? (
+          <Pause className={cn("h-4 w-4", isMe ? "text-primary-foreground" : "text-primary")} />
+        ) : (
+          <Play className={cn("h-4 w-4 ml-0.5", isMe ? "text-primary-foreground" : "text-primary")} />
+        )}
+      </button>
+      <div className="flex-1 min-w-0">
+        {/* Progress bar */}
+        <div className={cn("h-1.5 rounded-full w-full", isMe ? "bg-primary-foreground/20" : "bg-border")}>
+          <div
+            className={cn("h-full rounded-full transition-all duration-100", isMe ? "bg-primary-foreground/60" : "bg-primary")}
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+        <p className={cn("text-[10px] mt-1", isMe ? "text-primary-foreground/60" : "text-muted-foreground")}>
+          {duration > 0 ? formatDur(playing ? (audioRef.current?.currentTime || 0) : duration) : "0:00"}
+        </p>
+      </div>
+    </div>
+  );
+};
 
 const Messages = () => {
   const { user } = useAuth();
@@ -412,25 +477,40 @@ const Messages = () => {
       );
     }
     if (msg.attachment_type === "voice") {
-      return (
-        <audio controls className="mt-1 max-w-[240px]" preload="metadata">
-          <source src={msg.attachment_url} type="audio/webm" />
-        </audio>
-      );
+      return <VoiceMessage url={msg.attachment_url} isMe={isMe} />;
     }
+    // File attachment - downloadable
+    const fileSize = msg.attachment_name || "File";
+    const ext = fileSize.split(".").pop()?.toUpperCase() || "FILE";
     return (
-      <a
-        href={msg.attachment_url}
-        target="_blank"
-        rel="noopener noreferrer"
-        className={cn(
-          "flex items-center gap-2 mt-1 px-2 py-1.5 rounded-lg text-xs",
-          isMe ? "bg-primary-foreground/10" : "bg-secondary"
-        )}
-      >
-        <FileText className="h-3.5 w-3.5 shrink-0" />
-        <span className="truncate max-w-[160px]">{msg.attachment_name || "File"}</span>
-      </a>
+      <div className={cn(
+        "flex items-center gap-3 mt-1 px-3 py-2.5 rounded-xl text-sm min-w-[200px]",
+        isMe ? "bg-primary-foreground/10" : "bg-secondary/80"
+      )}>
+        <div className={cn(
+          "h-10 w-10 rounded-lg flex items-center justify-center shrink-0",
+          isMe ? "bg-primary-foreground/20" : "bg-primary/10"
+        )}>
+          <FileText className={cn("h-5 w-5", isMe ? "text-primary-foreground" : "text-primary")} />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className={cn("text-xs font-medium truncate", isMe ? "text-primary-foreground" : "text-foreground")}>{msg.attachment_name || "File"}</p>
+          <p className={cn("text-[10px]", isMe ? "text-primary-foreground/60" : "text-muted-foreground")}>{ext}</p>
+        </div>
+        <a
+          href={msg.attachment_url}
+          download={msg.attachment_name || "file"}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={(e) => e.stopPropagation()}
+          className={cn(
+            "h-8 w-8 rounded-full flex items-center justify-center shrink-0 transition-colors",
+            isMe ? "bg-primary-foreground/20 hover:bg-primary-foreground/30 text-primary-foreground" : "bg-primary/10 hover:bg-primary/20 text-primary"
+          )}
+        >
+          <Download className="h-4 w-4" />
+        </a>
+      </div>
     );
   };
 
