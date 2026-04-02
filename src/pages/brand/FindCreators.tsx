@@ -277,7 +277,9 @@ const FindCreators = () => {
         </Card>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((creator) => (
+          {filtered.map((creator) => {
+            const matchPct = creatorMatches[creator.user_id] || 0;
+            return (
             <Card key={creator.user_id} className="border-border/50 hover:border-primary/30 transition-colors">
               <CardContent className="p-4">
                 <div className="flex items-start gap-3 mb-3">
@@ -286,7 +288,14 @@ const FindCreators = () => {
                     <AvatarFallback className="bg-secondary text-lg">{(creator.display_name || "?").charAt(0).toUpperCase()}</AvatarFallback>
                   </Avatar>
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-foreground truncate">{creator.display_name || "Creator"}</p>
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="font-medium text-foreground truncate">{creator.display_name || "Creator"}</p>
+                      {matchPct > 0 && (
+                        <Badge className={`shrink-0 text-[11px] font-bold border ${getMatchColor(matchPct)}`}>
+                          <Sparkles className="h-3 w-3 mr-0.5" />{matchPct}%
+                        </Badge>
+                      )}
+                    </div>
                     {creator.username && <p className="text-xs text-muted-foreground">@{creator.username}</p>}
                     {creator.bio && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{creator.bio}</p>}
                   </div>
