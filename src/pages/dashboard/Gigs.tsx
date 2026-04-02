@@ -43,6 +43,7 @@ const Gigs = () => {
   const [leavingCampaign, setLeavingCampaign] = useState<any>(null);
   const [leavingLoading, setLeavingLoading] = useState(false);
   const [brandProfiles, setBrandProfiles] = useState<Record<string, any>>({});
+  const [activeTab, setActiveTab] = useState<TabFilter>("available");
   const [creatorProfile, setCreatorProfile] = useState<any>(null);
   const [dataReady, setDataReady] = useState(false);
 
