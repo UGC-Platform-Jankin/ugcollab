@@ -116,10 +116,13 @@ const Gigs = () => {
       return;
     }
     setAppliedCampaigns((prev) => new Set([...prev, applyingTo.id]));
-    await supabase.from("notifications" as any).insert({
-      user_id: applyingTo.brand_user_id, type: "application", title: "New Application",
-      body: `A creator applied to "${applyingTo.title}"`, link: "/brand/campaigns",
-    } as any);
+    // Only notify the brand if it's a different user
+    if (applyingTo.brand_user_id !== user.id) {
+      await supabase.from("notifications" as any).insert({
+        user_id: applyingTo.brand_user_id, type: "application", title: "New Application",
+        body: `A creator applied to "${applyingTo.title}"`, link: "/brand/campaigns",
+      } as any);
+    }
     toast({ title: "Application sent!", description: "The brand will review your application." });
     setApplyingTo(null);
     setCoverLetter("");
