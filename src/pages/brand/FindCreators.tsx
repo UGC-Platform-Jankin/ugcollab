@@ -61,6 +61,7 @@ const FindCreators = () => {
   const [viewingCreator, setViewingCreator] = useState<Creator | null>(null);
   const [creatorCollabs, setCreatorCollabs] = useState<any[]>([]);
   const [creatorSocialDetails, setCreatorSocialDetails] = useState<any[]>([]);
+  const [brandCampaignData, setBrandCampaignData] = useState<any[]>([]);
 
   useEffect(() => {
     if (!user) return;
