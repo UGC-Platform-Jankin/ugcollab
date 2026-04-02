@@ -18,9 +18,6 @@ const AdminPanel = () => {
 
   // Brands state
   const [brands, setBrands] = useState<any[]>([]);
-  const [newBrandName, setNewBrandName] = useState("");
-  const [newBrandLogo, setNewBrandLogo] = useState("");
-  const [newBrandWebsite, setNewBrandWebsite] = useState("");
 
   // Spotlight state
   const [spotlights, setSpotlights] = useState<any[]>([]);
