@@ -251,7 +251,7 @@ const Gigs = () => {
                         <p className="text-sm text-muted-foreground mt-0.5">{brand?.business_name || "Brand"}</p>
                       </div>
                       {hasApplied && (
-                        <Badge className="bg-amber-500/10 text-amber-600 dark:text-amber-400 border-0 text-[11px] font-bold uppercase tracking-wide shrink-0">
+                        <Badge className="bg-accent/10 text-accent-foreground border-0 text-[11px] font-bold uppercase tracking-wide shrink-0">
                           Applied
                         </Badge>
                       )}
