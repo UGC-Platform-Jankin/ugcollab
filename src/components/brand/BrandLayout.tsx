@@ -30,6 +30,8 @@ const BrandLayout = ({ children }: { children: React.ReactNode }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [brandProfile, setBrandProfile] = useState<any>(null);
+  const [needsOnboarding, setNeedsOnboarding] = useState(false);
+  const [onboardingChecked, setOnboardingChecked] = useState(false);
   const unread = useUnreadMessages();
   const { theme, toggleTheme } = useTheme();
 
