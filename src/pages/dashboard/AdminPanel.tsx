@@ -243,7 +243,6 @@ const AdminPanel = () => {
                 ))}
               </select>
               <Button onClick={addSpotlight} disabled={!selectedCreator} className="bg-gradient-coral text-primary-foreground gap-2">
-              <Button onClick={addSpotlight} disabled={!selectedCreator} className="bg-gradient-coral text-primary-foreground gap-2">
                 <Plus className="h-4 w-4" /> Add to Spotlight
               </Button>
             </CardContent>
