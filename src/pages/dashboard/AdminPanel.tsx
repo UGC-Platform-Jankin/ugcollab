@@ -90,18 +90,27 @@ const AdminPanel = () => {
     setPendingReviews(enriched);
   };
 
+  // Brand state for selecting from existing brands
+  const [existingBrands, setExistingBrands] = useState<any[]>([]);
+  const [selectedBrandId, setSelectedBrandId] = useState("");
+
+  const fetchExistingBrands = async () => {
+    const { data } = await supabase.from("brand_profiles").select("user_id, business_name, logo_url, website_url");
+    if (data) setExistingBrands(data as any[]);
+  };
+
   // Brand actions
   const addBrand = async () => {
-    if (!newBrandName.trim()) return;
+    if (!selectedBrandId) return;
+    const brand = existingBrands.find(b => b.user_id === selectedBrandId);
+    if (!brand) return;
     await supabase.from("homepage_brands" as any).insert({
-      brand_name: newBrandName,
-      logo_url: newBrandLogo || null,
-      website_url: newBrandWebsite || null,
+      brand_name: brand.business_name,
+      logo_url: brand.logo_url || null,
+      website_url: brand.website_url || null,
       display_order: brands.length,
     } as any);
-    setNewBrandName("");
-    setNewBrandLogo("");
-    setNewBrandWebsite("");
+    setSelectedBrandId("");
     fetchBrands();
     toast({ title: "Brand added" });
   };
