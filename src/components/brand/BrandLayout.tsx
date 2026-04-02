@@ -82,6 +82,7 @@ const BrandLayout = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <SidebarProvider>
+      {needsOnboarding && <BrandOnboarding onComplete={handleOnboardingComplete} />}
       <div className="min-h-screen flex w-full bg-background">
         <Sidebar className="border-r-0">
           <SidebarHeader className="p-5 border-b border-sidebar-border">
