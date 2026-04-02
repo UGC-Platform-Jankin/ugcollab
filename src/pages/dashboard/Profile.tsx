@@ -308,6 +308,41 @@ const Profile = () => {
               <Textarea id="bio" value={bio} onChange={(e) => setBio(e.target.value)} placeholder="Tell brands about yourself..." rows={3} />
             </div>
 
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label className="flex items-center gap-1.5"><User className="h-3.5 w-3.5" /> Gender</Label>
+                <div className="flex flex-wrap gap-2">
+                  {["Male", "Female", "Non-binary", "Prefer not to say"].map(g => (
+                    <button
+                      key={g}
+                      type="button"
+                      onClick={() => setGender(g)}
+                      className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all border ${
+                        gender === g
+                          ? "bg-primary text-primary-foreground border-primary"
+                          : "bg-secondary text-muted-foreground border-border hover:border-primary/50"
+                      }`}
+                    >
+                      {g}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label className="flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5" /> Location</Label>
+                <select
+                  value={country}
+                  onChange={(e) => setCountry(e.target.value)}
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                >
+                  <option value="">Select country</option>
+                  {["Hong Kong", "United Kingdom", "United States", "Australia", "Canada", "Singapore", "Malaysia", "Japan", "South Korea", "Thailand", "Philippines", "Indonesia", "India", "Germany", "France", "Netherlands", "Sweden", "Brazil", "Mexico", "Other"].map(c => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
             <div className="space-y-2">
               <Label className="flex items-center gap-2"><Tag className="h-3.5 w-3.5" /> Content Categories</Label>
               <div className="flex flex-wrap gap-2">
