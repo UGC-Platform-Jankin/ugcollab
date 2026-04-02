@@ -34,6 +34,9 @@ interface Creator {
   username: string | null;
   bio: string | null;
   avatar_url: string | null;
+  content_types: string[] | null;
+  gender: string | null;
+  country: string | null;
   socials: any[];
 }
 
