@@ -160,6 +160,12 @@ const Profile = () => {
 
   const handleRemoveSocial = async (platform: string) => {
     if (!socialIds[platform]) return;
+    // Prevent removing the last social connection
+    const connectedCount = Object.values(socialIds).filter(Boolean).length;
+    if (connectedCount <= 1) {
+      toast({ title: "Can't remove", description: "You must have at least one social linked.", variant: "destructive" });
+      return;
+    }
     const { error } = await supabase.from("social_connections").delete().eq("id", socialIds[platform]);
     if (!error) {
       setSocialForms((prev) => ({ ...prev, [platform]: { ...emptyForm } }));
