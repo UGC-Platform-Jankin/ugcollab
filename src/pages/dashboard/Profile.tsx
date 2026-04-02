@@ -46,6 +46,8 @@ const Profile = () => {
   const [bio, setBio] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
   const [contentTypes, setContentTypes] = useState<string[]>([]);
+  const [gender, setGender] = useState("");
+  const [country, setCountry] = useState("");
 
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
