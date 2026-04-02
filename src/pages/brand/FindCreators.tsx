@@ -86,7 +86,9 @@ const FindCreators = () => {
 
       setCreators(creatorList);
       setFiltered(creatorList);
-      setCampaigns((campaignsRes.data as any) || []);
+      const loadedCampaigns = (campaignsRes.data as any) || [];
+      setCampaigns(loadedCampaigns);
+      setBrandCampaignData(loadedCampaigns);
       setLoading(false);
     };
     load();
