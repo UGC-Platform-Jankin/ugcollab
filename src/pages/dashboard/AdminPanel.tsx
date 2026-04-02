@@ -42,6 +42,7 @@ const AdminPanel = () => {
         fetchSpotlights();
         fetchPendingReviews();
         fetchCreators();
+        fetchExistingBrands();
       }
       setLoading(false);
     };

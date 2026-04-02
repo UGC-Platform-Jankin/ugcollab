@@ -137,7 +137,7 @@ const Gigs = () => {
   });
 
   return (
-    <div className="max-w-4xl">
+    <div>
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-heading font-extrabold text-foreground tracking-tight">Gigs</h1>
