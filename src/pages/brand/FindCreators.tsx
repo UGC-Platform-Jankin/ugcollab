@@ -95,38 +95,6 @@ const FindCreators = () => {
     load();
   }, [user]);
 
-  useEffect(() => {
-    let result = creators;
-    
-    // Search filter
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      result = result.filter((c) =>
-        (c.display_name || "").toLowerCase().includes(q) ||
-        (c.username || "").toLowerCase().includes(q) ||
-        c.socials.some((s) => (s.platform_username || "").toLowerCase().includes(q))
-      );
-    }
-
-    // Platform filter
-    if (platformFilter !== "all") {
-      result = result.filter((c) => c.socials.some((s) => s.platform === platformFilter));
-    }
-
-    // Follower filter
-    const range = followerRanges[followerFilter];
-    if (range && range.min > 0) {
-      result = result.filter((c) => {
-        const total = c.socials.reduce((sum, s) => sum + (s.followers_count || 0), 0);
-        return total >= range.min && total < range.max;
-      });
-    }
-
-    // Sort by AI match
-    result.sort((a, b) => (creatorMatches[b.user_id] || 0) - (creatorMatches[a.user_id] || 0));
-    setFiltered(result);
-  }, [search, creators, platformFilter, followerFilter, creatorMatches]);
-
   const matchItems = creators.map(c => ({
     user_id: c.user_id, display_name: c.display_name, bio: c.bio,
     platforms: c.socials.map(s => s.platform),
@@ -146,6 +114,34 @@ const FindCreators = () => {
     if (pct >= 40) return "bg-orange-500/15 text-orange-600 border-orange-500/30";
     return "bg-muted text-muted-foreground border-border";
   };
+
+  useEffect(() => {
+    let result = creators;
+    
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      result = result.filter((c) =>
+        (c.display_name || "").toLowerCase().includes(q) ||
+        (c.username || "").toLowerCase().includes(q) ||
+        c.socials.some((s) => (s.platform_username || "").toLowerCase().includes(q))
+      );
+    }
+
+    if (platformFilter !== "all") {
+      result = result.filter((c) => c.socials.some((s) => s.platform === platformFilter));
+    }
+
+    const range = followerRanges[followerFilter];
+    if (range && range.min > 0) {
+      result = result.filter((c) => {
+        const total = c.socials.reduce((sum, s) => sum + (s.followers_count || 0), 0);
+        return total >= range.min && total < range.max;
+      });
+    }
+
+    result.sort((a, b) => (creatorMatches[b.user_id] || 0) - (creatorMatches[a.user_id] || 0));
+    setFiltered(result);
+  }, [search, creators, platformFilter, followerFilter, creatorMatches]);
 
   const handleInvite = async () => {
     if (!user || !inviteCreator || !selectedCampaignId) return;
