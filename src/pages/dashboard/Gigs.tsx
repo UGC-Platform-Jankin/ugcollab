@@ -141,6 +141,23 @@ const Gigs = () => {
     setLeavingLoading(false);
   };
 
+  const matchItems = campaigns.map(c => ({
+    id: c.id, title: c.title, description: c.description,
+    platforms: c.platforms, target_regions: c.target_regions, requirements: c.requirements,
+  }));
+
+  const { matches: aiMatches, loading: matchLoading } = useAIMatch(
+    "creator_to_campaigns", creatorProfile, matchItems,
+    dataReady && !!creatorProfile && campaigns.length > 0
+  );
+
+  const getMatchColor = (pct: number) => {
+    if (pct >= 80) return "bg-emerald-500/15 text-emerald-600 border-emerald-500/30";
+    if (pct >= 60) return "bg-amber-500/15 text-amber-600 border-amber-500/30";
+    if (pct >= 40) return "bg-orange-500/15 text-orange-600 border-orange-500/30";
+    return "bg-muted text-muted-foreground border-border";
+  };
+
   const tabs: { key: TabFilter; label: string; count: number }[] = [
     { key: "available", label: "Available", count: campaigns.filter(c => !appliedCampaigns.has(c.id)).length },
     { key: "applied", label: "Applied", count: appliedCampaigns.size },
@@ -151,7 +168,8 @@ const Gigs = () => {
     if (activeTab === "available") return !appliedCampaigns.has(c.id);
     if (activeTab === "applied") return appliedCampaigns.has(c.id) && !activeMemberships.some(m => m.campaign_id === c.id);
     return false;
-  });
+  }).sort((a, b) => (aiMatches[b.id] || 0) - (aiMatches[a.id] || 0));
+
 
   return (
     <div>
