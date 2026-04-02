@@ -7,8 +7,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Briefcase, Clock, DollarSign, MapPin, Send, Loader2, Check, LogOut, Gift, Video, MoreHorizontal } from "lucide-react";
+import { Briefcase, Clock, DollarSign, MapPin, Send, Loader2, Check, LogOut, Gift, Video, MoreHorizontal, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAIMatch } from "@/hooks/useAIMatch";
 
 interface Campaign {
   id: string;
