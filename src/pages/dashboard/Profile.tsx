@@ -126,7 +126,7 @@ const Profile = () => {
     setSaving(true);
     const { error } = await supabase
       .from("profiles")
-      .update({ username, display_name: displayName, bio, avatar_url: avatarUrl.split("?")[0] })
+      .update({ username, display_name: displayName, bio, avatar_url: avatarUrl.split("?")[0], content_types: contentTypes })
       .eq("user_id", user.id);
     if (error) {
       toast({ title: "Error", description: "Failed to update profile", variant: "destructive" });
