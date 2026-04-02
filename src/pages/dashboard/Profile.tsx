@@ -7,7 +7,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User, Lock, Save, Camera, Loader2, Instagram, Facebook, Video, Users, Eye, Trash2, Briefcase, Plus } from "lucide-react";
+import { User, Lock, Save, Camera, Loader2, Instagram, Facebook, Video, Users, Eye, Trash2, Briefcase, Plus, Tag } from "lucide-react";
+
+const CONTENT_TYPES = [
+  "Food & Cooking", "Beauty & Skincare", "Fashion & Style", "Tech & Gadgets",
+  "Fitness & Health", "Travel & Lifestyle", "Gaming", "Education & Tutorials",
+  "Comedy & Entertainment", "Music & Dance", "Pets & Animals", "Home & DIY",
+  "Parenting & Family", "Finance & Business", "Art & Photography", "Sports", "Other",
+];
 import { useToast } from "@/hooks/use-toast";
 
 interface SocialForm {
