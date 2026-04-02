@@ -23,7 +23,6 @@ const AdminPanel = () => {
   const [spotlights, setSpotlights] = useState<any[]>([]);
   const [allCreators, setAllCreators] = useState<any[]>([]);
   const [selectedCreator, setSelectedCreator] = useState("");
-  const [spotlightHeadline, setSpotlightHeadline] = useState("");
 
   // Reviews state
   const [pendingReviews, setPendingReviews] = useState<any[]>([]);
