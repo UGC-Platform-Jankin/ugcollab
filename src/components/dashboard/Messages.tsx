@@ -26,6 +26,7 @@ interface Message {
   attachment_url: string | null;
   attachment_type: string | null;
   attachment_name: string | null;
+  pinned?: boolean;
 }
 
 interface RoomMeta {
