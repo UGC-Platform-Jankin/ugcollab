@@ -1,12 +1,28 @@
 import { useAuth } from "@/contexts/AuthContext";
-import { useNavigate, Link, useLocation } from "react-router-dom";
+import { useNavigate, Link, useLocation, NavLink } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Building2, LogOut, Users, Megaphone, BarChart3, User, MessageCircle, Video, Link2, Sun, Moon } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Building2, LogOut, Users, Megaphone, BarChart3, User, MessageCircle, Video, Link2, Sun, Moon, Sparkles } from "lucide-react";
 import NotificationBell from "@/components/NotificationBell";
 import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 import { useTheme } from "@/contexts/ThemeContext";
+import { cn } from "@/lib/utils";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarHeader,
+  SidebarFooter,
+  SidebarProvider,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
 
 const BrandLayout = ({ children }: { children: React.ReactNode }) => {
   const { user, loading, signOut } = useAuth();
@@ -17,13 +33,13 @@ const BrandLayout = ({ children }: { children: React.ReactNode }) => {
   const { theme, toggleTheme } = useTheme();
 
   const navItems = [
-    { label: "Overview", icon: BarChart3, path: "/brand/dashboard", badge: 0 },
-    { label: "Campaigns", icon: Megaphone, path: "/brand/campaigns", badge: 0 },
-    { label: "Video Review", icon: Video, path: "/brand/video-review", badge: 0 },
-    { label: "Posted Videos", icon: Link2, path: "/brand/posted-videos", badge: 0 },
-    { label: "Messages", icon: MessageCircle, path: "/brand/messages", badge: unread.total },
-    { label: "Find Creators", icon: Users, path: "/brand/creators", badge: 0 },
-    { label: "Profile", icon: User, path: "/brand/profile", badge: 0 },
+    { label: "Overview", icon: BarChart3, path: "/brand/dashboard", count: 0 },
+    { label: "Campaigns", icon: Megaphone, path: "/brand/campaigns", count: 0 },
+    { label: "Video Review", icon: Video, path: "/brand/video-review", count: 0 },
+    { label: "Posted Videos", icon: Link2, path: "/brand/posted-videos", count: 0 },
+    { label: "Messages", icon: MessageCircle, path: "/brand/messages", count: unread.total },
+    { label: "Find Creators", icon: Users, path: "/brand/creators", count: 0 },
+    { label: "Profile", icon: User, path: "/brand/profile", count: 0 },
   ];
 
   useEffect(() => {
@@ -48,76 +64,127 @@ const BrandLayout = ({ children }: { children: React.ReactNode }) => {
   }
 
   return (
-    <div className="min-h-screen bg-background flex">
-      <aside className="w-64 border-r border-border bg-card flex flex-col shrink-0">
-        <div className="p-5 border-b border-border">
-          <Link to="/" className="flex items-center gap-2.5">
-            <div className="h-8 w-8 rounded-lg bg-gradient-coral flex items-center justify-center">
-              <Building2 className="h-4 w-4 text-white" />
+    <SidebarProvider>
+      <div className="min-h-screen flex w-full bg-background">
+        <Sidebar className="border-r-0">
+          <SidebarHeader className="p-5 border-b border-sidebar-border">
+            <Link to="/" className="flex items-center gap-3 group">
+              <div className="relative">
+                <div className="h-11 w-11 rounded-xl bg-gradient-coral flex items-center justify-center shadow-coral">
+                  <Building2 className="h-5 w-5 text-white" />
+                </div>
+                <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-primary flex items-center justify-center">
+                  <Sparkles className="w-2.5 h-2.5 text-primary-foreground" />
+                </div>
+              </div>
+              <div>
+                <span className="text-lg font-heading font-bold text-sidebar-foreground">UGC Zone</span>
+                <p className="text-xs text-sidebar-foreground/50">Brand Portal</p>
+              </div>
+            </Link>
+          </SidebarHeader>
+
+          {/* Brand profile card */}
+          <div className="px-4 py-3 mx-3 mt-4 rounded-xl bg-sidebar-accent border border-sidebar-border">
+            <div className="flex items-center gap-3">
+              <Avatar className="w-10 h-10 rounded-lg">
+                <AvatarImage src={brandProfile?.logo_url || undefined} />
+                <AvatarFallback className="rounded-lg bg-gradient-coral text-white font-bold text-sm">
+                  {(brandProfile?.business_name || "B").charAt(0).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-sm text-sidebar-foreground truncate">
+                  {brandProfile?.business_name || "Brand"}
+                </p>
+                <p className="text-[11px] text-sidebar-foreground/50">Brand Account</p>
+              </div>
             </div>
-            <span className="text-lg font-heading font-bold text-foreground">UGC Zone</span>
-          </Link>
-          <p className="text-[11px] text-muted-foreground mt-1.5 ml-[42px]">Brand Portal</p>
-        </div>
+          </div>
 
-        <nav className="flex-1 p-3 space-y-0.5">
-          {navItems.map((item) => {
-            const isActive = location.pathname === item.path;
-            return (
-              <Link
-                key={item.label}
-                to={item.path}
-                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-150 ${
-                  isActive
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground hover:bg-secondary"
-                }`}
-              >
-                <item.icon className="h-4 w-4 shrink-0" />
-                <span className="flex-1">{item.label}</span>
-                {item.badge > 0 && (
-                  <span className={`h-5 min-w-[20px] rounded-full text-[11px] font-bold flex items-center justify-center px-1.5 ${
-                    isActive ? "bg-white/20 text-primary-foreground" : "bg-primary text-primary-foreground"
-                  }`}>
-                    {item.badge > 99 ? "99+" : item.badge}
-                  </span>
-                )}
-              </Link>
-            );
-          })}
-        </nav>
+          <SidebarContent className="px-3 py-4">
+            <SidebarGroup>
+              <SidebarGroupContent>
+                <SidebarMenu className="space-y-1">
+                  {navItems.map((item) => {
+                    const isActive = location.pathname === item.path;
+                    return (
+                      <SidebarMenuItem key={item.label}>
+                        <SidebarMenuButton asChild>
+                          <NavLink
+                            to={item.path}
+                            className={cn(
+                              "flex items-center gap-2.5 px-3 py-2 rounded-lg transition-all duration-200",
+                              isActive
+                                ? "bg-primary text-primary-foreground shadow-coral font-semibold"
+                                : "text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                            )}
+                          >
+                            <item.icon className="w-4 h-4 shrink-0" />
+                            <span className="flex-1 text-[13px] truncate">{item.label}</span>
+                            {item.count > 0 && (
+                              <Badge className={cn(
+                                "h-5 min-w-[20px] px-1.5 text-[11px] font-bold border-0",
+                                isActive
+                                  ? "bg-primary-foreground/20 text-primary-foreground"
+                                  : "bg-primary text-primary-foreground"
+                              )}>
+                                {item.count > 99 ? "99+" : item.count}
+                              </Badge>
+                            )}
+                          </NavLink>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    );
+                  })}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          </SidebarContent>
 
-        <div className="p-3 border-t border-border space-y-1">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="w-full justify-start gap-3 text-muted-foreground hover:text-foreground text-[13px] h-9"
-            onClick={toggleTheme}
-          >
-            {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-            {theme === "dark" ? "Light Mode" : "Dark Mode"}
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="w-full justify-start gap-3 text-muted-foreground hover:text-foreground text-[13px] h-9"
-            onClick={() => signOut().then(() => navigate("/"))}
-          >
-            <LogOut className="h-4 w-4" />
-            Sign Out
-          </Button>
-        </div>
-      </aside>
+          <SidebarFooter className="p-3 border-t border-sidebar-border space-y-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full justify-start gap-3 text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent text-[13px] h-9 rounded-lg"
+              onClick={toggleTheme}
+            >
+              {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              {theme === "dark" ? "Light Mode" : "Dark Mode"}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full justify-start gap-3 text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent text-[13px] h-9 rounded-lg"
+              onClick={() => signOut().then(() => navigate("/"))}
+            >
+              <LogOut className="h-4 w-4" />
+              Sign Out
+            </Button>
+          </SidebarFooter>
+        </Sidebar>
 
-      <main className="flex-1 overflow-auto">
-        <header className="sticky top-0 z-10 border-b border-border bg-background/80 backdrop-blur-md px-6 py-3 flex items-center justify-end gap-3">
-          <NotificationBell />
-        </header>
-        <div className="p-6">
-          {children}
-        </div>
-      </main>
-    </div>
+        <main className="flex-1 flex flex-col min-w-0">
+          <header className="h-14 border-b border-border bg-card/80 backdrop-blur-sm flex items-center px-3 md:px-6 gap-3 sticky top-0 z-10">
+            <SidebarTrigger className="text-muted-foreground hover:text-foreground" />
+            <div className="flex items-center gap-2.5">
+              <div className="w-7 h-7 rounded-lg bg-gradient-coral flex items-center justify-center shadow-coral">
+                <Sparkles className="w-3.5 h-3.5 text-white" />
+              </div>
+              <h1 className="font-heading font-bold text-base md:text-lg text-foreground truncate">
+                {navItems.find((n) => location.pathname === n.path)?.label || "Brand Portal"}
+              </h1>
+            </div>
+            <div className="ml-auto">
+              <NotificationBell />
+            </div>
+          </header>
+          <div className="flex-1 p-3 md:p-6 overflow-auto bg-mesh">
+            {children}
+          </div>
+        </main>
+      </div>
+    </SidebarProvider>
   );
 };
 
