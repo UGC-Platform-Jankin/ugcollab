@@ -131,4 +131,15 @@
   .shadow-glow {
     box-shadow: var(--shadow-glow);
   }
+
+  .bg-mesh {
+    background-image: 
+      radial-gradient(at 20% 10%, hsl(12, 100%, 64%, 0.06) 0px, transparent 50%),
+      radial-gradient(at 80% 20%, hsl(30, 100%, 60%, 0.05) 0px, transparent 50%),
+      radial-gradient(at 50% 80%, hsl(220, 50%, 50%, 0.04) 0px, transparent 50%);
+  }
+
+  .shadow-coral {
+    box-shadow: 0 4px 24px -4px hsl(12, 100%, 64%, 0.35);
+  }
 }
