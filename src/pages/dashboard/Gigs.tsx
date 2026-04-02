@@ -10,6 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Briefcase, Clock, DollarSign, MapPin, Send, Loader2, Check, LogOut, Gift, Video, MoreHorizontal, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAIMatch } from "@/hooks/useAIMatch";
+import ActiveGigHub from "@/components/dashboard/ActiveGigHub";
 
 interface Campaign {
   id: string;
