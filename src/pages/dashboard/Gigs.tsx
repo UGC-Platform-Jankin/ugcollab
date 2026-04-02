@@ -78,6 +78,20 @@ const Gigs = () => {
           _campaign: campMap[a.campaign_id] || { title: "Campaign", expected_video_count: 0 },
         })));
       }
+      // Load creator profile for AI matching
+      if (user) {
+        const [profRes, socRes] = await Promise.all([
+          supabase.from("profiles").select("*").eq("user_id", user.id).maybeSingle(),
+          supabase.from("social_connections").select("platform, followers_count").eq("user_id", user.id),
+        ]);
+        const socials = socRes.data || [];
+        setCreatorProfile({
+          ...profRes.data,
+          platforms: [...new Set(socials.map((s: any) => s.platform))],
+          followers: socials.reduce((sum: number, s: any) => sum + (s.followers_count || 0), 0),
+        });
+      }
+      setDataReady(true);
       setLoading(false);
     };
     fetchData();
