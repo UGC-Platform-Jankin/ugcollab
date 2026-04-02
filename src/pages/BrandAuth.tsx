@@ -20,13 +20,7 @@ const BrandAuth = () => {
 
   useEffect(() => {
     if (user) {
-      supabase.from("brand_profiles").select("business_name").eq("user_id", user.id).single().then(({ data }) => {
-        if (!data?.business_name) {
-          navigate("/brand/setup");
-        } else {
-          navigate("/brand/dashboard");
-        }
-      });
+      navigate("/brand/dashboard");
     }
   }, [user, navigate]);
 

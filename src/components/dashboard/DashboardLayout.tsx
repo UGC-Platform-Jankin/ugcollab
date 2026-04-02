@@ -3,6 +3,7 @@ import { useNavigate, useLocation, Link, NavLink } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import CreatorOnboarding from "@/components/onboarding/CreatorOnboarding";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Briefcase, User, LogOut, MessageCircle, Shield, Video, Link2, LayoutDashboard, Sun, Moon, Sparkles } from "lucide-react";
 import NotificationBell from "@/components/NotificationBell";
@@ -30,6 +31,8 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
   const [isAdmin, setIsAdmin] = useState(false);
   const [profile, setProfile] = useState<any>(null);
+  const [needsOnboarding, setNeedsOnboarding] = useState(false);
+  const [onboardingChecked, setOnboardingChecked] = useState(false);
   const unread = useUnreadMessages();
   const { theme, toggleTheme } = useTheme();
 
@@ -51,8 +54,26 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
     supabase.from("user_roles" as any).select("role").eq("user_id", user.id).eq("role", "admin").then(({ data }) => {
       if (data && (data as any[]).length > 0) setIsAdmin(true);
     });
-    supabase.from("profiles").select("display_name, username, avatar_url").eq("user_id", user.id).maybeSingle().then(({ data }) => {
-      if (data) setProfile(data);
+    supabase.from("profiles").select("display_name, username, avatar_url, bio, content_types").eq("user_id", user.id).maybeSingle().then(({ data }) => {
+      if (data) {
+        setProfile(data);
+        const hasProfile = data.display_name && data.bio && (data as any).content_types?.length > 0;
+        if (!hasProfile) {
+          // Also check if they have at least one social
+          supabase.from("social_connections").select("id").eq("user_id", user.id).limit(1).then(({ data: socials }) => {
+            setNeedsOnboarding(!hasProfile || !socials?.length);
+            setOnboardingChecked(true);
+          });
+        } else {
+          supabase.from("social_connections").select("id").eq("user_id", user.id).limit(1).then(({ data: socials }) => {
+            setNeedsOnboarding(!socials?.length);
+            setOnboardingChecked(true);
+          });
+        }
+      } else {
+        setNeedsOnboarding(true);
+        setOnboardingChecked(true);
+      }
     });
   }, [user]);
 
@@ -66,8 +87,17 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
 
   if (!user) return null;
 
+  const handleOnboardingComplete = () => {
+    setNeedsOnboarding(false);
+    // Refresh profile
+    supabase.from("profiles").select("display_name, username, avatar_url, bio, content_types").eq("user_id", user.id).maybeSingle().then(({ data }) => {
+      if (data) setProfile(data);
+    });
+  };
+
   return (
     <SidebarProvider>
+      {onboardingChecked && needsOnboarding && <CreatorOnboarding onComplete={handleOnboardingComplete} />}
       <div className="min-h-screen flex w-full bg-background">
         <Sidebar className="border-r-0">
           <SidebarHeader className="p-5 border-b border-sidebar-border">

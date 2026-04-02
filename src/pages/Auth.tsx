@@ -22,13 +22,7 @@ const Auth = () => {
 
   useEffect(() => {
     if (user) {
-      supabase.from("profiles").select("display_name").eq("user_id", user.id).single().then(({ data }) => {
-        if (!data?.display_name) {
-          navigate("/dashboard/setup");
-        } else {
-          navigate("/dashboard");
-        }
-      });
+      navigate("/dashboard");
     }
   }, [user, navigate]);
 

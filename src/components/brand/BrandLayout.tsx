@@ -1,4 +1,5 @@
 import { useAuth } from "@/contexts/AuthContext";
+import BrandOnboarding from "@/components/onboarding/BrandOnboarding";
 import { useNavigate, Link, useLocation, NavLink } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -29,6 +30,8 @@ const BrandLayout = ({ children }: { children: React.ReactNode }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [brandProfile, setBrandProfile] = useState<any>(null);
+  const [needsOnboarding, setNeedsOnboarding] = useState(false);
+  const [onboardingChecked, setOnboardingChecked] = useState(false);
   const unread = useUnreadMessages();
   const { theme, toggleTheme } = useTheme();
 
@@ -49,13 +52,18 @@ const BrandLayout = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     if (user) {
       supabase.from("brand_profiles").select("*").eq("user_id", user.id).single().then(({ data }) => {
-        if (!data) navigate("/brand/setup");
-        else setBrandProfile(data);
+        if (!data) {
+          setNeedsOnboarding(true);
+          setOnboardingChecked(true);
+        } else {
+          setBrandProfile(data);
+          setOnboardingChecked(true);
+        }
       });
     }
-  }, [user, navigate]);
+  }, [user]);
 
-  if (loading || !brandProfile) {
+  if (loading || !onboardingChecked) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="h-8 w-8 rounded-lg bg-gradient-coral animate-pulse" />
@@ -63,8 +71,18 @@ const BrandLayout = ({ children }: { children: React.ReactNode }) => {
     );
   }
 
+  const handleOnboardingComplete = () => {
+    setNeedsOnboarding(false);
+    if (user) {
+      supabase.from("brand_profiles").select("*").eq("user_id", user.id).single().then(({ data }) => {
+        if (data) setBrandProfile(data);
+      });
+    }
+  };
+
   return (
     <SidebarProvider>
+      {needsOnboarding && <BrandOnboarding onComplete={handleOnboardingComplete} />}
       <div className="min-h-screen flex w-full bg-background">
         <Sidebar className="border-r-0">
           <SidebarHeader className="p-5 border-b border-sidebar-border">
