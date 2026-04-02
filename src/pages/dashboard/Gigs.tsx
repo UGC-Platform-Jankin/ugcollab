@@ -264,6 +264,7 @@ const Gigs = () => {
           {filteredCampaigns.map((campaign) => {
             const hasApplied = appliedCampaigns.has(campaign.id);
             const brand = brandProfiles[campaign.brand_user_id];
+            const matchPct = aiMatches[campaign.id] || 0;
             return (
               <div
                 key={campaign.id}
