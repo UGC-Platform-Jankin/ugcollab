@@ -61,8 +61,14 @@ const BrandCampaigns = () => {
 
   const loadApplications = async (campaignId: string) => {
     setLoadingApps(true);
-    const { data } = await supabase.from("campaign_applications").select("*").eq("campaign_id", campaignId).order("created_at", { ascending: false });
-    const apps = (data as any) || [];
+    const [appsRes, resourcesRes, sharesRes] = await Promise.all([
+      supabase.from("campaign_applications").select("*").eq("campaign_id", campaignId).order("created_at", { ascending: false }),
+      supabase.from("campaign_resources" as any).select("*").eq("campaign_id", campaignId).order("display_order"),
+      supabase.from("contact_shares" as any).select("*").eq("campaign_id", campaignId),
+    ]);
+    const apps = (appsRes.data as any) || [];
+    setCampaignResources((resourcesRes.data as any) || []);
+    setContactShares((sharesRes.data as any) || []);
     const creatorIds = [...new Set(apps.map((a: any) => a.creator_user_id))];
     if (creatorIds.length > 0) {
       const [profilesRes, socialsRes] = await Promise.all([
