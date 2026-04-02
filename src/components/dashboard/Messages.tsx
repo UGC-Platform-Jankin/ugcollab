@@ -678,6 +678,50 @@ const Messages = () => {
               const isConsecutive = idx > 0 && messages[idx - 1].sender_id === msg.sender_id && !shouldShowDateSeparator(idx);
               const readStatus = getReadStatus(msg);
 
+              // System messages: join/leave (📥/📤 prefix)
+              const isSystemMsg = msg.content.startsWith("📥 ") || msg.content.startsWith("📤 ");
+
+              // Pinned message
+              if (msg.pinned) {
+                return (
+                  <div key={msg.id}>
+                    {shouldShowDateSeparator(idx) && (
+                      <div className="flex justify-center my-4">
+                        <span className="text-[11px] text-muted-foreground bg-secondary/80 px-3 py-1 rounded-full">
+                          {formatDateSeparator(msg.created_at)}
+                        </span>
+                      </div>
+                    )}
+                    <div className="flex justify-center my-3">
+                      <div className="bg-primary/10 border border-primary/20 rounded-xl px-4 py-2.5 max-w-[90%] text-center">
+                        <span className="text-[10px] font-bold text-primary uppercase tracking-wider">📌 Pinned</span>
+                        <p className="text-xs text-foreground mt-1">{msg.content}</p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
+
+              // System join/leave messages
+              if (isSystemMsg) {
+                return (
+                  <div key={msg.id}>
+                    {shouldShowDateSeparator(idx) && (
+                      <div className="flex justify-center my-4">
+                        <span className="text-[11px] text-muted-foreground bg-secondary/80 px-3 py-1 rounded-full">
+                          {formatDateSeparator(msg.created_at)}
+                        </span>
+                      </div>
+                    )}
+                    <div className="flex justify-center my-2">
+                      <span className="text-[11px] text-muted-foreground bg-secondary/60 px-3 py-1 rounded-full">
+                        {msg.content}
+                      </span>
+                    </div>
+                  </div>
+                );
+              }
+
               return (
                 <div key={msg.id}>
                   {shouldShowDateSeparator(idx) && (
