@@ -9,8 +9,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Megaphone, Users, Check, X, Loader2, Clock, Eye, Instagram, Facebook, Video, Copy, StopCircle } from "lucide-react";
+import { Megaphone, Users, Check, X, Loader2, Clock, Eye, Instagram, Facebook, Video, Copy, StopCircle, Calendar, ExternalLink, MessageSquare, Phone } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import CampaignResources from "@/components/brand/CampaignResources";
 
 const platformIcons: Record<string, any> = { instagram: Instagram, facebook: Facebook, tiktok: Video };
 
