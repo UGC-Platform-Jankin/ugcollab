@@ -3,9 +3,10 @@ import { useNavigate, Link, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Building2, LogOut, Users, Megaphone, BarChart3, User, MessageCircle, Video, Link2 } from "lucide-react";
+import { Building2, LogOut, Users, Megaphone, BarChart3, User, MessageCircle, Video, Link2, Sun, Moon } from "lucide-react";
 import NotificationBell from "@/components/NotificationBell";
 import { useUnreadMessages } from "@/hooks/useUnreadMessages";
+import { useTheme } from "@/contexts/ThemeContext";
 
 const BrandLayout = ({ children }: { children: React.ReactNode }) => {
   const { user, loading, signOut } = useAuth();
@@ -13,6 +14,7 @@ const BrandLayout = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
   const [brandProfile, setBrandProfile] = useState<any>(null);
   const unread = useUnreadMessages();
+  const { theme, toggleTheme } = useTheme();
 
   const navItems = [
     { label: "Overview", icon: BarChart3, path: "/brand/dashboard", badge: 0 },
@@ -47,29 +49,36 @@ const BrandLayout = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <div className="min-h-screen bg-background flex">
-      <aside className="w-64 border-r border-border/50 bg-card/50 backdrop-blur-sm flex flex-col">
-        <div className="p-6 border-b border-border/50">
-          <Link to="/" className="flex items-center gap-2">
-            <Building2 className="h-4 w-4 text-primary" />
+      <aside className="w-64 border-r border-border bg-card flex flex-col shrink-0">
+        <div className="p-5 border-b border-border">
+          <Link to="/" className="flex items-center gap-2.5">
+            <div className="h-8 w-8 rounded-lg bg-gradient-coral flex items-center justify-center">
+              <Building2 className="h-4 w-4 text-white" />
+            </div>
             <span className="text-lg font-heading font-bold text-foreground">UGC Zone</span>
           </Link>
-          <p className="text-xs text-muted-foreground mt-1">Brand Portal</p>
+          <p className="text-[11px] text-muted-foreground mt-1.5 ml-[42px]">Brand Portal</p>
         </div>
-        <nav className="flex-1 p-4 space-y-1">
+
+        <nav className="flex-1 p-3 space-y-0.5">
           {navItems.map((item) => {
             const isActive = location.pathname === item.path;
             return (
               <Link
                 key={item.label}
                 to={item.path}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                  isActive ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-150 ${
+                  isActive
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground hover:bg-secondary"
                 }`}
               >
-                <item.icon className="h-4 w-4" />
+                <item.icon className="h-4 w-4 shrink-0" />
                 <span className="flex-1">{item.label}</span>
                 {item.badge > 0 && (
-                  <span className="h-5 min-w-[20px] rounded-full bg-primary text-[11px] font-bold text-primary-foreground flex items-center justify-center px-1.5">
+                  <span className={`h-5 min-w-[20px] rounded-full text-[11px] font-bold flex items-center justify-center px-1.5 ${
+                    isActive ? "bg-white/20 text-primary-foreground" : "bg-primary text-primary-foreground"
+                  }`}>
                     {item.badge > 99 ? "99+" : item.badge}
                   </span>
                 )}
@@ -77,17 +86,34 @@ const BrandLayout = ({ children }: { children: React.ReactNode }) => {
             );
           })}
         </nav>
-        <div className="p-4 border-t border-border/50">
-          <Button variant="ghost" className="w-full justify-start gap-3 text-muted-foreground hover:text-foreground" onClick={() => signOut().then(() => navigate("/"))}>
-            <LogOut className="h-4 w-4" /> Sign Out
+
+        <div className="p-3 border-t border-border space-y-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full justify-start gap-3 text-muted-foreground hover:text-foreground text-[13px] h-9"
+            onClick={toggleTheme}
+          >
+            {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            {theme === "dark" ? "Light Mode" : "Dark Mode"}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full justify-start gap-3 text-muted-foreground hover:text-foreground text-[13px] h-9"
+            onClick={() => signOut().then(() => navigate("/"))}
+          >
+            <LogOut className="h-4 w-4" />
+            Sign Out
           </Button>
         </div>
       </aside>
+
       <main className="flex-1 overflow-auto">
-        <div className="p-8">
-          <div className="flex justify-end mb-4">
-            <NotificationBell />
-          </div>
+        <header className="sticky top-0 z-10 border-b border-border bg-background/80 backdrop-blur-md px-6 py-3 flex items-center justify-end gap-3">
+          <NotificationBell />
+        </header>
+        <div className="p-6">
           {children}
         </div>
       </main>
