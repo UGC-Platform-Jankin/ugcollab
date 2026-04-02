@@ -66,23 +66,31 @@ const FindCreators = () => {
   useEffect(() => {
     if (!user) return;
     const load = async () => {
-      const [profilesRes, socialsRes, campaignsRes] = await Promise.all([
+      const [profilesRes, socialsRes, campaignsRes, collabsRes] = await Promise.all([
         supabase.from("profiles").select("user_id, display_name, username, bio, avatar_url"),
         supabase.from("social_connections").select("user_id, platform, followers_count, average_views, platform_username"),
-        supabase.from("campaigns").select("id, title").eq("brand_user_id", user.id).eq("status", "active"),
+        supabase.from("campaigns").select("id, title, description, platforms, target_regions").eq("brand_user_id", user.id).eq("status", "active"),
+        supabase.from("past_collaborations").select("user_id, brand_name"),
       ]);
 
       const profiles = profilesRes.data || [];
       const socials = socialsRes.data || [];
+      const collabs = collabsRes.data || [];
       const socialMap: Record<string, any[]> = {};
       socials.forEach((s: any) => {
         if (!socialMap[s.user_id]) socialMap[s.user_id] = [];
         socialMap[s.user_id].push(s);
       });
+      const collabMap: Record<string, string[]> = {};
+      collabs.forEach((c: any) => {
+        if (!collabMap[c.user_id]) collabMap[c.user_id] = [];
+        collabMap[c.user_id].push(c.brand_name);
+      });
 
       const creatorList: Creator[] = profiles.map((p: any) => ({
         ...p,
         socials: socialMap[p.user_id] || [],
+        past_collabs: collabMap[p.user_id] || [],
       }));
 
       setCreators(creatorList);
@@ -99,6 +107,7 @@ const FindCreators = () => {
     user_id: c.user_id, display_name: c.display_name, bio: c.bio,
     platforms: c.socials.map(s => s.platform),
     followers: c.socials.reduce((sum, s) => sum + (s.followers_count || 0), 0),
+    past_collabs: (c as any).past_collabs || [],
   }));
 
   const { matches: creatorMatches, loading: matchLoading } = useAIMatch(

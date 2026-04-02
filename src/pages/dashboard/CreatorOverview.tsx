@@ -19,10 +19,11 @@ const CreatorOverview = () => {
     if (!user) return;
 
     const load = async () => {
-      const [profileRes, socialsRes, campaignsRes] = await Promise.all([
+      const [profileRes, socialsRes, campaignsRes, collabsRes] = await Promise.all([
         supabase.from("profiles").select("*").eq("user_id", user.id).maybeSingle(),
         supabase.from("social_connections").select("platform, followers_count").eq("user_id", user.id),
         supabase.from("campaigns").select("*").eq("status", "active").order("created_at", { ascending: false }),
+        supabase.from("past_collaborations").select("brand_name").eq("user_id", user.id),
       ]);
 
       const p = profileRes.data;
@@ -30,7 +31,7 @@ const CreatorOverview = () => {
       const platforms = [...new Set(socials.map((s: any) => s.platform))];
       const followers = socials.reduce((sum: number, s: any) => sum + (s.followers_count || 0), 0);
 
-      setProfile({ ...p, platforms, followers });
+      setProfile({ ...p, platforms, followers, past_collabs: collabsRes.data || [] });
       setCampaigns((campaignsRes.data as any) || []);
 
       const allCampaigns = (campaignsRes.data as any) || [];
