@@ -334,6 +334,11 @@ const BrandCampaigns = () => {
           requirements: campaign.requirements,
           target_regions: campaign.target_regions,
           max_creators: campaign.max_creators,
+          communication_type: campaign.communication_type,
+          external_comm_link: campaign.external_comm_link,
+          request_contact_types: campaign.request_contact_types,
+          calendly_enabled: campaign.calendly_enabled,
+          calendly_link: campaign.calendly_link,
         },
       },
     });
