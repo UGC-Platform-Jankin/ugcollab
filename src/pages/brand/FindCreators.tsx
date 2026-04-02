@@ -331,7 +331,7 @@ const FindCreators = () => {
                 </div>
               </CardContent>
             </Card>
-          ))}
+          )})}
         </div>
       )}
 
