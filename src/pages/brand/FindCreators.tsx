@@ -122,8 +122,30 @@ const FindCreators = () => {
       });
     }
 
+    // Sort by AI match
+    result.sort((a, b) => (creatorMatches[b.user_id] || 0) - (creatorMatches[a.user_id] || 0));
     setFiltered(result);
-  }, [search, creators, platformFilter, followerFilter]);
+  }, [search, creators, platformFilter, followerFilter, creatorMatches]);
+
+  const matchItems = creators.map(c => ({
+    user_id: c.user_id, display_name: c.display_name, bio: c.bio,
+    platforms: c.socials.map(s => s.platform),
+    followers: c.socials.reduce((sum, s) => sum + (s.followers_count || 0), 0),
+  }));
+
+  const { matches: creatorMatches, loading: matchLoading } = useAIMatch(
+    "campaign_to_creators",
+    { campaigns: brandCampaignData },
+    matchItems,
+    !loading && creators.length > 0 && brandCampaignData.length > 0
+  );
+
+  const getMatchColor = (pct: number) => {
+    if (pct >= 80) return "bg-emerald-500/15 text-emerald-600 border-emerald-500/30";
+    if (pct >= 60) return "bg-amber-500/15 text-amber-600 border-amber-500/30";
+    if (pct >= 40) return "bg-orange-500/15 text-orange-600 border-orange-500/30";
+    return "bg-muted text-muted-foreground border-border";
+  };
 
   const handleInvite = async () => {
     if (!user || !inviteCreator || !selectedCampaignId) return;
