@@ -304,6 +304,27 @@ const Profile = () => {
               <Textarea id="bio" value={bio} onChange={(e) => setBio(e.target.value)} placeholder="Tell brands about yourself..." rows={3} />
             </div>
 
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2"><Tag className="h-3.5 w-3.5" /> Content Categories</Label>
+              <div className="flex flex-wrap gap-2">
+                {CONTENT_TYPES.map(t => (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => setContentTypes(prev => prev.includes(t) ? prev.filter(x => x !== t) : [...prev, t])}
+                    className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all border ${
+                      contentTypes.includes(t)
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-secondary text-muted-foreground border-border hover:border-primary/50"
+                    }`}
+                  >
+                    {t}
+                  </button>
+                ))}
+              </div>
+              {contentTypes.length === 0 && <p className="text-xs text-destructive">Select at least one category</p>}
+            </div>
+
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <span>Email:</span>
               <span className="text-foreground">{user?.email}</span>
