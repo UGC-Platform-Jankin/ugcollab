@@ -135,7 +135,8 @@ const CreateCampaign = () => {
           await supabase.from("messages").insert({
             chat_room_id: groupRoom.id,
             sender_id: user.id,
-            content: `Welcome to the ${insertedCampaign.title} campaign group chat. Accepted creators will be added here automatically so everyone can coordinate together.`,
+            content: `Welcome to the ${insertedCampaign.title} campaign group chat. This space is for the brand and accepted creators to coordinate together.`,
+            pinned: true,
           } as any);
         }
       }

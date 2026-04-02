@@ -256,20 +256,28 @@ const BrandCampaigns = () => {
       .maybeSingle();
 
     if (groupRoom) {
-      // Find their participant row via the creator's own view
-      const { data: participantRows } = await supabase
-        .from("chat_participants")
-        .select("id")
-        .eq("chat_room_id", groupRoom.id)
-        .eq("user_id", app.creator_user_id);
+      // System leave message in group chat
+      await supabase.from("messages").insert({
+        chat_room_id: groupRoom.id,
+        sender_id: user.id,
+        content: `📤 ${app._profile?.display_name || app._profile?.username || "A creator"} left the chat`,
+      } as any);
+    }
 
-      if (participantRows?.length) {
-        // We can't delete via RLS, so use a message to note removal
-        await supabase.from("messages").insert({
-          chat_room_id: groupRoom.id,
-          sender_id: user.id,
-          content: `${app._profile?.display_name || app._profile?.username || "A creator"} has been removed from this campaign.`,
-        } as any);
+    // Send removal details to private DM only
+    const { data: privateRooms } = await supabase.from("chat_rooms").select("id").eq("campaign_id", selectedCampaign.id).eq("type", "private");
+    if (privateRooms?.length) {
+      for (const room of privateRooms) {
+        const { data: participants } = await supabase.from("chat_participants").select("user_id").eq("chat_room_id", room.id);
+        const pIds = (participants || []).map((p: any) => p.user_id);
+        if (pIds.includes(user.id) && pIds.includes(app.creator_user_id)) {
+          await supabase.from("messages").insert({
+            chat_room_id: room.id,
+            sender_id: user.id,
+            content: `You have been removed from the campaign "${selectedCampaign.title}". Videos delivered: ${app.videos_delivered || 0}.`,
+          } as any);
+          break;
+        }
       }
     }
 

@@ -129,10 +129,35 @@ const Gigs = () => {
     if (!leavingCampaign || !user) return;
     setLeavingLoading(true);
     await supabase.from("campaign_applications").update({ status: "left" } as any).eq("id", leavingCampaign.id);
+
+    // System leave message in group chat
     const { data: groupRoom } = await supabase.from("chat_rooms").select("id").eq("campaign_id", leavingCampaign.campaign_id).eq("type", "group").maybeSingle();
     if (groupRoom) {
-      await supabase.from("messages").insert({ chat_room_id: groupRoom.id, sender_id: user.id, content: `I've left this campaign. Thanks for the opportunity!` } as any);
+      // Get display name for system message
+      const { data: profile } = await supabase.from("profiles").select("display_name, username").eq("user_id", user.id).maybeSingle();
+      const name = profile?.display_name || profile?.username || "A creator";
+      await supabase.from("messages").insert({ chat_room_id: groupRoom.id, sender_id: user.id, content: `📤 ${name} left the chat` } as any);
     }
+
+    // Send detailed leave message to private DM with the brand only
+    const brandUserId = leavingCampaign._campaign?.brand_user_id;
+    if (brandUserId) {
+      const { data: privateRooms } = await supabase.from("chat_rooms").select("id").eq("campaign_id", leavingCampaign.campaign_id).eq("type", "private");
+      if (privateRooms?.length) {
+        for (const room of privateRooms) {
+          const { data: participants } = await supabase.from("chat_participants").select("user_id").eq("chat_room_id", room.id);
+          const pIds = (participants || []).map((p: any) => p.user_id);
+          if (pIds.includes(user.id) && pIds.includes(brandUserId)) {
+            await supabase.from("messages").insert({
+              chat_room_id: room.id, sender_id: user.id,
+              content: `I've left the campaign "${leavingCampaign._campaign?.title}". Videos delivered: ${leavingCampaign.videos_delivered || 0}. Thanks for the opportunity!`,
+            } as any);
+            break;
+          }
+        }
+      }
+    }
+
     await supabase.from("notifications" as any).insert({
       user_id: leavingCampaign._campaign?.brand_user_id || "", type: "application_update", title: "Creator Left Campaign",
       body: `A creator has left "${leavingCampaign._campaign?.title || "your campaign"}". Videos delivered: ${leavingCampaign.videos_delivered || 0}`, link: "/brand/campaigns",
