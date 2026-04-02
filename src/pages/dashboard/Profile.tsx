@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User, Lock, Save, Camera, Loader2, Instagram, Facebook, Video, Users, Eye, Trash2, Briefcase, Plus, Tag } from "lucide-react";
+import { User, Lock, Save, Camera, Loader2, Instagram, Facebook, Video, Users, Eye, Trash2, Briefcase, Plus, Tag, MapPin } from "lucide-react";
 
 const CONTENT_TYPES = [
   "Food & Cooking", "Beauty & Skincare", "Fashion & Style", "Tech & Gadgets",
@@ -46,6 +46,8 @@ const Profile = () => {
   const [bio, setBio] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
   const [contentTypes, setContentTypes] = useState<string[]>([]);
+  const [gender, setGender] = useState("");
+  const [country, setCountry] = useState("");
 
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -77,6 +79,8 @@ const Profile = () => {
         setBio(profileRes.data.bio || "");
         setAvatarUrl(profileRes.data.avatar_url || "");
         setContentTypes((profileRes.data as any).content_types || []);
+        setGender((profileRes.data as any).gender || "");
+        setCountry((profileRes.data as any).country || "");
       }
       if (socialsRes.data) {
         const newForms: Record<string, SocialForm> = { instagram: { ...emptyForm }, facebook: { ...emptyForm }, tiktok: { ...emptyForm } };
@@ -126,7 +130,7 @@ const Profile = () => {
     setSaving(true);
     const { error } = await supabase
       .from("profiles")
-      .update({ username, display_name: displayName, bio, avatar_url: avatarUrl.split("?")[0], content_types: contentTypes })
+      .update({ username, display_name: displayName, bio, avatar_url: avatarUrl.split("?")[0], content_types: contentTypes, gender, country } as any)
       .eq("user_id", user.id);
     if (error) {
       toast({ title: "Error", description: "Failed to update profile", variant: "destructive" });
@@ -302,6 +306,41 @@ const Profile = () => {
             <div className="space-y-2">
               <Label htmlFor="bio">Bio</Label>
               <Textarea id="bio" value={bio} onChange={(e) => setBio(e.target.value)} placeholder="Tell brands about yourself..." rows={3} />
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label className="flex items-center gap-1.5"><User className="h-3.5 w-3.5" /> Gender</Label>
+                <div className="flex flex-wrap gap-2">
+                  {["Male", "Female", "Non-binary", "Prefer not to say"].map(g => (
+                    <button
+                      key={g}
+                      type="button"
+                      onClick={() => setGender(g)}
+                      className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all border ${
+                        gender === g
+                          ? "bg-primary text-primary-foreground border-primary"
+                          : "bg-secondary text-muted-foreground border-border hover:border-primary/50"
+                      }`}
+                    >
+                      {g}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label className="flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5" /> Location</Label>
+                <select
+                  value={country}
+                  onChange={(e) => setCountry(e.target.value)}
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                >
+                  <option value="">Select country</option>
+                  {["Hong Kong", "United Kingdom", "United States", "Australia", "Canada", "Singapore", "Malaysia", "Japan", "South Korea", "Thailand", "Philippines", "Indonesia", "India", "Germany", "France", "Netherlands", "Sweden", "Brazil", "Mexico", "Other"].map(c => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             <div className="space-y-2">

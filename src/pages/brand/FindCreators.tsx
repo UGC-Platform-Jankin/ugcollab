@@ -34,6 +34,9 @@ interface Creator {
   username: string | null;
   bio: string | null;
   avatar_url: string | null;
+  content_types: string[] | null;
+  gender: string | null;
+  country: string | null;
   socials: any[];
 }
 
@@ -67,7 +70,7 @@ const FindCreators = () => {
     if (!user) return;
     const load = async () => {
       const [profilesRes, socialsRes, campaignsRes, collabsRes] = await Promise.all([
-        supabase.from("profiles").select("user_id, display_name, username, bio, avatar_url"),
+        supabase.from("profiles").select("user_id, display_name, username, bio, avatar_url, content_types, gender, country"),
         supabase.from("social_connections").select("user_id, platform, followers_count, average_views, platform_username"),
         supabase.from("campaigns").select("id, title, description, platforms, target_regions").eq("brand_user_id", user.id).eq("status", "active"),
         supabase.from("past_collaborations").select("user_id, brand_name"),
@@ -411,7 +414,26 @@ const FindCreators = () => {
                   {viewingCreator.username && (
                     <p className="text-sm text-muted-foreground">@{viewingCreator.username}</p>
                   )}
+                  <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+                    {viewingCreator.gender && <span>{viewingCreator.gender}</span>}
+                    {viewingCreator.country && <span className="flex items-center gap-0.5">📍 {viewingCreator.country}</span>}
+                  </div>
                 </div>
+
+                {/* Content Categories */}
+                {viewingCreator.content_types && viewingCreator.content_types.length > 0 && (
+                  <>
+                    <Separator />
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground mb-2">Content Categories</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {viewingCreator.content_types.map((t: string) => (
+                          <Badge key={t} className="bg-primary/10 text-primary border-0 text-xs">{t}</Badge>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                )}
 
                 {/* Bio */}
                 {viewingCreator.bio && (

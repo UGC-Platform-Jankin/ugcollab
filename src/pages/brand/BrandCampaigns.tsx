@@ -656,13 +656,28 @@ const BrandCampaigns = () => {
                 <div>
                   <p className="text-lg font-heading font-bold text-foreground">{creatorProfile.display_name || creatorProfile.username || "Creator"}</p>
                   {creatorProfile.username && <p className="text-sm text-muted-foreground">@{creatorProfile.username}</p>}
-                  <p className="text-xs text-muted-foreground mt-0.5">Joined {new Date(creatorProfile.created_at).toLocaleDateString()}</p>
+                  <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground flex-wrap">
+                    {creatorProfile.gender && <span>{creatorProfile.gender}</span>}
+                    {creatorProfile.country && <span className="flex items-center gap-0.5">📍 {creatorProfile.country}</span>}
+                    <span>Joined {new Date(creatorProfile.created_at).toLocaleDateString()}</span>
+                  </div>
                 </div>
               </div>
               <div>
                 <p className="text-xs font-medium text-muted-foreground uppercase mb-1">Bio</p>
                 <p className="text-sm text-foreground">{creatorProfile.bio || "No bio provided"}</p>
               </div>
+              {/* Content Categories */}
+              {creatorProfile.content_types?.length > 0 && (
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground uppercase mb-2">Content Categories</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {creatorProfile.content_types.map((t: string) => (
+                      <Badge key={t} className="bg-primary/10 text-primary border-0 text-xs">{t}</Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
               <div>
                 <p className="text-xs font-medium text-muted-foreground uppercase mb-2">Connected Platforms</p>
                 {creatorSocials.length > 0 ? (
@@ -680,6 +695,11 @@ const BrandCampaigns = () => {
                             <p className="text-sm font-medium text-foreground">{(s.followers_count || 0).toLocaleString()}</p>
                             <p className="text-xs text-muted-foreground">followers</p>
                           </div>
+                          {s.profile_url && (
+                            <a href={s.profile_url} target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80 shrink-0" onClick={(e) => e.stopPropagation()}>
+                              <ExternalLink className="h-4 w-4" />
+                            </a>
+                          )}
                         </div>
                       );
                     })}

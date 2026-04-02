@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Camera, Loader2, Instagram, Facebook, Video, ArrowRight, ArrowLeft, Check, Sparkles } from "lucide-react";
+import { Camera, Loader2, Instagram, Facebook, Video, ArrowRight, ArrowLeft, Check, Sparkles, MapPin, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -17,6 +17,15 @@ const CONTENT_TYPES = [
   "Home & Decor", "Pets & Animals", "Finance & Business", "Entertainment",
   "Parenting & Family", "Sports", "Music", "Art & Crafts",
   "Automotive", "Photography", "Comedy & Humor", "Unboxing & Reviews",
+];
+
+const GENDERS = ["Male", "Female", "Non-binary", "Prefer not to say"];
+
+const COUNTRIES = [
+  "Hong Kong", "United Kingdom", "United States", "Australia", "Canada",
+  "Singapore", "Malaysia", "Japan", "South Korea", "Thailand",
+  "Philippines", "Indonesia", "India", "Germany", "France",
+  "Netherlands", "Sweden", "Brazil", "Mexico", "Other",
 ];
 
 const platforms = [
@@ -43,7 +52,7 @@ const CreatorOnboarding = ({ onComplete }: Props) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [step, setStep] = useState(1);
-  const totalSteps = 4;
+  const totalSteps = 5;
   const [saving, setSaving] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
@@ -51,6 +60,8 @@ const CreatorOnboarding = ({ onComplete }: Props) => {
   const [displayName, setDisplayName] = useState("");
   const [username, setUsername] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
+  const [gender, setGender] = useState("");
+  const [country, setCountry] = useState("");
 
   // Step 2: Bio
   const [bio, setBio] = useState("");
@@ -92,13 +103,14 @@ const CreatorOnboarding = ({ onComplete }: Props) => {
 
   const canProceed = () => {
     switch (step) {
-      case 1: return displayName.trim().length > 0;
+      case 1: return displayName.trim().length > 0 && gender.length > 0 && country.length > 0;
       case 2: return bio.trim().length >= 10;
       case 3: return selectedTypes.length > 0;
       case 4: {
         const hasAnySocial = Object.values(socialForms).some(f => f.profile_url.trim().length > 0);
         return hasAnySocial;
       }
+      case 5: return true; // summary step
       default: return false;
     }
   };
@@ -114,7 +126,9 @@ const CreatorOnboarding = ({ onComplete }: Props) => {
       bio: bio.trim(),
       avatar_url: cleanAvatarUrl || null,
       content_types: selectedTypes,
-    }).eq("user_id", user.id);
+      gender,
+      country,
+    } as any).eq("user_id", user.id);
 
     for (const p of platforms) {
       const form = socialForms[p.key];
@@ -143,6 +157,7 @@ const CreatorOnboarding = ({ onComplete }: Props) => {
     { title: "Tell us about yourself", subtitle: "Brands want to know what you're about" },
     { title: "What content do you create?", subtitle: "Select all that apply" },
     { title: "Connect your socials", subtitle: "Link at least one platform" },
+    { title: "You're all set!", subtitle: "Review your profile summary" },
   ];
 
   return (
@@ -226,6 +241,37 @@ const CreatorOnboarding = ({ onComplete }: Props) => {
                       <Input value={username} onChange={(e) => setUsername(e.target.value)} placeholder="@username" />
                     </div>
                   </div>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label className="flex items-center gap-1.5"><User className="h-3.5 w-3.5" /> Gender *</Label>
+                      <div className="flex flex-wrap gap-2">
+                        {GENDERS.map(g => (
+                          <button
+                            key={g}
+                            onClick={() => setGender(g)}
+                            className={`px-3 py-2 rounded-lg text-sm font-medium border transition-all ${
+                              gender === g
+                                ? "bg-primary text-primary-foreground border-primary"
+                                : "bg-secondary/50 text-foreground border-border hover:bg-secondary"
+                            }`}
+                          >
+                            {g}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5" /> Location *</Label>
+                      <select
+                        value={country}
+                        onChange={(e) => setCountry(e.target.value)}
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                      >
+                        <option value="">Select country</option>
+                        {COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}
+                      </select>
+                    </div>
+                  </div>
                 </div>
               )}
 
@@ -297,6 +343,41 @@ const CreatorOnboarding = ({ onComplete }: Props) => {
                       </div>
                     </div>
                   ))}
+                </div>
+              )}
+
+              {step === 5 && (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-4 p-4 rounded-xl bg-secondary/30 border border-border/50">
+                    <Avatar className="h-14 w-14">
+                      <AvatarImage src={avatarUrl} />
+                      <AvatarFallback className="bg-secondary text-lg">{(displayName || "U").charAt(0).toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="font-heading font-bold text-foreground">{displayName}</p>
+                      {username && <p className="text-sm text-muted-foreground">@{username}</p>}
+                      <div className="flex gap-2 mt-1 text-xs text-muted-foreground">
+                        {gender && <span>{gender}</span>}
+                        {country && <span>· {country}</span>}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {selectedTypes.map(t => (
+                      <Badge key={t} className="bg-primary/10 text-primary border-0 text-xs">{t}</Badge>
+                    ))}
+                  </div>
+                  <p className="text-sm text-muted-foreground line-clamp-3">{bio}</p>
+                  <div className="flex gap-3">
+                    {platforms.filter(p => socialForms[p.key].profile_url.trim()).map(p => {
+                      const Icon = p.icon;
+                      return (
+                        <div key={p.key} className={`flex items-center gap-1 text-xs ${p.color}`}>
+                          <Icon className="h-3.5 w-3.5" /> {p.name}
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
             </motion.div>
