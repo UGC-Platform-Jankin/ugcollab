@@ -12,8 +12,9 @@ import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { Users, Search, Send, Loader2, Instagram, Facebook, Video, Filter, X, Eye, Globe, Briefcase } from "lucide-react";
+import { Users, Search, Send, Loader2, Instagram, Facebook, Video, Filter, X, Eye, Globe, Briefcase, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAIMatch } from "@/hooks/useAIMatch";
 
 const platformIcons: Record<string, any> = { instagram: Instagram, facebook: Facebook, tiktok: Video };
 const platformColors: Record<string, string> = { instagram: "text-pink-400", facebook: "text-blue-400", tiktok: "text-cyan-400" };
