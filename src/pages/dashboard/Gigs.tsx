@@ -3,11 +3,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Briefcase, Clock, DollarSign, MapPin, Send, Loader2, Check, LogOut, Gift, Video, MoreHorizontal, Sparkles } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Briefcase, Clock, DollarSign, MapPin, Send, Loader2, Check, LogOut, Gift, Video, MoreHorizontal, Sparkles, Filter, X, ChevronDown, Globe, Tag, Users, ExternalLink, Calendar } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAIMatch } from "@/hooks/useAIMatch";
 import ActiveGigHub from "@/components/dashboard/ActiveGigHub";
@@ -26,9 +28,18 @@ interface Campaign {
   expected_video_count: number;
   requirements: string | null;
   brand_user_id: string;
+  max_creators: number;
+  calendly_enabled: boolean;
+  calendly_link: string | null;
+  communication_type: string;
+  external_comm_link: string | null;
+  request_contact_types: string[] | null;
 }
 
 type TabFilter = "available" | "applied" | "active";
+
+const REGION_OPTIONS = ["Hong Kong", "United Kingdom", "United States", "Worldwide", "Australia", "Canada", "Singapore", "Malaysia", "Japan", "South Korea"];
+const CATEGORY_PLATFORMS = ["instagram", "tiktok", "facebook", "youtube"];
 
 const Gigs = () => {
   const { user } = useAuth();
@@ -47,6 +58,26 @@ const Gigs = () => {
   const [activeTab, setActiveTab] = useState<TabFilter>("available");
   const [creatorProfile, setCreatorProfile] = useState<any>(null);
   const [dataReady, setDataReady] = useState(false);
+  const [applicationCounts, setApplicationCounts] = useState<Record<string, number>>({});
+  const [acceptedCounts, setAcceptedCounts] = useState<Record<string, number>>({});
+
+  // Filters
+  const [showFilters, setShowFilters] = useState(false);
+  const [filterPay, setFilterPay] = useState<"all" | "paid" | "free">("all");
+  const [filterRegion, setFilterRegion] = useState("");
+  const [filterPlatform, setFilterPlatform] = useState("");
+  const [filterMinVideos, setFilterMinVideos] = useState("");
+  const [filterMaxVideos, setFilterMaxVideos] = useState("");
+
+  const hasActiveFilters = filterPay !== "all" || filterRegion || filterPlatform || filterMinVideos || filterMaxVideos;
+
+  const clearFilters = () => {
+    setFilterPay("all");
+    setFilterRegion("");
+    setFilterPlatform("");
+    setFilterMinVideos("");
+    setFilterMaxVideos("");
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -54,15 +85,29 @@ const Gigs = () => {
         supabase.from("campaigns").select("*").eq("status", "active").order("created_at", { ascending: false }),
         user ? supabase.from("campaign_applications").select("*").eq("creator_user_id", user.id) : Promise.resolve({ data: [] }),
       ]);
-      setCampaigns((campaignsRes.data as any) || []);
+      const allCampaigns = (campaignsRes.data as Campaign[]) || [];
+      setCampaigns(allCampaigns);
 
-      const allCampaigns = (campaignsRes.data as any) || [];
-      const brandUserIds = [...new Set(allCampaigns.map((c: any) => c.brand_user_id))] as string[];
+      const brandUserIds = [...new Set(allCampaigns.map(c => c.brand_user_id))] as string[];
       if (brandUserIds.length > 0) {
-        const { data: brands } = await supabase.from("brand_profiles").select("user_id, business_name, logo_url").in("user_id", brandUserIds);
+        const { data: brands } = await supabase.from("brand_profiles").select("user_id, business_name, logo_url, website_url, instagram_url, tiktok_url").in("user_id", brandUserIds);
         const brandMap: Record<string, any> = {};
         (brands || []).forEach((b: any) => { brandMap[b.user_id] = b; });
         setBrandProfiles(brandMap);
+      }
+
+      // Get application counts per campaign
+      const campIds = allCampaigns.map(c => c.id);
+      if (campIds.length > 0) {
+        const { data: allApps } = await supabase.from("campaign_applications").select("campaign_id, status").in("campaign_id", campIds);
+        const appCounts: Record<string, number> = {};
+        const accCounts: Record<string, number> = {};
+        (allApps || []).forEach((a: any) => {
+          appCounts[a.campaign_id] = (appCounts[a.campaign_id] || 0) + 1;
+          if (a.status === "accepted") accCounts[a.campaign_id] = (accCounts[a.campaign_id] || 0) + 1;
+        });
+        setApplicationCounts(appCounts);
+        setAcceptedCounts(accCounts);
       }
 
       const allApps = (applicationsRes.data as any) || [];
@@ -70,16 +115,15 @@ const Gigs = () => {
 
       const accepted = allApps.filter((a: any) => a.status === "accepted");
       if (accepted.length > 0) {
-        const campIds = [...new Set(accepted.map((a: any) => a.campaign_id))] as string[];
-        const { data: campData } = await supabase.from("campaigns").select("id, title, expected_video_count").in("id", campIds);
+        const ids = [...new Set(accepted.map((a: any) => a.campaign_id))] as string[];
+        const { data: campData } = await supabase.from("campaigns").select("id, title, expected_video_count, brand_user_id").in("id", ids);
         const campMap: Record<string, any> = {};
         (campData || []).forEach((c: any) => { campMap[c.id] = c; });
         setActiveMemberships(accepted.map((a: any) => ({
-          ...a,
-          _campaign: campMap[a.campaign_id] || { title: "Campaign", expected_video_count: 0 },
+          ...a, _campaign: campMap[a.campaign_id] || { title: "Campaign", expected_video_count: 0 },
         })));
       }
-      // Load creator profile for AI matching
+
       if (user) {
         const [profRes, socRes, collabRes] = await Promise.all([
           supabase.from("profiles").select("*").eq("user_id", user.id).maybeSingle(),
@@ -116,12 +160,11 @@ const Gigs = () => {
       return;
     }
     setAppliedCampaigns((prev) => new Set([...prev, applyingTo.id]));
-    // Only notify the brand if it's a different user
     if (applyingTo.brand_user_id !== user.id) {
-      await supabase.from("notifications" as any).insert({
+      await supabase.from("notifications").insert({
         user_id: applyingTo.brand_user_id, type: "application", title: "New Application",
         body: `A creator applied to "${applyingTo.title}"`, link: "/brand/campaigns",
-      } as any);
+      });
     }
     toast({ title: "Application sent!", description: "The brand will review your application." });
     setApplyingTo(null);
@@ -133,17 +176,12 @@ const Gigs = () => {
     if (!leavingCampaign || !user) return;
     setLeavingLoading(true);
     await supabase.from("campaign_applications").update({ status: "left" } as any).eq("id", leavingCampaign.id);
-
-    // System leave message in group chat
     const { data: groupRoom } = await supabase.from("chat_rooms").select("id").eq("campaign_id", leavingCampaign.campaign_id).eq("type", "group").maybeSingle();
     if (groupRoom) {
-      // Get display name for system message
       const { data: profile } = await supabase.from("profiles").select("display_name, username").eq("user_id", user.id).maybeSingle();
       const name = profile?.display_name || profile?.username || "A creator";
       await supabase.from("messages").insert({ chat_room_id: groupRoom.id, sender_id: user.id, content: `📤 ${name} left the chat` } as any);
     }
-
-    // Send detailed leave message to private DM with the brand only
     const brandUserId = leavingCampaign._campaign?.brand_user_id;
     if (brandUserId) {
       const { data: privateRooms } = await supabase.from("chat_rooms").select("id").eq("campaign_id", leavingCampaign.campaign_id).eq("type", "private");
@@ -161,11 +199,10 @@ const Gigs = () => {
         }
       }
     }
-
-    await supabase.from("notifications" as any).insert({
+    await supabase.from("notifications").insert({
       user_id: leavingCampaign._campaign?.brand_user_id || "", type: "application_update", title: "Creator Left Campaign",
       body: `A creator has left "${leavingCampaign._campaign?.title || "your campaign"}". Videos delivered: ${leavingCampaign.videos_delivered || 0}`, link: "/brand/campaigns",
-    } as any);
+    });
     setActiveMemberships((prev) => prev.filter((m) => m.id !== leavingCampaign.id));
     toast({ title: "You've left the campaign" });
     setLeavingCampaign(null);
@@ -185,8 +222,8 @@ const Gigs = () => {
   const getMatchColor = (pct: number) => {
     if (pct >= 80) return "bg-emerald-500/15 text-emerald-600 border-emerald-500/30";
     if (pct >= 60) return "bg-amber-500/15 text-amber-600 border-amber-500/30";
-    if (pct >= 40) return "bg-orange-500/15 text-orange-600 border-orange-500/30";
-    return "bg-muted text-muted-foreground border-border";
+    if (pct >= 50) return "bg-orange-500/15 text-orange-600 border-orange-500/30";
+    return "";
   };
 
   const tabs: { key: TabFilter; label: string; count: number }[] = [
@@ -195,47 +232,127 @@ const Gigs = () => {
     { key: "active", label: "Active", count: activeMemberships.length },
   ];
 
-  const filteredCampaigns = campaigns.filter((c) => {
-    if (activeTab === "available") return !appliedCampaigns.has(c.id);
-    if (activeTab === "applied") return appliedCampaigns.has(c.id) && !activeMemberships.some(m => m.campaign_id === c.id);
-    return false;
-  }).sort((a, b) => (aiMatches[b.id] || 0) - (aiMatches[a.id] || 0));
+  const applyFilters = (list: Campaign[]) => {
+    return list.filter(c => {
+      if (filterPay === "paid" && (c.is_free_product || !c.price_per_video)) return false;
+      if (filterPay === "free" && !c.is_free_product) return false;
+      if (filterRegion && !(c.target_regions || []).some(r => r.toLowerCase().includes(filterRegion.toLowerCase()))) return false;
+      if (filterPlatform && !(c.platforms || []).some(p => p.toLowerCase() === filterPlatform.toLowerCase())) return false;
+      if (filterMinVideos && c.expected_video_count < parseInt(filterMinVideos)) return false;
+      if (filterMaxVideos && c.expected_video_count > parseInt(filterMaxVideos)) return false;
+      return true;
+    });
+  };
 
+  const filteredCampaigns = applyFilters(
+    campaigns.filter((c) => {
+      if (activeTab === "available") return !appliedCampaigns.has(c.id);
+      if (activeTab === "applied") return appliedCampaigns.has(c.id) && !activeMemberships.some(m => m.campaign_id === c.id);
+      return false;
+    })
+  ).sort((a, b) => (aiMatches[b.id] || 0) - (aiMatches[a.id] || 0));
+
+  const selectedBrand = selectedCampaign ? brandProfiles[selectedCampaign.brand_user_id] : null;
+  const selectedMatchPct = selectedCampaign ? (aiMatches[selectedCampaign.id] || 0) : 0;
 
   return (
     <div>
-      {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-heading font-extrabold text-foreground tracking-tight">Gigs</h1>
         <p className="text-muted-foreground text-sm mt-0.5">Browse campaigns and find your next collaboration</p>
       </div>
 
-      {/* Tab Bar */}
-      <div className="inline-flex items-center bg-secondary rounded-full p-1 mb-6">
-        {tabs.map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
-            className={`relative px-5 py-2 rounded-full text-sm font-semibold transition-all duration-200 ${
-              activeTab === tab.key
-                ? "bg-primary text-primary-foreground shadow-md"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            {tab.label}
-            {tab.count > 0 && (
-              <span className={`ml-1.5 text-xs ${activeTab === tab.key ? "opacity-80" : "opacity-60"}`}>
-                {tab.count}
-              </span>
-            )}
-          </button>
-        ))}
+      {/* Tab Bar + Filter Toggle */}
+      <div className="flex items-center gap-3 mb-4 flex-wrap">
+        <div className="inline-flex items-center bg-secondary rounded-full p-1">
+          {tabs.map((tab) => (
+            <button key={tab.key} onClick={() => setActiveTab(tab.key)}
+              className={`relative px-5 py-2 rounded-full text-sm font-semibold transition-all duration-200 ${
+                activeTab === tab.key ? "bg-primary text-primary-foreground shadow-md" : "text-muted-foreground hover:text-foreground"
+              }`}>
+              {tab.label}
+              {tab.count > 0 && <span className={`ml-1.5 text-xs ${activeTab === tab.key ? "opacity-80" : "opacity-60"}`}>{tab.count}</span>}
+            </button>
+          ))}
+        </div>
+        {activeTab !== "active" && (
+          <Button variant={hasActiveFilters ? "default" : "outline"} size="sm" className="gap-1.5 rounded-full" onClick={() => setShowFilters(!showFilters)}>
+            <Filter className="h-3.5 w-3.5" /> Filters
+            {hasActiveFilters && <span className="ml-1 h-4 w-4 rounded-full bg-primary-foreground text-primary text-[10px] font-bold flex items-center justify-center">!</span>}
+          </Button>
+        )}
       </div>
+
+      {/* Filter Panel */}
+      {showFilters && activeTab !== "active" && (
+        <Card className="border-border/50 mb-4">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-sm font-semibold text-foreground">Filter Campaigns</p>
+              {hasActiveFilters && (
+                <Button variant="ghost" size="sm" className="text-xs h-7 gap-1 text-muted-foreground" onClick={clearFilters}>
+                  <X className="h-3 w-3" /> Clear all
+                </Button>
+              )}
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+              {/* Pay */}
+              <div className="space-y-1">
+                <label className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium flex items-center gap-1">
+                  <DollarSign className="h-3 w-3" /> Pay
+                </label>
+                <select value={filterPay} onChange={e => setFilterPay(e.target.value as any)}
+                  className="flex h-9 w-full rounded-md border border-input bg-background px-2 py-1 text-sm">
+                  <option value="all">All</option>
+                  <option value="paid">Paid</option>
+                  <option value="free">Free Product</option>
+                </select>
+              </div>
+              {/* Region */}
+              <div className="space-y-1">
+                <label className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium flex items-center gap-1">
+                  <Globe className="h-3 w-3" /> Region
+                </label>
+                <select value={filterRegion} onChange={e => setFilterRegion(e.target.value)}
+                  className="flex h-9 w-full rounded-md border border-input bg-background px-2 py-1 text-sm">
+                  <option value="">Any</option>
+                  {REGION_OPTIONS.map(r => <option key={r} value={r}>{r}</option>)}
+                </select>
+              </div>
+              {/* Platform */}
+              <div className="space-y-1">
+                <label className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium flex items-center gap-1">
+                  <Tag className="h-3 w-3" /> Platform
+                </label>
+                <select value={filterPlatform} onChange={e => setFilterPlatform(e.target.value)}
+                  className="flex h-9 w-full rounded-md border border-input bg-background px-2 py-1 text-sm">
+                  <option value="">Any</option>
+                  {CATEGORY_PLATFORMS.map(p => <option key={p} value={p} className="capitalize">{p.charAt(0).toUpperCase() + p.slice(1)}</option>)}
+                </select>
+              </div>
+              {/* Min Videos */}
+              <div className="space-y-1">
+                <label className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium flex items-center gap-1">
+                  <Video className="h-3 w-3" /> Min Videos
+                </label>
+                <Input type="number" value={filterMinVideos} onChange={e => setFilterMinVideos(e.target.value)} placeholder="0" className="h-9" />
+              </div>
+              {/* Max Videos */}
+              <div className="space-y-1">
+                <label className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium flex items-center gap-1">
+                  <Video className="h-3 w-3" /> Max Videos
+                </label>
+                <Input type="number" value={filterMaxVideos} onChange={e => setFilterMaxVideos(e.target.value)} placeholder="∞" className="h-9" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Content */}
       {loading ? (
         <div className="space-y-4">
-          {[1, 2, 3].map((i) => (
+          {[1, 2, 3].map(i => (
             <div key={i} className="rounded-2xl border border-border bg-card p-5 animate-pulse">
               <div className="flex items-center gap-4">
                 <div className="h-12 w-12 rounded-xl bg-muted" />
@@ -254,7 +371,7 @@ const Gigs = () => {
           <div className="space-y-4">
             <ActiveGigHub />
             <div className="space-y-3">
-              {activeMemberships.map((m) => (
+              {activeMemberships.map(m => (
                 <div key={m.id} className="rounded-2xl border border-border bg-card p-5 transition-all hover:shadow-md">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
@@ -264,21 +381,13 @@ const Gigs = () => {
                       <div>
                         <h3 className="font-heading font-bold text-foreground">{m._campaign.title}</h3>
                         <div className="flex items-center gap-3 mt-1">
-                          <span className="text-xs text-muted-foreground">
-                            {m.videos_delivered || 0}/{m._campaign.expected_video_count} videos
-                          </span>
-                          <Badge className="bg-primary/10 text-primary border-0 text-[11px] font-bold uppercase tracking-wide">
-                            Active
-                          </Badge>
+                          <span className="text-xs text-muted-foreground">{m.videos_delivered || 0}/{m._campaign.expected_video_count} videos</span>
+                          <Badge className="bg-primary/10 text-primary border-0 text-[11px] font-bold uppercase tracking-wide">Active</Badge>
                         </div>
                       </div>
                     </div>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="text-destructive hover:text-destructive hover:bg-destructive/10 gap-1.5 rounded-full"
-                      onClick={() => setLeavingCampaign(m)}
-                    >
+                    <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive hover:bg-destructive/10 gap-1.5 rounded-full"
+                      onClick={() => setLeavingCampaign(m)}>
                       <LogOut className="h-3.5 w-3.5" /> Leave
                     </Button>
                   </div>
@@ -291,20 +400,18 @@ const Gigs = () => {
         <EmptyState
           icon={Briefcase}
           title={activeTab === "available" ? "No gigs available" : "No applications yet"}
-          subtitle={activeTab === "available" ? "New campaigns from brands will appear here" : "Apply to campaigns to see them here"}
+          subtitle={hasActiveFilters ? "Try adjusting your filters" : activeTab === "available" ? "New campaigns from brands will appear here" : "Apply to campaigns to see them here"}
         />
       ) : (
         <div className="space-y-3">
-          {filteredCampaigns.map((campaign) => {
+          {filteredCampaigns.map(campaign => {
             const hasApplied = appliedCampaigns.has(campaign.id);
             const brand = brandProfiles[campaign.brand_user_id];
             const matchPct = aiMatches[campaign.id] || 0;
             return (
-              <div
-                key={campaign.id}
+              <div key={campaign.id}
                 className="group rounded-2xl border border-border bg-card p-5 transition-all hover:shadow-md hover:border-primary/20 cursor-pointer"
-                onClick={() => setSelectedCampaign(campaign)}
-              >
+                onClick={() => setSelectedCampaign(campaign)}>
                 <div className="flex items-start gap-4">
                   <Avatar className="h-12 w-12 rounded-xl shrink-0 ring-2 ring-border">
                     <AvatarImage src={brand?.logo_url || undefined} className="rounded-xl object-cover" />
@@ -315,59 +422,40 @@ const Gigs = () => {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <h3 className="font-heading font-bold text-foreground text-base leading-tight truncate">
-                          {campaign.title}
-                        </h3>
+                        <h3 className="font-heading font-bold text-foreground text-base leading-tight truncate">{campaign.title}</h3>
                         <p className="text-sm text-muted-foreground mt-0.5">{brand?.business_name || "Brand"}</p>
                       </div>
-                      {matchPct > 0 && (
-                        <Badge className={`shrink-0 text-[11px] font-bold border ${getMatchColor(matchPct)}`}>
-                          <Sparkles className="h-3 w-3 mr-0.5" />{matchPct}%
-                        </Badge>
-                      )}
-                      {hasApplied && (
-                        <Badge className="bg-accent/10 text-accent-foreground border-0 text-[11px] font-bold uppercase tracking-wide shrink-0">
-                          Applied
-                        </Badge>
-                      )}
+                      <div className="flex items-center gap-2 shrink-0">
+                        {matchPct >= 50 && (
+                          <Badge className={`text-[11px] font-bold border ${getMatchColor(matchPct)}`}>
+                            <Sparkles className="h-3 w-3 mr-0.5" />{matchPct}%
+                          </Badge>
+                        )}
+                        {hasApplied && (
+                          <Badge className="bg-accent/10 text-accent-foreground border-0 text-[11px] font-bold uppercase tracking-wide">Applied</Badge>
+                        )}
+                      </div>
                     </div>
-
-                    {/* Meta row */}
                     <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground flex-wrap">
                       {campaign.target_regions && campaign.target_regions.length > 0 && (
-                        <span className="flex items-center gap-1">
-                          <MapPin className="h-3.5 w-3.5" />
-                          {campaign.target_regions.join(", ")}
-                        </span>
+                        <span className="flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{campaign.target_regions.join(", ")}</span>
                       )}
                       {campaign.campaign_length_days && (
-                        <span className="flex items-center gap-1">
-                          <Clock className="h-3.5 w-3.5" />
-                          {campaign.campaign_length_days} days
-                        </span>
+                        <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" />{campaign.campaign_length_days} days</span>
                       )}
                       {campaign.expected_video_count > 0 && (
-                        <span className="flex items-center gap-1">
-                          <Video className="h-3.5 w-3.5" />
-                          {campaign.expected_video_count} video{campaign.expected_video_count > 1 ? "s" : ""}
-                        </span>
+                        <span className="flex items-center gap-1"><Video className="h-3.5 w-3.5" />{campaign.expected_video_count} video{campaign.expected_video_count > 1 ? "s" : ""}</span>
                       )}
                     </div>
-
-                    {/* Platforms */}
                     {campaign.platforms && campaign.platforms.length > 0 && (
                       <div className="flex gap-1.5 flex-wrap mt-3">
-                        {campaign.platforms.map((p) => (
-                          <span key={p} className="px-2.5 py-0.5 rounded-full bg-secondary text-[11px] font-medium text-foreground capitalize">
-                            {p}
-                          </span>
+                        {campaign.platforms.map(p => (
+                          <span key={p} className="px-2.5 py-0.5 rounded-full bg-secondary text-[11px] font-medium text-foreground capitalize">{p}</span>
                         ))}
                       </div>
                     )}
                   </div>
                 </div>
-
-                {/* Footer row */}
                 <div className="flex items-center justify-between mt-4 pt-4 border-t border-border/50">
                   <div className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
                     {campaign.is_free_product ? (
@@ -378,24 +466,11 @@ const Gigs = () => {
                   </div>
                   <div className="flex items-center gap-2">
                     {hasApplied ? (
-                      <Button size="sm" variant="outline" disabled className="rounded-full gap-1.5 text-xs">
-                        <Check className="h-3.5 w-3.5" /> Applied
-                      </Button>
+                      <Button size="sm" variant="outline" disabled className="rounded-full gap-1.5 text-xs"><Check className="h-3.5 w-3.5" /> Applied</Button>
                     ) : (
-                      <Button
-                        size="sm"
-                        className="rounded-full gap-1.5 text-xs font-bold uppercase tracking-wide"
-                        onClick={(e) => { e.stopPropagation(); setApplyingTo(campaign); }}
-                      >
-                        Apply
-                      </Button>
+                      <Button size="sm" className="rounded-full gap-1.5 text-xs font-bold uppercase tracking-wide"
+                        onClick={(e) => { e.stopPropagation(); setApplyingTo(campaign); }}>Apply</Button>
                     )}
-                    <button
-                      className="h-8 w-8 rounded-full flex items-center justify-center text-muted-foreground hover:bg-secondary transition-colors"
-                      onClick={(e) => { e.stopPropagation(); setSelectedCampaign(campaign); }}
-                    >
-                      <MoreHorizontal className="h-4 w-4" />
-                    </button>
                   </div>
                 </div>
               </div>
@@ -404,64 +479,149 @@ const Gigs = () => {
         </div>
       )}
 
-      {/* Campaign Detail Dialog */}
+      {/* Campaign Detail Dialog - Redesigned */}
       <Dialog open={!!selectedCampaign} onOpenChange={(open) => !open && setSelectedCampaign(null)}>
-        <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto rounded-2xl">
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto rounded-2xl p-0">
           {selectedCampaign && (
-            <>
-              <DialogHeader>
-                <div className="flex items-center gap-3 mb-2">
-                  <Avatar className="h-12 w-12 rounded-xl">
-                    <AvatarImage src={brandProfiles[selectedCampaign.brand_user_id]?.logo_url || undefined} className="rounded-xl" />
-                    <AvatarFallback className="rounded-xl bg-secondary font-bold">
-                      {(brandProfiles[selectedCampaign.brand_user_id]?.business_name || "B").charAt(0)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <DialogTitle className="text-lg font-heading font-bold">{selectedCampaign.title}</DialogTitle>
-                    <p className="text-sm text-muted-foreground">{brandProfiles[selectedCampaign.brand_user_id]?.business_name}</p>
+            <div>
+              {/* Match Banner */}
+              {selectedMatchPct >= 50 && (
+                <div className="bg-primary/10 border-b border-primary/20 px-6 py-3 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+                    <span className="text-sm font-semibold text-primary">
+                      <Sparkles className="h-3.5 w-3.5 inline mr-1" />
+                      You are a {selectedMatchPct}% fit
+                    </span>
                   </div>
-                </div>
-                {selectedCampaign.platforms && selectedCampaign.platforms.length > 0 && (
-                  <div className="flex gap-1.5 flex-wrap">
-                    {selectedCampaign.platforms.map((p) => (
-                      <span key={p} className="px-2.5 py-0.5 rounded-full bg-secondary text-[11px] font-medium text-foreground capitalize">{p}</span>
-                    ))}
-                  </div>
-                )}
-              </DialogHeader>
-              <div className="space-y-4 mt-2">
-                <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">{selectedCampaign.description}</p>
-                <div className="grid grid-cols-2 gap-2">
-                  {[
-                    { label: "Compensation", value: selectedCampaign.is_free_product ? "Free Product" : `HK$${selectedCampaign.price_per_video}/video` },
-                    { label: "Videos Expected", value: String(selectedCampaign.expected_video_count) },
-                    ...(selectedCampaign.campaign_length_days ? [{ label: "Duration", value: `${selectedCampaign.campaign_length_days} days` }] : []),
-                    ...(selectedCampaign.target_regions ? [{ label: "Regions", value: selectedCampaign.target_regions.join(", ") }] : []),
-                  ].map((item) => (
-                    <div key={item.label} className="p-3 rounded-xl bg-secondary/50">
-                      <p className="text-muted-foreground text-[11px] font-medium uppercase tracking-wide">{item.label}</p>
-                      <p className="font-semibold text-foreground text-sm mt-0.5">{item.value}</p>
-                    </div>
-                  ))}
-                </div>
-                {selectedCampaign.requirements && (
-                  <div className="p-3 rounded-xl bg-secondary/50">
-                    <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground mb-1">Requirements</p>
-                    <p className="text-sm text-foreground leading-relaxed">{selectedCampaign.requirements}</p>
-                  </div>
-                )}
-                <div className="pt-2">
-                  {appliedCampaigns.has(selectedCampaign.id) ? (
-                    <Button disabled variant="outline" className="w-full gap-1.5 rounded-full"><Check className="h-4 w-4" /> Already Applied</Button>
-                  ) : (
-                    <Button className="w-full gap-1.5 rounded-full font-bold" onClick={() => { setApplyingTo(selectedCampaign); setSelectedCampaign(null); }}>
-                      <Send className="h-4 w-4" /> Apply Now
+                  {!appliedCampaigns.has(selectedCampaign.id) && (
+                    <Button size="sm" className="rounded-full font-bold" onClick={() => { setApplyingTo(selectedCampaign); setSelectedCampaign(null); }}>
+                      Apply Now
                     </Button>
                   )}
                 </div>
+              )}
+
+              {/* Brand Header */}
+              <div className="p-6 border-b border-border/50">
+                <div className="flex items-start gap-4">
+                  <Avatar className="h-14 w-14 rounded-xl ring-2 ring-border">
+                    <AvatarImage src={selectedBrand?.logo_url || undefined} className="rounded-xl" />
+                    <AvatarFallback className="rounded-xl bg-secondary text-lg font-bold">
+                      {(selectedBrand?.business_name || "B").charAt(0)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1">
+                    <h2 className="text-xl font-heading font-bold text-foreground">{selectedCampaign.title}</h2>
+                    <p className="text-sm text-muted-foreground">{selectedBrand?.business_name}</p>
+                    <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
+                      {selectedBrand?.website_url && (
+                        <a href={selectedBrand.website_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-primary hover:underline">
+                          <Globe className="h-3 w-3" /> Website
+                        </a>
+                      )}
+                      {selectedBrand?.instagram_url && (
+                        <a href={selectedBrand.instagram_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-primary hover:underline">
+                          Instagram
+                        </a>
+                      )}
+                      {selectedBrand?.tiktok_url && (
+                        <a href={selectedBrand.tiktok_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-primary hover:underline">
+                          TikTok
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground">
+                  <span className="flex items-center gap-1"><Users className="h-3.5 w-3.5" /> {applicationCounts[selectedCampaign.id] || 0} creators applied</span>
+                  {(acceptedCounts[selectedCampaign.id] || 0) > 0 && (
+                    <span className="text-primary font-medium">💚 Brand connected with {acceptedCounts[selectedCampaign.id]} creators</span>
+                  )}
+                </div>
               </div>
-            </>
+
+              {/* About */}
+              {selectedCampaign.description && (
+                <div className="p-6 border-b border-border/50">
+                  <h3 className="font-heading font-bold text-foreground mb-2">About this campaign</h3>
+                  <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">{selectedCampaign.description}</p>
+                </div>
+              )}
+
+              {/* Budget */}
+              <div className="p-6 border-b border-border/50">
+                <h3 className="font-heading font-bold text-foreground mb-2">Budget</h3>
+                {selectedCampaign.is_free_product ? (
+                  <div className="flex items-center gap-2">
+                    <Gift className="h-5 w-5 text-primary" />
+                    <span className="text-lg font-bold text-foreground">Free Product</span>
+                  </div>
+                ) : (
+                  <div>
+                    <span className="text-lg font-bold text-foreground">HK${selectedCampaign.price_per_video}</span>
+                    <span className="text-sm text-muted-foreground ml-1">per video</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Deliverables */}
+              <div className="p-6 border-b border-border/50">
+                <h3 className="font-heading font-bold text-foreground mb-2">Deliverables</h3>
+                <p className="text-foreground"><span className="text-lg font-bold">{selectedCampaign.expected_video_count}</span> <span className="text-sm text-muted-foreground">video{selectedCampaign.expected_video_count > 1 ? "s" : ""}</span></p>
+                {selectedCampaign.campaign_length_days && (
+                  <p className="text-sm text-muted-foreground mt-1 flex items-center gap-1"><Clock className="h-3.5 w-3.5" /> {selectedCampaign.campaign_length_days} day campaign</p>
+                )}
+                {selectedCampaign.platforms && selectedCampaign.platforms.length > 0 && (
+                  <div className="mt-3">
+                    <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider mb-1.5">Platforms</p>
+                    <div className="flex gap-2">
+                      {selectedCampaign.platforms.map(p => (
+                        <Badge key={p} variant="secondary" className="capitalize">{p}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Requirements */}
+              {selectedCampaign.requirements && (
+                <div className="p-6 border-b border-border/50">
+                  <h3 className="font-heading font-bold text-foreground mb-2">Requirements</h3>
+                  <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">{selectedCampaign.requirements}</p>
+                </div>
+              )}
+
+              {/* Looking for N creators */}
+              <div className="p-6 border-b border-border/50">
+                <h3 className="font-heading font-bold text-foreground mb-2">Looking for {selectedCampaign.max_creators} creator{selectedCampaign.max_creators > 1 ? "s" : ""}</h3>
+                {selectedCampaign.target_regions && selectedCampaign.target_regions.length > 0 && (
+                  <div className="mt-2">
+                    <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider mb-1.5">Location</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {selectedCampaign.target_regions.map(r => <Badge key={r} variant="outline" className="text-xs">{r}</Badge>)}
+                    </div>
+                  </div>
+                )}
+                {selectedCampaign.calendly_enabled && selectedCampaign.calendly_link && (
+                  <div className="mt-3 flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-primary" />
+                    <span className="text-sm text-muted-foreground">Scheduling call available via Calendly</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Apply CTA */}
+              <div className="p-6">
+                {appliedCampaigns.has(selectedCampaign.id) ? (
+                  <Button disabled variant="outline" className="w-full gap-1.5 rounded-full"><Check className="h-4 w-4" /> Already Applied</Button>
+                ) : (
+                  <Button className="w-full gap-1.5 rounded-full font-bold" onClick={() => { setApplyingTo(selectedCampaign); setSelectedCampaign(null); }}>
+                    <Send className="h-4 w-4" /> Apply Now
+                  </Button>
+                )}
+              </div>
+            </div>
           )}
         </DialogContent>
       </Dialog>
@@ -477,9 +637,7 @@ const Gigs = () => {
             <div>
               <Textarea
                 placeholder="Tell the brand why you're the perfect creator for this campaign. Share your experience, content style, audience match, etc."
-                value={coverLetter}
-                onChange={(e) => setCoverLetter(e.target.value)}
-                className="min-h-[200px] rounded-xl"
+                value={coverLetter} onChange={(e) => setCoverLetter(e.target.value)} className="min-h-[200px] rounded-xl"
               />
               <p className={`text-xs mt-1.5 ${coverLetter.length >= 300 ? "text-muted-foreground" : "text-destructive"}`}>
                 {coverLetter.length}/300 characters minimum
@@ -498,15 +656,9 @@ const Gigs = () => {
           <AlertDialogHeader>
             <AlertDialogTitle className="font-heading font-bold">Leave this campaign?</AlertDialogTitle>
             <AlertDialogDescription className="space-y-2">
-              <span className="block">
-                You are about to leave <strong>"{leavingCampaign?._campaign?.title}"</strong>.
-              </span>
-              <span className="block font-medium text-foreground">
-                Videos delivered so far: {leavingCampaign?.videos_delivered || 0} / {leavingCampaign?._campaign?.expected_video_count || 0}
-              </span>
-              <span className="block text-sm">
-                You'll be removed from the group chat but can still message the brand privately. This action cannot be undone.
-              </span>
+              <span className="block">You are about to leave <strong>"{leavingCampaign?._campaign?.title}"</strong>.</span>
+              <span className="block font-medium text-foreground">Videos delivered so far: {leavingCampaign?.videos_delivered || 0} / {leavingCampaign?._campaign?.expected_video_count || 0}</span>
+              <span className="block text-sm">You'll be removed from the group chat but can still message the brand privately. This action cannot be undone.</span>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -526,9 +678,7 @@ const Gigs = () => {
                   <AlertDialogCancel className="rounded-full">Go back</AlertDialogCancel>
                   <AlertDialogAction
                     className="bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-full"
-                    onClick={handleLeaveCampaign}
-                    disabled={leavingLoading}
-                  >
+                    onClick={handleLeaveCampaign} disabled={leavingLoading}>
                     {leavingLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Leave permanently"}
                   </AlertDialogAction>
                 </AlertDialogFooter>
