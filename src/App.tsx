@@ -42,6 +42,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <ThemeApplier />
           <AuthProvider>
             <Routes>
               <Route path="/" element={<Index />} />
