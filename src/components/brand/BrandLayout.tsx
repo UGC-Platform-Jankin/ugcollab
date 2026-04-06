@@ -26,12 +26,14 @@ const BrandLayout = ({ children }: { children: React.ReactNode }) => {
   const [onboardingChecked, setOnboardingChecked] = useState(false);
   const [campaigns, setCampaigns] = useState<any[]>([]);
   const [expandedCampaigns, setExpandedCampaigns] = useState<Set<string>>(new Set());
+  const [campaignNotifs, setCampaignNotifs] = useState(0);
+  const [perCampaignNotifs, setPerCampaignNotifs] = useState<Record<string, number>>({});
   const unread = useUnreadMessages();
   const { theme, toggleTheme } = useTheme();
 
   const navItems = [
     { label: "Overview", icon: BarChart3, path: "/brand/dashboard", count: 0 },
-    { label: "Campaigns", icon: Megaphone, path: "/brand/campaigns", count: 0 },
+    { label: "Campaigns", icon: Megaphone, path: "/brand/campaigns", count: campaignNotifs },
     { label: "Messages", icon: MessageCircle, path: "/brand/messages", count: unread.total },
     { label: "Find Creators", icon: Users, path: "/brand/creators", count: 0 },
     { label: "Profile", icon: User, path: "/brand/profile", count: 0 },
@@ -48,12 +50,27 @@ const BrandLayout = ({ children }: { children: React.ReactNode }) => {
         setOnboardingChecked(true);
       });
 
-      // Load campaigns for sidebar
       supabase.from("campaigns").select("id, title, status").eq("brand_user_id", user.id).order("created_at", { ascending: false }).then(({ data }) => {
         setCampaigns(data || []);
-        // Auto-expand if currently viewing a campaign
         const match = location.pathname.match(/\/brand\/campaigns\/([^/]+)/);
         if (match && match[1] !== "new") setExpandedCampaigns(new Set([match[1]]));
+      });
+
+      // Load unread notifications for badge counts
+      supabase.from("notifications").select("id, type, link, read").eq("user_id", user.id).eq("read", false).then(({ data: notifs }) => {
+        if (!notifs) return;
+        // Campaign-level notifs: new applications, video submissions
+        const campTypes = ["application", "video_submission", "video_resubmission"];
+        setCampaignNotifs(notifs.filter((n: any) => campTypes.includes(n.type)).length);
+        // Per-campaign notifs
+        const perCamp: Record<string, number> = {};
+        notifs.forEach((n: any) => {
+          if (n.link) {
+            const m = n.link.match(/\/brand\/campaigns\/([^/]+)/);
+            if (m) perCamp[m[1]] = (perCamp[m[1]] || 0) + 1;
+          }
+        });
+        setPerCampaignNotifs(perCamp);
       });
     }
   }, [user]);
@@ -80,6 +97,13 @@ const BrandLayout = ({ children }: { children: React.ReactNode }) => {
     { label: "Settings", icon: Settings, suffix: "/settings" },
   ];
 
+  // Find the current nav icon for header
+  const currentNavItem = (() => {
+    const campMatch = location.pathname.match(/\/brand\/campaigns\/([^/]+)/);
+    if (campMatch) return null;
+    return navItems.find(n => location.pathname === n.path) || navItems[0];
+  })();
+
   const headerTitle = (() => {
     const campMatch = location.pathname.match(/\/brand\/campaigns\/([^/]+)/);
     if (campMatch && campMatch[1] !== "new") {
@@ -87,7 +111,7 @@ const BrandLayout = ({ children }: { children: React.ReactNode }) => {
       return camp?.title || "Campaign";
     }
     if (location.pathname === "/brand/campaigns/new") return "New Campaign";
-    return navItems.find(n => location.pathname === n.path)?.label || "Brand Portal";
+    return currentNavItem?.label || "Brand Portal";
   })();
 
   const activeCampaigns = campaigns.filter(c => c.status === "active");
@@ -168,6 +192,7 @@ const BrandLayout = ({ children }: { children: React.ReactNode }) => {
                       {activeCampaigns.map(camp => {
                         const isExpanded = expandedCampaigns.has(camp.id);
                         const isCampActive = location.pathname.startsWith(`/brand/campaigns/${camp.id}`);
+                        const campCount = perCampaignNotifs[camp.id] || 0;
                         return (
                           <div key={camp.id}>
                             <SidebarMenuItem>
@@ -180,6 +205,11 @@ const BrandLayout = ({ children }: { children: React.ReactNode }) => {
                               >
                                 <Megaphone className="w-4 h-4 shrink-0" />
                                 <span className="flex-1 text-[13px] truncate">{camp.title}</span>
+                                {campCount > 0 && (
+                                  <Badge className="h-5 min-w-[20px] px-1.5 text-[11px] font-bold border-0 bg-primary text-primary-foreground">
+                                    {campCount}
+                                  </Badge>
+                                )}
                                 {isExpanded ? <ChevronDown className="w-3.5 h-3.5 shrink-0" /> : <ChevronRight className="w-3.5 h-3.5 shrink-0" />}
                               </button>
                             </SidebarMenuItem>
@@ -233,9 +263,15 @@ const BrandLayout = ({ children }: { children: React.ReactNode }) => {
           <header className="h-14 border-b border-border bg-card/80 backdrop-blur-sm flex items-center px-3 md:px-6 gap-3 sticky top-0 z-10">
             <SidebarTrigger className="text-muted-foreground hover:text-foreground" />
             <div className="flex items-center gap-2.5">
-              <div className="w-7 h-7 rounded-lg bg-gradient-coral flex items-center justify-center shadow-coral">
-                <Sparkles className="w-3.5 h-3.5 text-white" />
-              </div>
+              {currentNavItem ? (
+                <div className="w-7 h-7 rounded-lg bg-secondary flex items-center justify-center">
+                  <currentNavItem.icon className="w-3.5 h-3.5 text-foreground" />
+                </div>
+              ) : (
+                <div className="w-7 h-7 rounded-lg bg-secondary flex items-center justify-center">
+                  <Megaphone className="w-3.5 h-3.5 text-foreground" />
+                </div>
+              )}
               <h1 className="font-heading font-bold text-base md:text-lg text-foreground truncate">{headerTitle}</h1>
             </div>
             <div className="ml-auto"><NotificationBell /></div>

@@ -125,20 +125,19 @@ const CreatorOverview = () => {
       </div>
 
       {/* Quick stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-3 gap-3">
         {[
-          { label: "Active Gigs", value: activeGigs.length, icon: Play, color: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-500/10" },
+          { label: "Active Gigs", value: activeGigs.length, icon: Briefcase, color: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-500/10" },
           { label: "Pending Apps", value: appliedGigs.length, icon: Clock, color: "text-amber-600 dark:text-amber-400", bg: "bg-amber-50 dark:bg-amber-500/10" },
-          { label: "Videos Sent", value: totalVideos, icon: Video, color: "text-blue-600 dark:text-blue-400", bg: "bg-blue-50 dark:bg-blue-500/10" },
           { label: "Accepted", value: acceptedVideos, icon: CheckCircle, color: "text-primary", bg: "bg-primary/5" },
         ].map((stat) => (
           <Card key={stat.label} className="border-border shadow-sm hover:shadow-md transition-shadow">
-            <CardContent className="p-4">
-              <div className={`h-9 w-9 rounded-xl ${stat.bg} flex items-center justify-center mb-3`}>
-                <stat.icon className={`h-4.5 w-4.5 ${stat.color}`} />
+            <CardContent className="p-3">
+              <div className={`h-7 w-7 rounded-lg ${stat.bg} flex items-center justify-center mb-2`}>
+                <stat.icon className={`h-3.5 w-3.5 ${stat.color}`} />
               </div>
-              <p className="text-2xl font-heading font-bold text-foreground">{stat.value}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">{stat.label}</p>
+              <p className="text-xl font-heading font-bold text-foreground">{stat.value}</p>
+              <p className="text-[11px] text-muted-foreground">{stat.label}</p>
             </CardContent>
           </Card>
         ))}

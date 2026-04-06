@@ -27,12 +27,14 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const [onboardingChecked, setOnboardingChecked] = useState(false);
   const [activeGigs, setActiveGigs] = useState<any[]>([]);
   const [expandedGigs, setExpandedGigs] = useState<Set<string>>(new Set());
+  const [gigNotifs, setGigNotifs] = useState(0); // unread gig-related notifs
+  const [activeGigNotifs, setActiveGigNotifs] = useState<Record<string, number>>({}); // per-gig notifs
   const unread = useUnreadMessages();
   const { theme, toggleTheme } = useTheme();
 
   const navItems = [
     { label: "Dashboard", icon: LayoutDashboard, path: "/dashboard", count: 0 },
-    { label: "Gigs", icon: Briefcase, path: "/dashboard/gigs", count: 0 },
+    { label: "Gigs", icon: Briefcase, path: "/dashboard/gigs", count: gigNotifs },
     { label: "Messages", icon: MessageCircle, path: "/dashboard/messages", count: unread.total },
     { label: "Profile", icon: User, path: "/dashboard/profile", count: 0 },
   ];
@@ -74,6 +76,24 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
       const match = location.pathname.match(/\/dashboard\/gig\/([^/]+)/);
       if (match) setExpandedGigs(new Set([match[1]]));
     });
+
+    // Load unread notifications for badge counts
+    supabase.from("notifications").select("id, type, link, read").eq("user_id", user.id).eq("read", false).then(({ data: notifs }) => {
+      if (!notifs) return;
+      // Gigs tab: application-related notifs
+      const gigTypes = ["application_accepted", "application_rejected", "invite"];
+      setGigNotifs(notifs.filter((n: any) => gigTypes.includes(n.type)).length);
+      // Per-gig notifs: video accepted/rejected
+      const perGig: Record<string, number> = {};
+      notifs.forEach((n: any) => {
+        if (["video_accepted", "video_rejected"].includes(n.type) && n.link) {
+          // link format: /dashboard/gig/CAMPAIGN_ID or /dashboard/videos
+          const m = n.link.match(/\/dashboard\/gig\/([^/]+)/);
+          if (m) perGig[m[1]] = (perGig[m[1]] || 0) + 1;
+        }
+      });
+      setActiveGigNotifs(perGig);
+    });
   }, [user]);
 
   const toggleGig = (id: string) => {
@@ -100,13 +120,27 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
     { label: "Schedule", icon: Calendar, suffix: "/schedule" },
   ];
 
+  // Find the current nav icon for header
+  const currentNavItem = (() => {
+    const gigMatch = location.pathname.match(/\/dashboard\/gig\/([^/]+)/);
+    if (gigMatch) return null; // gig pages use brand logo
+    if (location.pathname === "/dashboard/admin") return { icon: Shield, label: "Admin" };
+    return navItems.find(n => location.pathname === n.path) || navItems[0];
+  })();
+
   const headerTitle = (() => {
     const gigMatch = location.pathname.match(/\/dashboard\/gig\/([^/]+)/);
     if (gigMatch) {
       const gig = activeGigs.find(g => g.id === gigMatch[1]);
       return gig?.title || "Gig";
     }
-    return navItems.find(n => location.pathname === n.path)?.label || (location.pathname === "/dashboard/admin" ? "Admin" : "Dashboard");
+    return currentNavItem?.label || "Dashboard";
+  })();
+
+  const headerGig = (() => {
+    const gigMatch = location.pathname.match(/\/dashboard\/gig\/([^/]+)/);
+    if (gigMatch) return activeGigs.find(g => g.id === gigMatch[1]);
+    return null;
   })();
 
   return (
@@ -185,6 +219,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
                       {activeGigs.map(gig => {
                         const isExpanded = expandedGigs.has(gig.id);
                         const isGigActive = location.pathname.startsWith(`/dashboard/gig/${gig.id}`);
+                        const gigCount = activeGigNotifs[gig.id] || 0;
                         return (
                           <div key={gig.id}>
                             <SidebarMenuItem>
@@ -204,6 +239,11 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
                                   <Building2 className="w-4 h-4 shrink-0" />
                                 )}
                                 <span className="flex-1 text-[13px] truncate">{gig.title}</span>
+                                {gigCount > 0 && (
+                                  <Badge className="h-5 min-w-[20px] px-1.5 text-[11px] font-bold border-0 bg-primary text-primary-foreground">
+                                    {gigCount}
+                                  </Badge>
+                                )}
                                 {isExpanded ? <ChevronDown className="w-3.5 h-3.5 shrink-0" /> : <ChevronRight className="w-3.5 h-3.5 shrink-0" />}
                               </button>
                             </SidebarMenuItem>
@@ -274,9 +314,22 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
           <header className="h-14 border-b border-border bg-card/80 backdrop-blur-sm flex items-center px-3 md:px-6 gap-3 sticky top-0 z-10">
             <SidebarTrigger className="text-muted-foreground hover:text-foreground" />
             <div className="flex items-center gap-2.5">
-              <div className="w-7 h-7 rounded-lg bg-gradient-coral flex items-center justify-center shadow-coral">
-                <Sparkles className="w-3.5 h-3.5 text-white" />
-              </div>
+              {headerGig ? (
+                headerGig._brand?.logo_url ? (
+                  <Avatar className="w-7 h-7 rounded-lg">
+                    <AvatarImage src={headerGig._brand.logo_url} className="rounded-lg" />
+                    <AvatarFallback className="rounded-lg bg-secondary text-xs font-bold">{(headerGig._brand.business_name || "B").charAt(0)}</AvatarFallback>
+                  </Avatar>
+                ) : (
+                  <div className="w-7 h-7 rounded-lg bg-secondary flex items-center justify-center">
+                    <Building2 className="w-3.5 h-3.5 text-muted-foreground" />
+                  </div>
+                )
+              ) : currentNavItem ? (
+                <div className="w-7 h-7 rounded-lg bg-secondary flex items-center justify-center">
+                  <currentNavItem.icon className="w-3.5 h-3.5 text-foreground" />
+                </div>
+              ) : null}
               <h1 className="font-heading font-bold text-base md:text-lg text-foreground truncate">{headerTitle}</h1>
             </div>
             <div className="ml-auto"><NotificationBell /></div>
