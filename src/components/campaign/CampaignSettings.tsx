@@ -620,7 +620,7 @@ const CampaignSettings = ({ campaignId }: Props) => {
 
       {/* Past Creators */}
       {(() => {
-        const past = applications.filter(a => ["removed", "rejected"].includes(a.status));
+        const past = applications.filter(a => ["removed", "rejected", "left"].includes(a.status));
         if (past.length === 0) return null;
         return (
           <div>
