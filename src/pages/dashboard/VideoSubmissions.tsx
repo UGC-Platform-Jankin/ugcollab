@@ -28,6 +28,7 @@ const VideoSubmissions = () => {
   const [reuploadTitle, setReuploadTitle] = useState("");
   const [reuploadLoading, setReuploadLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("submit");
+  const [playingVideo, setPlayingVideo] = useState<{ url: string; title: string } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const reuploadRef = useRef<HTMLInputElement>(null);
 
@@ -296,9 +297,9 @@ const VideoSubmissions = () => {
                         )}
                       </div>
                       <div className="flex flex-col gap-2 shrink-0">
-                        <a href={sub.video_url} target="_blank" rel="noopener noreferrer">
-                          <Button size="sm" variant="outline" className="gap-1"><Video className="h-3.5 w-3.5" /> View</Button>
-                        </a>
+                        <Button size="sm" variant="outline" className="gap-1" onClick={() => setPlayingVideo({ url: sub.video_url, title: sub.title })}>
+                          <Play className="h-3.5 w-3.5" /> View
+                        </Button>
                         {sub.status === "rejected" && (
                           <Button size="sm" className="gap-1 bg-gradient-coral" onClick={() => { setReuploadSub(sub); setReuploadTitle(sub.title); }}>
                             <RefreshCw className="h-3.5 w-3.5" /> Re-upload
@@ -339,6 +340,12 @@ const VideoSubmissions = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      <VideoPlayerDialog
+        videoUrl={playingVideo?.url || null}
+        title={playingVideo?.title}
+        onClose={() => setPlayingVideo(null)}
+      />
     </div>
   );
 };
