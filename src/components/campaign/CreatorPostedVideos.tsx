@@ -27,19 +27,19 @@ const CreatorPostedVideos = ({ campaignId, campaignTitle }: Props) => {
   const [links, setLinks] = useState<{ platform: string; url: string }[]>([{ platform: "", url: "" }]);
   const [submitting, setSubmitting] = useState(false);
   const [playingVideo, setPlayingVideo] = useState<{ url: string; title: string } | null>(null);
+  const [expectedCount, setExpectedCount] = useState(0);
 
   useEffect(() => {
     if (!user) return;
     const load = async () => {
-      const { data: subs } = await supabase
-        .from("video_submissions")
-        .select("*")
-        .eq("creator_user_id", user.id)
-        .eq("campaign_id", campaignId)
-        .eq("status", "accepted");
+    const [{ data: subs }, { data: campData }] = await Promise.all([
+      supabase.from("video_submissions").select("*").eq("creator_user_id", user.id).eq("campaign_id", campaignId).eq("status", "accepted"),
+      supabase.from("campaigns").select("expected_video_count").eq("id", campaignId).single(),
+    ]);
 
-      const accepted = subs || [];
-      setAcceptedSubs(accepted);
+    const accepted = subs || [];
+    setAcceptedSubs(accepted);
+    setExpectedCount((campData as any)?.expected_video_count || 0);
 
       if (accepted.length > 0) {
         const subIds = accepted.map((s: any) => s.id);
@@ -81,8 +81,27 @@ const CreatorPostedVideos = ({ campaignId, campaignTitle }: Props) => {
   const linkMap: Record<string, any[]> = {};
   postedLinks.forEach((l: any) => { if (!linkMap[l.submission_id]) linkMap[l.submission_id] = []; linkMap[l.submission_id].push(l); });
 
+  const postedCount = Object.values(linkMap).reduce((sum, links) => sum + links.length, 0);
+  const videosRemaining = Math.max(0, expectedCount - acceptedSubs.length);
+
   return (
     <div className="space-y-6">
+      {/* Stats bar */}
+      <div className="grid grid-cols-3 gap-3">
+        <div className="rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 p-3 text-center">
+          <p className="text-lg font-bold text-foreground">{acceptedSubs.length}</p>
+          <p className="text-[11px] text-muted-foreground">Accepted Videos</p>
+        </div>
+        <div className="rounded-xl bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 p-3 text-center">
+          <p className="text-lg font-bold text-foreground">{postedCount}</p>
+          <p className="text-[11px] text-muted-foreground">Links Posted</p>
+        </div>
+        <div className="rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 p-3 text-center">
+          <p className="text-lg font-bold text-foreground">{videosRemaining}</p>
+          <p className="text-[11px] text-muted-foreground">Remaining</p>
+        </div>
+      </div>
+
       {acceptedSubs.length > 0 ? (
         <Card className="border-border/50">
           <CardHeader><CardTitle className="text-lg">Submit Posted Video Links</CardTitle></CardHeader>

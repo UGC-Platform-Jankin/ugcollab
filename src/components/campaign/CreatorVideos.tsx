@@ -30,15 +30,16 @@ const CreatorVideos = ({ campaignId, campaignTitle }: Props) => {
   const [playingVideo, setPlayingVideo] = useState<{ url: string; title: string } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
+  const [expectedCount, setExpectedCount] = useState(0);
+
   const loadSubs = async () => {
     if (!user) return;
-    const { data } = await supabase
-      .from("video_submissions")
-      .select("*")
-      .eq("creator_user_id", user.id)
-      .eq("campaign_id", campaignId)
-      .order("created_at", { ascending: false });
+    const [{ data }, { data: campData }] = await Promise.all([
+      supabase.from("video_submissions").select("*").eq("creator_user_id", user.id).eq("campaign_id", campaignId).order("created_at", { ascending: false }),
+      supabase.from("campaigns").select("expected_video_count").eq("id", campaignId).single(),
+    ]);
     setSubmissions(data || []);
+    setExpectedCount((campData as any)?.expected_video_count || 0);
     setLoading(false);
   };
 
@@ -93,21 +94,27 @@ const CreatorVideos = ({ campaignId, campaignTitle }: Props) => {
   const rejectedCount = submissions.filter(s => s.status === "rejected").length;
   const acceptedCount = submissions.filter(s => s.status === "accepted").length;
 
+  const videosRemaining = Math.max(0, expectedCount - acceptedCount);
+
   return (
     <div className="space-y-6">
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-3">
-        <div className="rounded-xl bg-yellow-500/10 border border-yellow-500/20 p-3 text-center">
+      <div className="grid grid-cols-4 gap-3">
+        <div className="rounded-xl bg-yellow-50 dark:bg-yellow-500/10 border border-yellow-200 dark:border-yellow-500/20 p-3 text-center">
           <p className="text-lg font-bold text-foreground">{pendingCount}</p>
           <p className="text-[11px] text-muted-foreground">Pending</p>
         </div>
-        <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/20 p-3 text-center">
+        <div className="rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 p-3 text-center">
           <p className="text-lg font-bold text-foreground">{acceptedCount}</p>
           <p className="text-[11px] text-muted-foreground">Accepted</p>
         </div>
-        <div className="rounded-xl bg-destructive/10 border border-destructive/20 p-3 text-center">
+        <div className="rounded-xl bg-red-50 dark:bg-destructive/10 border border-red-200 dark:border-destructive/20 p-3 text-center">
           <p className="text-lg font-bold text-foreground">{rejectedCount}</p>
           <p className="text-[11px] text-muted-foreground">Rejected</p>
+        </div>
+        <div className="rounded-xl bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 p-3 text-center">
+          <p className="text-lg font-bold text-foreground">{videosRemaining}</p>
+          <p className="text-[11px] text-muted-foreground">Remaining</p>
         </div>
       </div>
 
