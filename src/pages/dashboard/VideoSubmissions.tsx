@@ -7,10 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Upload, Loader2, Video, RefreshCw, CheckCircle, XCircle, Clock, ArrowRight, Play } from "lucide-react";
+import { Upload, Loader2, Video, RefreshCw, CheckCircle, XCircle, Clock, ArrowRight, Play, ChevronDown, ChevronRight, Briefcase } from "lucide-react";
 import VideoPlayerDialog from "@/components/VideoPlayerDialog";
 
 const VideoSubmissions = () => {
@@ -29,8 +28,8 @@ const VideoSubmissions = () => {
   const [reuploadLoading, setReuploadLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("submit");
   const [playingVideo, setPlayingVideo] = useState<{ url: string; title: string } | null>(null);
+  const [openCampaigns, setOpenCampaigns] = useState<Set<string>>(new Set());
   const fileRef = useRef<HTMLInputElement>(null);
-  const reuploadRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -40,7 +39,7 @@ const VideoSubmissions = () => {
         .select("campaign_id")
         .eq("creator_user_id", user.id)
         .eq("status", "accepted");
-      
+
       const campIds = (apps || []).map((a: any) => a.campaign_id);
       if (campIds.length > 0) {
         const { data: camps } = await supabase.from("campaigns").select("id, title").in("id", campIds);
@@ -48,11 +47,16 @@ const VideoSubmissions = () => {
       }
 
       const { data: subs } = await supabase
-        .from("video_submissions" as any)
+        .from("video_submissions")
         .select("*")
         .eq("creator_user_id", user.id)
         .order("created_at", { ascending: false });
-      setSubmissions((subs as any) || []);
+      setSubmissions(subs || []);
+
+      // Auto-open all campaigns with submissions
+      const campIdsWithSubs = new Set((subs || []).map((s: any) => s.campaign_id));
+      setOpenCampaigns(campIdsWithSubs as Set<string>);
+
       setLoading(false);
     };
     load();
@@ -74,7 +78,7 @@ const VideoSubmissions = () => {
     }
     const { data: urlData } = supabase.storage.from("video-submissions").getPublicUrl(path);
 
-    const { error: insertErr } = await supabase.from("video_submissions" as any).insert({
+    const { error: insertErr } = await supabase.from("video_submissions").insert({
       campaign_id: selectedCampaign,
       creator_user_id: user.id,
       title: title.trim(),
@@ -90,17 +94,17 @@ const VideoSubmissions = () => {
     const camp = campaigns.find(c => c.id === selectedCampaign);
     const { data: campFull } = await supabase.from("campaigns").select("brand_user_id").eq("id", selectedCampaign).single();
     if (campFull) {
-      await supabase.from("notifications" as any).insert({
+      await supabase.from("notifications").insert({
         user_id: campFull.brand_user_id,
         type: "video_submission",
         title: "New Video Submitted",
         body: `A creator submitted a video "${title.trim()}" for "${camp?.title || "your campaign"}"`,
         link: "/brand/video-review",
-      } as any);
+      });
     }
 
-    const { data: subs } = await supabase.from("video_submissions" as any).select("*").eq("creator_user_id", user.id).order("created_at", { ascending: false });
-    setSubmissions((subs as any) || []);
+    const { data: subs } = await supabase.from("video_submissions").select("*").eq("creator_user_id", user.id).order("created_at", { ascending: false });
+    setSubmissions(subs || []);
     setTitle("");
     setFile(null);
     setSelectedCampaign("");
@@ -123,7 +127,7 @@ const VideoSubmissions = () => {
     }
     const { data: urlData } = supabase.storage.from("video-submissions").getPublicUrl(path);
 
-    await supabase.from("video_submissions" as any).update({
+    await supabase.from("video_submissions").update({
       video_url: urlData.publicUrl,
       status: "pending",
       feedback: null,
@@ -133,17 +137,17 @@ const VideoSubmissions = () => {
 
     const { data: campFull } = await supabase.from("campaigns").select("brand_user_id, title").eq("id", reuploadSub.campaign_id).single();
     if (campFull) {
-      await supabase.from("notifications" as any).insert({
+      await supabase.from("notifications").insert({
         user_id: campFull.brand_user_id,
         type: "video_resubmission",
         title: "Video Re-submitted",
         body: `A creator re-submitted a video for "${campFull.title}"`,
         link: "/brand/video-review",
-      } as any);
+      });
     }
 
-    const { data: subs } = await supabase.from("video_submissions" as any).select("*").eq("creator_user_id", user.id).order("created_at", { ascending: false });
-    setSubmissions((subs as any) || []);
+    const { data: subs } = await supabase.from("video_submissions").select("*").eq("creator_user_id", user.id).order("created_at", { ascending: false });
+    setSubmissions(subs || []);
     setReuploadSub(null);
     setReuploadFile(null);
     setReuploadTitle("");
@@ -153,9 +157,26 @@ const VideoSubmissions = () => {
 
   const getCampaignTitle = (id: string) => campaigns.find(c => c.id === id)?.title || "Campaign";
 
+  const toggleCampaign = (id: string) => {
+    setOpenCampaigns(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
   const pendingSubs = submissions.filter((s: any) => s.status === "pending");
   const rejectedSubs = submissions.filter((s: any) => s.status === "rejected");
   const acceptedSubs = submissions.filter((s: any) => s.status === "accepted");
+
+  // Group submissions by campaign
+  const groupedByCampaign: Record<string, { title: string; subs: any[] }> = {};
+  submissions.forEach((sub: any) => {
+    if (!groupedByCampaign[sub.campaign_id]) {
+      groupedByCampaign[sub.campaign_id] = { title: getCampaignTitle(sub.campaign_id), subs: [] };
+    }
+    groupedByCampaign[sub.campaign_id].subs.push(sub);
+  });
 
   if (loading) return <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
 
@@ -265,51 +286,75 @@ const VideoSubmissions = () => {
               </CardContent>
             </Card>
           ) : (
-            <div className="space-y-3">
-              {submissions.map((sub: any) => (
-                <Card key={sub.id} className="border-border/50">
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          {sub.status === "accepted" ? <CheckCircle className="h-4 w-4 text-emerald-500" /> :
-                           sub.status === "rejected" ? <XCircle className="h-4 w-4 text-destructive" /> :
-                           <Clock className="h-4 w-4 text-yellow-500" />}
-                          <p className="font-medium text-foreground truncate">{sub.title}</p>
+            <div className="space-y-4">
+              {Object.entries(groupedByCampaign).map(([campId, { title: campTitle, subs }]) => {
+                const isOpen = openCampaigns.has(campId);
+                const pendingCount = subs.filter(s => s.status === "pending").length;
+                return (
+                  <Card key={campId} className="border-border/50 overflow-hidden">
+                    <button
+                      onClick={() => toggleCampaign(campId)}
+                      className="w-full flex items-center justify-between p-4 hover:bg-secondary/30 transition-colors text-left"
+                    >
+                      <div className="flex items-center gap-3">
+                        <Briefcase className="h-5 w-5 text-primary shrink-0" />
+                        <div>
+                          <p className="font-heading font-bold text-foreground">{campTitle}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {subs.length} submission{subs.length !== 1 ? "s" : ""}
+                            {pendingCount > 0 && <span className="text-yellow-500 ml-1">· {pendingCount} pending</span>}
+                          </p>
                         </div>
-                        <p className="text-xs text-muted-foreground mb-2">
-                          {getCampaignTitle(sub.campaign_id)} &middot; {new Date(sub.created_at).toLocaleDateString()}
-                        </p>
-                        <Badge
-                          className={
-                            sub.status === "accepted" ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30" :
-                            sub.status === "rejected" ? "bg-destructive/20 text-destructive border-destructive/30" :
-                            "bg-yellow-500/20 text-yellow-500 border-yellow-500/30"
-                          }
-                        >
-                          {sub.status === "accepted" ? "Accepted" : sub.status === "rejected" ? "Needs Revision" : "Pending Review"}
-                        </Badge>
-                        {sub.feedback && (
-                          <div className="mt-3 p-3 rounded-lg bg-destructive/5 border border-destructive/20">
-                            <p className="text-xs text-muted-foreground mb-1 font-semibold">📝 Brand Feedback</p>
-                            <p className="text-sm text-foreground">{sub.feedback}</p>
+                      </div>
+                      {isOpen ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
+                    </button>
+                    {isOpen && (
+                      <div className="border-t border-border/50 divide-y divide-border/20">
+                        {subs.map((sub: any) => (
+                          <div key={sub.id} className="flex items-start justify-between gap-4 px-4 py-3">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                {sub.status === "accepted" ? <CheckCircle className="h-4 w-4 text-emerald-500 shrink-0" /> :
+                                 sub.status === "rejected" ? <XCircle className="h-4 w-4 text-destructive shrink-0" /> :
+                                 <Clock className="h-4 w-4 text-yellow-500 shrink-0" />}
+                                <p className="font-medium text-sm text-foreground truncate">{sub.title}</p>
+                              </div>
+                              <p className="text-[11px] text-muted-foreground">{new Date(sub.created_at).toLocaleDateString()}</p>
+                              <div className="mt-1.5">
+                                <Badge
+                                  className={
+                                    sub.status === "accepted" ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30" :
+                                    sub.status === "rejected" ? "bg-destructive/20 text-destructive border-destructive/30" :
+                                    "bg-yellow-500/20 text-yellow-500 border-yellow-500/30"
+                                  }
+                                >
+                                  {sub.status === "accepted" ? "Accepted" : sub.status === "rejected" ? "Needs Revision" : "Pending Review"}
+                                </Badge>
+                              </div>
+                              {sub.feedback && (
+                                <div className="mt-2 p-2 rounded-lg bg-destructive/5 border border-destructive/20">
+                                  <p className="text-xs text-muted-foreground mb-0.5 font-semibold">📝 Brand Feedback</p>
+                                  <p className="text-xs text-foreground">{sub.feedback}</p>
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex flex-col gap-1.5 shrink-0">
+                              <Button size="sm" variant="outline" className="gap-1 h-7 text-xs" onClick={() => setPlayingVideo({ url: sub.video_url, title: sub.title })}>
+                                <Play className="h-3 w-3" /> View
+                              </Button>
+                              {sub.status === "rejected" && (
+                                <Button size="sm" className="gap-1 h-7 text-xs bg-gradient-coral" onClick={() => { setReuploadSub(sub); setReuploadTitle(sub.title); }}>
+                                  <RefreshCw className="h-3 w-3" /> Re-upload
+                                </Button>
+                              )}
+                            </div>
                           </div>
-                        )}
+                        ))}
                       </div>
-                      <div className="flex flex-col gap-2 shrink-0">
-                        <Button size="sm" variant="outline" className="gap-1" onClick={() => setPlayingVideo({ url: sub.video_url, title: sub.title })}>
-                          <Play className="h-3.5 w-3.5" /> View
-                        </Button>
-                        {sub.status === "rejected" && (
-                          <Button size="sm" className="gap-1 bg-gradient-coral" onClick={() => { setReuploadSub(sub); setReuploadTitle(sub.title); }}>
-                            <RefreshCw className="h-3.5 w-3.5" /> Re-upload
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                    )}
+                  </Card>
+                );
+              })}
             </div>
           )}
         </TabsContent>
@@ -332,20 +377,16 @@ const VideoSubmissions = () => {
             </div>
             <div className="space-y-2">
               <p className="text-sm font-medium">Updated Video</p>
-              <Input ref={reuploadRef} type="file" accept="video/*" onChange={e => setReuploadFile(e.target.files?.[0] || null)} />
+              <Input type="file" accept="video/*" onChange={e => setReuploadFile(e.target.files?.[0] || null)} />
             </div>
             <Button onClick={handleReupload} disabled={reuploadLoading || !reuploadFile} className="w-full gap-2">
-              {reuploadLoading ? <><Loader2 className="h-4 w-4 animate-spin" /> Uploading...</> : <><Upload className="h-4 w-4" /> Re-submit</>}
+              {reuploadLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />} Re-submit
             </Button>
           </div>
         </DialogContent>
       </Dialog>
 
-      <VideoPlayerDialog
-        videoUrl={playingVideo?.url || null}
-        title={playingVideo?.title}
-        onClose={() => setPlayingVideo(null)}
-      />
+      <VideoPlayerDialog videoUrl={playingVideo?.url || null} title={playingVideo?.title} onClose={() => setPlayingVideo(null)} />
     </div>
   );
 };

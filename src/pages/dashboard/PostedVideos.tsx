@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Link2, Plus, Trash2, Loader2, ExternalLink, Play } from "lucide-react";
+import { Link2, Plus, Trash2, Loader2, ExternalLink, Play, ChevronDown, ChevronRight, Briefcase } from "lucide-react";
 import VideoPlayerDialog from "@/components/VideoPlayerDialog";
 
 const PLATFORMS = ["TikTok", "Instagram", "YouTube", "Facebook", "X (Twitter)", "Other"];
@@ -22,33 +22,32 @@ const PostedVideos = () => {
   const [links, setLinks] = useState<{ platform: string; url: string }[]>([{ platform: "", url: "" }]);
   const [submitting, setSubmitting] = useState(false);
   const [playingVideo, setPlayingVideo] = useState<{ url: string; title: string } | null>(null);
+  const [openCampaigns, setOpenCampaigns] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (!user) return;
     const load = async () => {
       const { data: subs } = await supabase
-        .from("video_submissions" as any)
+        .from("video_submissions")
         .select("*")
         .eq("creator_user_id", user.id)
         .eq("status", "accepted");
 
-      const accepted = (subs as any) || [];
-      // Enrich with campaign title
+      const accepted = subs || [];
       if (accepted.length > 0) {
         const campIds = [...new Set(accepted.map((s: any) => s.campaign_id))] as string[];
         const { data: camps } = await supabase.from("campaigns").select("id, title").in("id", campIds);
         const campMap: Record<string, string> = {};
         (camps || []).forEach((c: any) => { campMap[c.id] = c.title; });
         accepted.forEach((s: any) => { s._campaignTitle = campMap[s.campaign_id] || "Campaign"; });
+
+        const subIds = accepted.map((s: any) => s.id);
+        const { data: pl } = await supabase.from("posted_video_links").select("*").in("submission_id", subIds);
+        setPostedLinks(pl || []);
+
+        setOpenCampaigns(new Set(campIds));
       }
       setAcceptedSubs(accepted);
-
-      // Get posted links
-      if (accepted.length > 0) {
-        const subIds = accepted.map((s: any) => s.id);
-        const { data: pl } = await supabase.from("posted_video_links" as any).select("*").in("submission_id", subIds);
-        setPostedLinks((pl as any) || []);
-      }
       setLoading(false);
     };
     load();
@@ -69,44 +68,58 @@ const PostedVideos = () => {
     setSubmitting(true);
 
     const rows = validLinks.map(l => ({ submission_id: selectedSub, platform: l.platform, url: l.url.trim() }));
-    const { error } = await supabase.from("posted_video_links" as any).insert(rows as any);
+    const { error } = await supabase.from("posted_video_links").insert(rows as any);
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
       setSubmitting(false);
       return;
     }
 
-    // Refresh
     const subIds = acceptedSubs.map((s: any) => s.id);
-    const { data: pl } = await supabase.from("posted_video_links" as any).select("*").in("submission_id", subIds);
-    setPostedLinks((pl as any) || []);
+    const { data: pl } = await supabase.from("posted_video_links").select("*").in("submission_id", subIds);
+    setPostedLinks(pl || []);
     setLinks([{ platform: "", url: "" }]);
     setSelectedSub("");
     toast({ title: "Posted video links saved!" });
     setSubmitting(false);
   };
 
-  const getSubTitle = (id: string) => acceptedSubs.find(s => s.id === id)?.title || "Video";
-  const getSubCampaign = (id: string) => acceptedSubs.find(s => s.id === id)?._campaignTitle || "Campaign";
+  const toggleCampaign = (id: string) => {
+    setOpenCampaigns(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
 
   if (loading) return <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
 
-  // Group posted links by submission
-  const linksBySub: Record<string, any[]> = {};
+  // Group by campaign
+  const linkMap: Record<string, any[]> = {};
   postedLinks.forEach((l: any) => {
-    if (!linksBySub[l.submission_id]) linksBySub[l.submission_id] = [];
-    linksBySub[l.submission_id].push(l);
+    if (!linkMap[l.submission_id]) linkMap[l.submission_id] = [];
+    linkMap[l.submission_id].push(l);
   });
+
+  const groupedByCampaign: Record<string, { title: string; subs: any[] }> = {};
+  acceptedSubs.forEach((sub: any) => {
+    if (!groupedByCampaign[sub.campaign_id]) {
+      groupedByCampaign[sub.campaign_id] = { title: sub._campaignTitle, subs: [] };
+    }
+    groupedByCampaign[sub.campaign_id].subs.push({ ...sub, _links: linkMap[sub.id] || [] });
+  });
+
+  const subsWithLinks = acceptedSubs.filter(s => linkMap[s.id]?.length > 0);
 
   return (
     <div>
-      <div className="mb-8">
-        <h1 className="text-3xl font-heading font-bold text-foreground">Posted Videos</h1>
-        <p className="text-muted-foreground mt-1">Submit links to your posted videos</p>
+      <div className="mb-6">
+        <h1 className="text-2xl font-heading font-extrabold text-foreground tracking-tight">Posted Videos</h1>
+        <p className="text-muted-foreground text-sm mt-0.5">Submit links to your posted videos</p>
       </div>
 
       {acceptedSubs.length > 0 && (
-        <Card className="border-border/50 mb-8">
+        <Card className="border-border/50 mb-6">
           <CardHeader><CardTitle className="text-lg">Submit Posted Video Links</CardTitle></CardHeader>
           <CardContent className="space-y-4">
             <Select value={selectedSub} onValueChange={setSelectedSub}>
@@ -140,7 +153,7 @@ const PostedVideos = () => {
       )}
 
       {acceptedSubs.length === 0 && (
-        <Card className="border-border/50 border-dashed mb-8">
+        <Card className="border-border/50 border-dashed mb-6">
           <CardContent className="py-12 text-center">
             <Link2 className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
             <p className="text-muted-foreground">No accepted videos yet. Submit videos for review first.</p>
@@ -148,50 +161,67 @@ const PostedVideos = () => {
         </Card>
       )}
 
-      {Object.keys(linksBySub).length > 0 && (
+      {subsWithLinks.length > 0 && (
         <div>
-          <h2 className="text-xl font-heading font-bold text-foreground mb-4">Your Posted Links</h2>
-          <div className="space-y-3">
-            {Object.entries(linksBySub).map(([subId, subLinks]) => (
-              <Card key={subId} className="border-border/50">
-                <CardContent className="p-4">
-                  <p className="font-medium text-foreground mb-1">{getSubTitle(subId)}</p>
-                  <div className="flex items-center gap-2 mb-3">
-                    <p className="text-xs text-muted-foreground">{getSubCampaign(subId)}</p>
-                    {acceptedSubs.find(s => s.id === subId)?.video_url && (
-                      <button
-                        onClick={() => {
-                          const sub = acceptedSubs.find(s => s.id === subId);
-                          if (sub) setPlayingVideo({ url: sub.video_url, title: sub.title });
-                        }}
-                        className="text-xs text-primary hover:underline flex items-center gap-1"
-                      >
-                        <Play className="h-3 w-3" /> Watch Original
-                      </button>
-                    )}
-                  </div>
-                  <div className="space-y-2">
-                    {subLinks.map((l: any) => (
-                      <div key={l.id} className="flex items-center gap-2">
-                        <Badge variant="secondary" className="text-xs">{l.platform}</Badge>
-                        <a href={l.url} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline truncate flex items-center gap-1">
-                          {l.url} <ExternalLink className="h-3 w-3 shrink-0" />
-                        </a>
+          <h2 className="text-lg font-heading font-bold text-foreground mb-4">Your Posted Links</h2>
+          <div className="space-y-4">
+            {Object.entries(groupedByCampaign)
+              .filter(([, { subs }]) => subs.some(s => s._links.length > 0))
+              .map(([campId, { title: campTitle, subs }]) => {
+                const isOpen = openCampaigns.has(campId);
+                const totalLinks = subs.reduce((sum, s) => sum + s._links.length, 0);
+                return (
+                  <Card key={campId} className="border-border/50 overflow-hidden">
+                    <button
+                      onClick={() => toggleCampaign(campId)}
+                      className="w-full flex items-center justify-between p-4 hover:bg-secondary/30 transition-colors text-left"
+                    >
+                      <div className="flex items-center gap-3">
+                        <Briefcase className="h-5 w-5 text-primary shrink-0" />
+                        <div>
+                          <p className="font-heading font-bold text-foreground">{campTitle}</p>
+                          <p className="text-xs text-muted-foreground">{totalLinks} link{totalLinks !== 1 ? "s" : ""} posted</p>
+                        </div>
                       </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                      {isOpen ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
+                    </button>
+                    {isOpen && (
+                      <div className="border-t border-border/50 divide-y divide-border/20">
+                        {subs.filter(s => s._links.length > 0).map((sub: any) => (
+                          <div key={sub.id} className="px-4 py-3">
+                            <div className="flex items-center gap-2 mb-2">
+                              <p className="text-sm font-medium text-foreground">{sub.title}</p>
+                              {sub.video_url && (
+                                <button
+                                  onClick={() => setPlayingVideo({ url: sub.video_url, title: sub.title })}
+                                  className="text-xs text-primary hover:underline flex items-center gap-1"
+                                >
+                                  <Play className="h-3 w-3" /> Watch
+                                </button>
+                              )}
+                            </div>
+                            <div className="space-y-1.5">
+                              {sub._links.map((l: any) => (
+                                <div key={l.id} className="flex items-center gap-2">
+                                  <Badge variant="secondary" className="text-xs">{l.platform}</Badge>
+                                  <a href={l.url} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline truncate flex items-center gap-1">
+                                    {l.url} <ExternalLink className="h-3 w-3 shrink-0" />
+                                  </a>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </Card>
+                );
+              })}
           </div>
         </div>
       )}
 
-      <VideoPlayerDialog
-        videoUrl={playingVideo?.url || null}
-        title={playingVideo?.title}
-        onClose={() => setPlayingVideo(null)}
-      />
+      <VideoPlayerDialog videoUrl={playingVideo?.url || null} title={playingVideo?.title} onClose={() => setPlayingVideo(null)} />
     </div>
   );
 };
