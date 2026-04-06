@@ -29,6 +29,7 @@ import BrandCampaignDetail from "./pages/brand/BrandCampaignDetail.tsx";
 import FindCreators from "./pages/brand/FindCreators.tsx";
 import VideoReview from "./pages/brand/VideoReview.tsx";
 import BrandPostedVideos from "./pages/brand/BrandPostedVideos.tsx";
+import BrandPublicProfile from "./pages/brand/BrandPublicProfile.tsx";
 import ReviewsPage from "./pages/Reviews.tsx";
 import AdminPanel from "./pages/dashboard/AdminPanel.tsx";
 import AboutPage from "./pages/AboutPage.tsx";
@@ -79,6 +80,7 @@ const App = () => (
               <Route path="/brand/profile" element={<BrandLayout><BrandProfileContent /></BrandLayout>} />
               <Route path="/brand/video-review" element={<BrandLayout><VideoReview /></BrandLayout>} />
               <Route path="/brand/posted-videos" element={<BrandLayout><BrandPostedVideos /></BrandLayout>} />
+              <Route path="/brand/public/:brandUserId" element={<BrandPublicProfile />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </AuthProvider>
