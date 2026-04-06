@@ -258,7 +258,7 @@ const AllCreators = ({ campaignId }: Props) => {
                       </div>
                       <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5 flex-wrap">
                         {profile?.username && <span>@{profile.username}</span>}
-                        <span className="flex items-center gap-1"><Mail className="h-3 w-3" /> {profile?.display_name ? `${profile.username || "—"}` : "—"}</span>
+                        {c._email && <span className="flex items-center gap-1"><Mail className="h-3 w-3" /> {c._email}</span>}
                         <span>{accepted} accepted · {pending} pending · {subs.length} total videos</span>
                         <span>{links.length} link{links.length !== 1 ? "s" : ""} posted</span>
                       </div>
