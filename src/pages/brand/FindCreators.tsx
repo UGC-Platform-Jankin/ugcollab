@@ -329,54 +329,59 @@ const FindCreators = () => {
           {filtered.map((creator) => {
             const matchPct = creatorMatches[creator.user_id] || 0;
             return (
-            <Card key={creator.user_id} className="border-border/50 hover:border-primary/30 transition-colors">
-              <CardContent className="p-4">
-                <div className="flex items-start gap-3 mb-3">
-                  <Avatar className="h-12 w-12">
-                    <AvatarImage src={creator.avatar_url || undefined} />
-                    <AvatarFallback className="bg-secondary text-lg">{(creator.display_name || "?").charAt(0).toUpperCase()}</AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="font-medium text-foreground truncate">{creator.display_name || "Creator"}</p>
-                      {matchPct > 0 && (
-                        <Badge className={`shrink-0 text-[11px] font-bold border ${getMatchColor(matchPct)}`}>
-                          <Sparkles className="h-3 w-3 mr-0.5" />{matchPct}%
-                        </Badge>
-                      )}
-                    </div>
-                    {creator.username && <p className="text-xs text-muted-foreground">@{creator.username}</p>}
-                    {creator.bio && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{creator.bio}</p>}
-                  </div>
-                </div>
+            <Card key={creator.user_id} className="border-border shadow-sm hover:shadow-lg hover:border-primary/20 transition-all cursor-pointer group h-full overflow-hidden"
+              onClick={() => handleViewCreator(creator)}>
+              {/* Hero area */}
+              <div className="h-32 bg-gradient-to-br from-secondary via-secondary/60 to-muted flex items-center justify-center relative">
+                <Avatar className="h-20 w-20 rounded-2xl ring-4 ring-card shadow-lg">
+                  <AvatarImage src={creator.avatar_url || undefined} className="rounded-2xl object-cover" />
+                  <AvatarFallback className="rounded-2xl bg-card text-2xl font-bold text-foreground">{(creator.display_name || "?").charAt(0).toUpperCase()}</AvatarFallback>
+                </Avatar>
+                {matchPct > 0 && (
+                  <Badge className={`absolute top-3 right-3 text-[10px] font-bold border ${getMatchColor(matchPct)}`}>
+                    <Sparkles className="h-3 w-3 mr-0.5" />{matchPct}%
+                  </Badge>
+                )}
+              </div>
 
-                {creator.socials.length > 0 ? (
-                  <div className="space-y-1.5 mb-3">
-                    {creator.socials.map((s, i) => {
-                      const Icon = platformIcons[s.platform] || Users;
-                      return (
-                        <div key={i} className="flex items-center gap-2 text-xs">
-                          <Icon className="h-3.5 w-3.5 text-muted-foreground" />
-                          <span className="text-muted-foreground">@{s.platform_username || s.platform}</span>
-                          <span className="ml-auto text-foreground font-medium">{(s.followers_count || 0).toLocaleString()}</span>
-                        </div>
-                      );
-                    })}
+              <CardContent className="p-5 flex flex-col">
+                <h3 className="font-heading font-bold text-base text-foreground text-center group-hover:text-primary transition-colors mb-0.5">{creator.display_name || "Creator"}</h3>
+                {creator.username && <p className="text-sm text-muted-foreground text-center mb-3">@{creator.username}</p>}
+                
+                <div className="flex items-center justify-center gap-2 flex-wrap mb-2">
+                  {creator.country && (
+                    <Badge variant="secondary" className="text-xs gap-1 px-3 py-1"><Globe className="h-3 w-3" /> {creator.country}</Badge>
+                  )}
+                  <Badge variant="secondary" className="text-xs gap-1 px-3 py-1"><Users className="h-3 w-3" /> {formatCount(totalFollowers(creator))}</Badge>
+                </div>
+                <div className="flex items-center justify-center gap-2 flex-wrap mb-4">
+                  {creator.socials.map((s, i) => {
+                    const Icon = platformIcons[s.platform] || Users;
+                    return (
+                      <Badge key={i} variant="outline" className="text-xs gap-1 px-3 py-1 capitalize">
+                        <Icon className="h-3 w-3" /> {s.platform}
+                      </Badge>
+                    );
+                  })}
+                </div>
+                {creator.content_types && creator.content_types.length > 0 && (
+                  <div className="flex items-center justify-center gap-1.5 flex-wrap mb-4">
+                    {creator.content_types.slice(0, 2).map(t => (
+                      <span key={t} className="px-2 py-0.5 rounded-full bg-primary/5 text-primary text-[11px] font-medium">{t}</span>
+                    ))}
+                    {creator.content_types.length > 2 && (
+                      <span className="text-[11px] text-muted-foreground">+{creator.content_types.length - 2}</span>
+                    )}
                   </div>
-                ) : (
-                  <p className="text-xs text-muted-foreground mb-3">No socials connected</p>
                 )}
 
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground">{totalFollowers(creator).toLocaleString()} total followers</span>
-                  <div className="flex gap-1.5">
-                    <Button size="sm" variant="outline" className="gap-1" onClick={() => handleViewCreator(creator)}>
-                      <Eye className="h-3.5 w-3.5" /> View
-                    </Button>
-                    <Button size="sm" className="gap-1" onClick={() => setInviteCreator(creator)}>
-                      <Send className="h-3.5 w-3.5" /> Invite
-                    </Button>
-                  </div>
+                <div className="border-t border-border pt-3 mt-auto flex gap-2">
+                  <Button size="sm" variant="outline" className="flex-1 gap-1 text-xs" onClick={(e) => { e.stopPropagation(); handleViewCreator(creator); }}>
+                    <Eye className="h-3 w-3" /> View
+                  </Button>
+                  <Button size="sm" className="flex-1 gap-1 text-xs" onClick={(e) => { e.stopPropagation(); setInviteCreator(creator); }}>
+                    <Send className="h-3 w-3" /> Invite
+                  </Button>
                 </div>
               </CardContent>
             </Card>

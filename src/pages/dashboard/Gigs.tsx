@@ -447,87 +447,75 @@ const Gigs = () => {
           subtitle={hasActiveFilters ? "Try adjusting your filters" : activeTab === "available" ? "New campaigns from brands will appear here" : "Apply to campaigns to see them here"}
         />
       ) : (
-        <div className="space-y-3">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredCampaigns.map(campaign => {
             const hasApplied = appliedCampaigns.has(campaign.id);
             const brand = brandProfiles[campaign.brand_user_id];
             const matchPct = aiMatches[campaign.id] || 0;
             return (
-              <div key={campaign.id}
-                className="group rounded-2xl border border-border bg-card p-5 transition-all hover:shadow-md hover:border-primary/20 cursor-pointer"
+              <Card key={campaign.id}
+                className="border-border shadow-sm hover:shadow-lg hover:border-primary/20 transition-all cursor-pointer group h-full overflow-hidden"
                 onClick={() => setSelectedCampaign(campaign)}>
-                <div className="flex items-start gap-4">
-                  <Avatar className="h-12 w-12 rounded-xl shrink-0 ring-2 ring-border">
-                    <AvatarImage src={brand?.logo_url || undefined} className="rounded-xl object-cover" />
-                    <AvatarFallback className="rounded-xl bg-secondary text-base font-bold">
+                {/* Hero area */}
+                <div className="h-32 bg-gradient-to-br from-secondary via-secondary/60 to-muted flex items-center justify-center relative">
+                  <Avatar className="h-20 w-20 rounded-2xl ring-4 ring-card shadow-lg">
+                    <AvatarImage src={brand?.logo_url || undefined} className="rounded-2xl object-cover" />
+                    <AvatarFallback className="rounded-2xl bg-card text-2xl font-bold text-foreground">
                       {(brand?.business_name || "B").charAt(0).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <h3 className="font-heading font-bold text-foreground text-base leading-tight truncate">{campaign.title}</h3>
-                        <p className="text-sm text-muted-foreground mt-0.5">{brand?.business_name || "Brand"}</p>
-                      </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        {matchPct >= 50 && (
-                          <Badge className={`text-[11px] font-bold border ${getMatchColor(matchPct)}`}>
-                            <Sparkles className="h-3 w-3 mr-0.5" />{matchPct}%
-                          </Badge>
-                        )}
-                         {hasApplied && (
-                          <Badge className={`border-0 text-[11px] font-bold uppercase tracking-wide ${
-                            applicationStatuses[campaign.id] === "accepted" 
-                              ? "bg-emerald-500/15 text-emerald-600" 
-                              : applicationStatuses[campaign.id] === "rejected"
-                              ? "bg-destructive/15 text-destructive"
-                              : "bg-accent/10 text-accent-foreground"
-                          }`}>
-                            {applicationStatuses[campaign.id] === "accepted" ? "Accepted" 
-                              : applicationStatuses[campaign.id] === "rejected" ? "Rejected" 
-                              : "Applied"}
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground flex-wrap">
-                      {campaign.target_regions && campaign.target_regions.length > 0 && (
-                        <span className="flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{campaign.target_regions.join(", ")}</span>
-                      )}
-                      {campaign.campaign_length_days && (
-                        <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" />{campaign.campaign_length_days} days</span>
-                      )}
-                      {campaign.expected_video_count > 0 && (
-                        <span className="flex items-center gap-1"><Video className="h-3.5 w-3.5" />{campaign.expected_video_count} video{campaign.expected_video_count > 1 ? "s" : ""}</span>
-                      )}
-                    </div>
-                    {campaign.platforms && campaign.platforms.length > 0 && (
-                      <div className="flex gap-1.5 flex-wrap mt-3">
-                        {campaign.platforms.map(p => (
-                          <span key={p} className="px-2.5 py-0.5 rounded-full bg-secondary text-[11px] font-medium text-foreground capitalize">{p}</span>
-                        ))}
-                      </div>
+                  <div className="absolute top-3 right-3 flex gap-1.5">
+                    {matchPct >= 50 && (
+                      <Badge className={`text-[10px] font-bold border ${getMatchColor(matchPct)}`}>
+                        <Sparkles className="h-3 w-3 mr-0.5" />{matchPct}%
+                      </Badge>
+                    )}
+                    {hasApplied && (
+                      <Badge className={`text-[10px] font-bold border-0 ${
+                        applicationStatuses[campaign.id] === "accepted" ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400"
+                        : applicationStatuses[campaign.id] === "rejected" ? "bg-red-50 text-red-700 dark:bg-destructive/15 dark:text-destructive"
+                        : "bg-secondary text-foreground"
+                      }`}>
+                        {applicationStatuses[campaign.id] === "accepted" ? "Accepted" : applicationStatuses[campaign.id] === "rejected" ? "Rejected" : "Applied"}
+                      </Badge>
                     )}
                   </div>
                 </div>
-                <div className="flex items-center justify-between mt-4 pt-4 border-t border-border/50">
-                  <div className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
+
+                <CardContent className="p-5 flex flex-col">
+                  <h3 className="font-heading font-bold text-base text-foreground text-center group-hover:text-primary transition-colors mb-1">{campaign.title}</h3>
+                  <p className="text-sm text-muted-foreground text-center mb-3">{brand?.business_name || "Brand"}</p>
+
+                  <div className="flex items-center justify-center gap-2 flex-wrap mb-2">
                     {campaign.is_free_product ? (
-                      <><Gift className="h-4 w-4 text-primary" /> Free Product</>
+                      <Badge variant="secondary" className="text-xs gap-1 px-3 py-1"><Gift className="h-3 w-3" /> Free Product</Badge>
                     ) : campaign.price_per_video ? (
-                      <><DollarSign className="h-4 w-4 text-primary" /> HK${campaign.price_per_video}/video</>
+                      <Badge variant="secondary" className="text-xs gap-1 px-3 py-1 text-primary font-semibold"><DollarSign className="h-3 w-3" /> HK${campaign.price_per_video}/vid</Badge>
                     ) : null}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {hasApplied ? (
-                      <Button size="sm" variant="outline" disabled className="rounded-full gap-1.5 text-xs"><Check className="h-3.5 w-3.5" /> Applied</Button>
-                    ) : (
-                      <Button size="sm" className="rounded-full gap-1.5 text-xs font-bold uppercase tracking-wide"
-                        onClick={(e) => { e.stopPropagation(); setApplyingTo(campaign); }}>Apply</Button>
+                    {campaign.target_regions?.length > 0 && (
+                      <Badge variant="secondary" className="text-xs gap-1 px-3 py-1"><MapPin className="h-3 w-3" /> {campaign.target_regions.join(", ")}</Badge>
                     )}
                   </div>
-                </div>
-              </div>
+                  <div className="flex items-center justify-center gap-2 flex-wrap mb-4">
+                    <Badge variant="secondary" className="text-xs gap-1 px-3 py-1"><Video className="h-3 w-3" /> {campaign.expected_video_count} vid{campaign.expected_video_count !== 1 ? "s" : ""}</Badge>
+                    {campaign.platforms?.length > 0 && campaign.platforms.map((p: string) => (
+                      <Badge key={p} variant="outline" className="text-xs capitalize px-3 py-1">{p}</Badge>
+                    ))}
+                  </div>
+
+                  <div className="border-t border-border pt-3 mt-auto">
+                    {hasApplied ? (
+                      <div className="text-center text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                        <Check className="h-3.5 w-3.5 inline mr-1" /> Applied
+                      </div>
+                    ) : (
+                      <div className="text-center text-sm font-semibold text-muted-foreground group-hover:text-primary transition-colors uppercase tracking-wide">
+                        View Gig
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
             );
           })}
         </div>

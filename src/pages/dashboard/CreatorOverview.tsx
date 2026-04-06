@@ -192,16 +192,21 @@ const CreatorOverview = () => {
                     <CardContent className="p-5 flex flex-col">
                       <h3 className="font-heading font-bold text-base text-foreground text-center group-hover:text-primary transition-colors mb-1">{campaign.title}</h3>
                       <p className="text-sm text-muted-foreground text-center mb-4">{brand?.business_name || "Brand"}</p>
-                      <div className="flex items-center justify-center gap-2 flex-wrap mb-4">
+                      <div className="flex items-center justify-center gap-2 flex-wrap mb-2">
                         {campaign.is_free_product ? (
                           <Badge variant="secondary" className="text-xs gap-1 px-3 py-1"><Gift className="h-3 w-3" /> Free Product</Badge>
                         ) : campaign.price_per_video ? (
                           <Badge variant="secondary" className="text-xs gap-1 px-3 py-1 text-primary font-semibold"><DollarSign className="h-3 w-3" /> HK${campaign.price_per_video}/vid</Badge>
                         ) : null}
                         {campaign.target_regions?.length > 0 && (
-                          <Badge variant="secondary" className="text-xs gap-1 px-3 py-1"><MapPin className="h-3 w-3" /> {campaign.target_regions[0]}</Badge>
+                          <Badge variant="secondary" className="text-xs gap-1 px-3 py-1"><MapPin className="h-3 w-3" /> {campaign.target_regions.join(", ")}</Badge>
                         )}
+                      </div>
+                      <div className="flex items-center justify-center gap-2 flex-wrap mb-4">
                         <Badge variant="secondary" className="text-xs gap-1 px-3 py-1"><Video className="h-3 w-3" /> {campaign.expected_video_count} vid{campaign.expected_video_count !== 1 ? "s" : ""}</Badge>
+                        {campaign.platforms?.length > 0 && campaign.platforms.map((p: string) => (
+                          <Badge key={p} variant="outline" className="text-xs capitalize px-3 py-1">{p}</Badge>
+                        ))}
                       </div>
                       <div className="border-t border-border pt-3 mt-auto">
                         <div className="text-center text-sm font-semibold text-muted-foreground group-hover:text-primary transition-colors uppercase tracking-wide">
