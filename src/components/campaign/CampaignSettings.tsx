@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -743,30 +744,36 @@ const CampaignSettings = ({ campaignId }: Props) => {
       </Dialog>
 
       {/* Remove Creator Dialog */}
-      <AlertDialog open={!!removingCreator} onOpenChange={(open) => !open && setRemovingCreator(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Remove creator from campaign?</AlertDialogTitle>
-            <AlertDialogDescription className="space-y-2">
-              <span className="block">
-                You are about to remove <strong>{removingCreator?._profile?.display_name || removingCreator?._profile?.username || "this creator"}</strong> from "{campaign?.title}".
-              </span>
-              <span className="block font-medium text-foreground">
-                Videos delivered so far: {removingCreator?.videos_delivered || 0} / {campaign?.expected_video_count || 0}
-              </span>
-              <span className="block text-sm">
-                They will be removed from the group chat but the private message thread will remain. This action cannot be undone.
-              </span>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={handleRemoveCreator} disabled={removingLoading}>
-              {removingLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Remove permanently"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <Dialog open={!!removingCreator} onOpenChange={(open) => { if (!open) { setRemovingCreator(null); setRemovalMessage(""); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Remove {removingCreator?._profile?.display_name || "creator"} from campaign</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="p-3 rounded-lg bg-secondary/50 text-sm space-y-1">
+              <p className="text-muted-foreground">Videos delivered: <span className="font-medium text-foreground">{removingCreator?.videos_delivered || 0} / {campaign?.expected_video_count || 0}</span></p>
+              <p className="text-xs text-muted-foreground">They will be removed from the group chat. The private message thread will remain.</p>
+            </div>
+            <div>
+              <Label className="text-sm font-medium mb-1.5 block">Reason for removal <span className="text-destructive">*</span></Label>
+              <Textarea
+                placeholder="Explain to the creator why they are being removed..."
+                value={removalMessage}
+                onChange={(e) => setRemovalMessage(e.target.value)}
+                className="min-h-[100px]"
+              />
+              <p className="text-xs text-muted-foreground mt-1">This message will be sent to the creator via private chat.</p>
+            </div>
+            <div className="flex gap-3 justify-end">
+              <Button variant="outline" onClick={() => { setRemovingCreator(null); setRemovalMessage(""); }}>Cancel</Button>
+              <Button variant="destructive" onClick={handleRemoveCreator} disabled={removingLoading || !removalMessage.trim()}>
+                {removingLoading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
+                Remove permanently
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
