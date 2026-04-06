@@ -3,11 +3,12 @@ import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Video, Link2, Calendar, Settings } from "lucide-react";
+import { Loader2, Video, Link2, Calendar, Settings, Users } from "lucide-react";
 import VideoReviewForCampaign from "@/components/campaign/BrandVideoReview";
 import BrandPostedForCampaign from "@/components/campaign/BrandPostedVideos";
 import PostingSchedule from "@/components/campaign/PostingSchedule";
 import CampaignSettings from "@/components/campaign/CampaignSettings";
+import AllCreators from "@/components/campaign/AllCreators";
 
 const BrandCampaignDetail = () => {
   const { campaignId } = useParams<{ campaignId: string }>();
@@ -20,6 +21,7 @@ const BrandCampaignDetail = () => {
   const currentTab = location.pathname.endsWith("/posted") ? "posted"
     : location.pathname.endsWith("/schedule") ? "schedule"
     : location.pathname.endsWith("/videos") ? "videos"
+    : location.pathname.endsWith("/creators") ? "creators"
     : "settings";
 
   const handleTabChange = (val: string) => {
@@ -53,6 +55,7 @@ const BrandCampaignDetail = () => {
           {campaign.posting_schedule_enabled && (
             <TabsTrigger value="schedule" className="gap-1.5"><Calendar className="h-3.5 w-3.5" /> Schedule</TabsTrigger>
           )}
+          <TabsTrigger value="creators" className="gap-1.5"><Users className="h-3.5 w-3.5" /> All Creators</TabsTrigger>
           <TabsTrigger value="settings" className="gap-1.5"><Settings className="h-3.5 w-3.5" /> Settings</TabsTrigger>
         </TabsList>
 
@@ -67,6 +70,9 @@ const BrandCampaignDetail = () => {
             <PostingSchedule campaignId={campaignId!} />
           </TabsContent>
         )}
+        <TabsContent value="creators">
+          <AllCreators campaignId={campaignId!} />
+        </TabsContent>
         <TabsContent value="settings">
           <CampaignSettings campaignId={campaignId!} />
         </TabsContent>
