@@ -34,7 +34,7 @@ const AllCreators = ({ campaignId }: Props) => {
   const [creators, setCreators] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [filterStatus, setFilterStatus] = useState<"all" | "accepted" | "removed" | "left">("all");
+  const [filterStatus, setFilterStatus] = useState<"all" | "accepted" | "past">("all");
   const [expandedCreator, setExpandedCreator] = useState<string | null>(null);
   const [expandedSection, setExpandedSection] = useState<Record<string, "videos" | "links" | null>>({});
   const [playingVideo, setPlayingVideo] = useState<{ url: string; title: string } | null>(null);
@@ -180,7 +180,8 @@ const AllCreators = ({ campaignId }: Props) => {
   };
 
   const filtered = creators.filter(c => {
-    if (filterStatus !== "all" && c.status !== filterStatus) return false;
+    if (filterStatus === "accepted" && c.status !== "accepted") return false;
+    if (filterStatus === "past" && c.status === "accepted") return false;
     if (search) {
       const q = search.toLowerCase();
       const name = (c._profile?.display_name || "").toLowerCase();
@@ -206,7 +207,7 @@ const AllCreators = ({ campaignId }: Props) => {
           />
         </div>
         <div className="flex gap-1.5">
-          {(["all", "accepted", "removed", "left"] as const).map(s => (
+          {(["all", "accepted", "past"] as const).map(s => (
             <Button
               key={s}
               size="sm"
@@ -214,7 +215,7 @@ const AllCreators = ({ campaignId }: Props) => {
               className="text-xs capitalize"
               onClick={() => setFilterStatus(s)}
             >
-              {s === "all" ? "All" : s} {s === "all" ? `(${creators.length})` : `(${creators.filter(c => c.status === s).length})`}
+              {s === "all" ? "All" : s === "past" ? "Past" : s} {s === "all" ? `(${creators.length})` : s === "accepted" ? `(${creators.filter(c => c.status === "accepted").length})` : `(${creators.filter(c => c.status !== "accepted").length})`}
             </Button>
           ))}
         </div>
@@ -250,7 +251,7 @@ const AllCreators = ({ campaignId }: Props) => {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <p className="font-medium text-sm text-foreground">{profile?.display_name || profile?.username || "Creator"}</p>
-                        <Badge variant={c.status === "accepted" ? "default" : "destructive"} className="text-[10px] capitalize">{c.status}</Badge>
+                        <Badge variant={c.status === "accepted" ? "default" : "destructive"} className="text-[10px] capitalize">{c.status === "accepted" ? "Active" : "Past"}</Badge>
                       </div>
                       <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5 flex-wrap">
                         {profile?.username && <span>@{profile.username}</span>}
