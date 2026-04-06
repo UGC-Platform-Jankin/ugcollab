@@ -21,6 +21,7 @@ const PostedVideos = () => {
   const [selectedSub, setSelectedSub] = useState("");
   const [links, setLinks] = useState<{ platform: string; url: string }[]>([{ platform: "", url: "" }]);
   const [submitting, setSubmitting] = useState(false);
+  const [playingVideo, setPlayingVideo] = useState<{ url: string; title: string } | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -155,7 +156,20 @@ const PostedVideos = () => {
               <Card key={subId} className="border-border/50">
                 <CardContent className="p-4">
                   <p className="font-medium text-foreground mb-1">{getSubTitle(subId)}</p>
-                  <p className="text-xs text-muted-foreground mb-3">{getSubCampaign(subId)}</p>
+                  <div className="flex items-center gap-2 mb-3">
+                    <p className="text-xs text-muted-foreground">{getSubCampaign(subId)}</p>
+                    {acceptedSubs.find(s => s.id === subId)?.video_url && (
+                      <button
+                        onClick={() => {
+                          const sub = acceptedSubs.find(s => s.id === subId);
+                          if (sub) setPlayingVideo({ url: sub.video_url, title: sub.title });
+                        }}
+                        className="text-xs text-primary hover:underline flex items-center gap-1"
+                      >
+                        <Play className="h-3 w-3" /> Watch Original
+                      </button>
+                    )}
+                  </div>
                   <div className="space-y-2">
                     {subLinks.map((l: any) => (
                       <div key={l.id} className="flex items-center gap-2">
@@ -172,6 +186,12 @@ const PostedVideos = () => {
           </div>
         </div>
       )}
+
+      <VideoPlayerDialog
+        videoUrl={playingVideo?.url || null}
+        title={playingVideo?.title}
+        onClose={() => setPlayingVideo(null)}
+      />
     </div>
   );
 };
