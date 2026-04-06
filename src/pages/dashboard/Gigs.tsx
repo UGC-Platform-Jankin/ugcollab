@@ -457,13 +457,7 @@ const Gigs = () => {
                 className="border-border shadow-sm hover:shadow-lg hover:border-primary/20 transition-all cursor-pointer group h-full overflow-hidden"
                 onClick={() => setSelectedCampaign(campaign)}>
                 {/* Hero area */}
-                <div className="h-32 bg-gradient-to-br from-secondary via-secondary/60 to-muted flex items-center justify-center relative">
-                  <Avatar className="h-20 w-20 rounded-2xl ring-4 ring-card shadow-lg">
-                    <AvatarImage src={brand?.logo_url || undefined} className="rounded-2xl object-cover" />
-                    <AvatarFallback className="rounded-2xl bg-card text-2xl font-bold text-foreground">
-                      {(brand?.business_name || "B").charAt(0).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
+                <div className="h-36 bg-gradient-to-br from-secondary via-secondary/60 to-muted flex flex-col items-center justify-end pb-4 relative">
                   <div className="absolute top-3 right-3 flex gap-1.5">
                     {matchPct >= 50 && (
                       <Badge className={`text-[10px] font-bold border ${getMatchColor(matchPct)}`}>
@@ -480,6 +474,12 @@ const Gigs = () => {
                       </Badge>
                     )}
                   </div>
+                  <Avatar className="h-16 w-16 rounded-2xl ring-4 ring-card shadow-lg">
+                    <AvatarImage src={brand?.logo_url || undefined} className="rounded-2xl object-cover" />
+                    <AvatarFallback className="rounded-2xl bg-card text-xl font-bold text-foreground">
+                      {(brand?.business_name || "B").charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
                 </div>
 
                 <CardContent className="p-5 flex flex-col">

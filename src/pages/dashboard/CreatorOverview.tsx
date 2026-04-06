@@ -182,12 +182,12 @@ const CreatorOverview = () => {
               return (
                 <div key={campaign.id} onClick={() => setSelectedCampaign(campaign)} className="cursor-pointer">
                   <Card className="border-border shadow-sm hover:shadow-lg hover:border-primary/20 transition-all group h-full overflow-hidden">
-                    <div className="h-32 bg-gradient-to-br from-secondary via-secondary/60 to-muted flex items-center justify-center relative">
-                      <Avatar className="h-20 w-20 rounded-2xl ring-4 ring-card shadow-lg">
-                        <AvatarImage src={brand?.logo_url} className="rounded-2xl object-cover" />
-                        <AvatarFallback className="rounded-2xl bg-card text-2xl font-bold text-foreground">{(brand?.business_name || "B").charAt(0)}</AvatarFallback>
-                      </Avatar>
+                    <div className="h-36 bg-gradient-to-br from-secondary via-secondary/60 to-muted flex flex-col items-center justify-end pb-4 relative">
                       <Badge className={`absolute top-3 right-3 text-[10px] font-bold border ${getMatchColor(pct)}`}>{pct}% match</Badge>
+                      <Avatar className="h-16 w-16 rounded-2xl ring-4 ring-card shadow-lg">
+                        <AvatarImage src={brand?.logo_url} className="rounded-2xl object-cover" />
+                        <AvatarFallback className="rounded-2xl bg-card text-xl font-bold text-foreground">{(brand?.business_name || "B").charAt(0)}</AvatarFallback>
+                      </Avatar>
                     </div>
                     <CardContent className="p-5 flex flex-col">
                       <h3 className="font-heading font-bold text-base text-foreground text-center group-hover:text-primary transition-colors mb-1">{campaign.title}</h3>

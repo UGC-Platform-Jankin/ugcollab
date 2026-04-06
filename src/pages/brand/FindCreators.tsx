@@ -332,16 +332,16 @@ const FindCreators = () => {
             <Card key={creator.user_id} className="border-border shadow-sm hover:shadow-lg hover:border-primary/20 transition-all cursor-pointer group h-full overflow-hidden"
               onClick={() => handleViewCreator(creator)}>
               {/* Hero area */}
-              <div className="h-32 bg-gradient-to-br from-secondary via-secondary/60 to-muted flex items-center justify-center relative">
-                <Avatar className="h-20 w-20 rounded-2xl ring-4 ring-card shadow-lg">
-                  <AvatarImage src={creator.avatar_url || undefined} className="rounded-2xl object-cover" />
-                  <AvatarFallback className="rounded-2xl bg-card text-2xl font-bold text-foreground">{(creator.display_name || "?").charAt(0).toUpperCase()}</AvatarFallback>
-                </Avatar>
+              <div className="h-36 bg-gradient-to-br from-secondary via-secondary/60 to-muted flex flex-col items-center justify-end pb-4 relative">
                 {matchPct > 0 && (
                   <Badge className={`absolute top-3 right-3 text-[10px] font-bold border ${getMatchColor(matchPct)}`}>
                     <Sparkles className="h-3 w-3 mr-0.5" />{matchPct}%
                   </Badge>
                 )}
+                <Avatar className="h-16 w-16 rounded-2xl ring-4 ring-card shadow-lg">
+                  <AvatarImage src={creator.avatar_url || undefined} className="rounded-2xl object-cover" />
+                  <AvatarFallback className="rounded-2xl bg-card text-xl font-bold text-foreground">{(creator.display_name || "?").charAt(0).toUpperCase()}</AvatarFallback>
+                </Avatar>
               </div>
 
               <CardContent className="p-5 flex flex-col">
