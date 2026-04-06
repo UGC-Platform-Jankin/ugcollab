@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Video, CheckCircle, XCircle, Clock, MessageSquare, Play, ArrowLeft, Bell } from "lucide-react";
+import { Loader2, Video, CheckCircle, XCircle, MessageSquare, Play, ArrowLeft } from "lucide-react";
 import VideoPlayerDialog from "@/components/VideoPlayerDialog";
 
 interface Props {
@@ -19,15 +19,33 @@ const BrandVideoReview = ({ campaignId }: Props) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [submissions, setSubmissions] = useState<any[]>([]);
-  const [profiles, setProfiles] = useState<Record<string, any>>({});
+  const [allCreators, setAllCreators] = useState<{ userId: string; profile: any }[]>([]);
   const [loading, setLoading] = useState(true);
   const [reviewSub, setReviewSub] = useState<any>(null);
   const [feedback, setFeedback] = useState("");
   const [reviewLoading, setReviewLoading] = useState(false);
   const [playingVideo, setPlayingVideo] = useState<{ url: string; title: string } | null>(null);
   const [selectedCreator, setSelectedCreator] = useState<string | null>(null);
+  const [expectedVideoCount, setExpectedVideoCount] = useState(1);
 
   const loadData = async () => {
+    // Load campaign expected video count
+    const { data: campData } = await supabase
+      .from("campaigns")
+      .select("expected_video_count")
+      .eq("id", campaignId)
+      .single();
+    setExpectedVideoCount(campData?.expected_video_count || 1);
+
+    // Load ALL accepted creators for this campaign
+    const { data: apps } = await supabase
+      .from("campaign_applications")
+      .select("creator_user_id")
+      .eq("campaign_id", campaignId)
+      .eq("status", "accepted");
+    const creatorIds = [...new Set((apps || []).map((a: any) => a.creator_user_id))] as string[];
+
+    // Load submissions
     const { data: subs } = await supabase
       .from("video_submissions")
       .select("*")
@@ -35,12 +53,18 @@ const BrandVideoReview = ({ campaignId }: Props) => {
       .order("created_at", { ascending: false });
     setSubmissions(subs || []);
 
-    const creatorIds = [...new Set((subs || []).map((s: any) => s.creator_user_id))] as string[];
-    if (creatorIds.length > 0) {
-      const { data: profs } = await supabase.from("profiles").select("user_id, display_name, username, avatar_url").in("user_id", creatorIds);
+    // Also include creator IDs from submissions (in case they exist but aren't in applications)
+    const subCreatorIds = [...new Set((subs || []).map((s: any) => s.creator_user_id))] as string[];
+    const allIds = [...new Set([...creatorIds, ...subCreatorIds])] as string[];
+
+    // Load profiles
+    if (allIds.length > 0) {
+      const { data: profs } = await supabase.from("profiles").select("user_id, display_name, username, avatar_url").in("user_id", allIds);
       const map: Record<string, any> = {};
       (profs || []).forEach((p: any) => { map[p.user_id] = p; });
-      setProfiles(map);
+      setAllCreators(allIds.map(uid => ({ userId: uid, profile: map[uid] || {} })));
+    } else {
+      setAllCreators([]);
     }
     setLoading(false);
   };
@@ -77,40 +101,28 @@ const BrandVideoReview = ({ campaignId }: Props) => {
 
   if (loading) return <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-primary" /></div>;
 
-  // Group by creator
-  const byCreator: Record<string, { profile: any; subs: any[] }> = {};
+  // Build per-creator data
+  const byCreator: Record<string, any[]> = {};
   submissions.forEach((sub: any) => {
-    const uid = sub.creator_user_id;
-    if (!byCreator[uid]) byCreator[uid] = { profile: profiles[uid] || {}, subs: [] };
-    byCreator[uid].subs.push(sub);
+    if (!byCreator[sub.creator_user_id]) byCreator[sub.creator_user_id] = [];
+    byCreator[sub.creator_user_id].push(sub);
   });
-
-  const creatorEntries = Object.entries(byCreator);
-
-  if (submissions.length === 0) {
-    return (
-      <Card className="border-border/50 border-dashed">
-        <CardContent className="py-12 text-center">
-          <Video className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-          <p className="text-muted-foreground">No video submissions yet.</p>
-        </CardContent>
-      </Card>
-    );
-  }
 
   // Stats
   const pendingCount = submissions.filter(s => s.status === "pending").length;
   const acceptedCount = submissions.filter(s => s.status === "accepted").length;
   const rejectedCount = submissions.filter(s => s.status === "rejected").length;
 
-  // If a creator is selected, show their submissions
+  // Selected creator detail view
   if (selectedCreator) {
-    const creatorData = byCreator[selectedCreator];
-    if (!creatorData) { setSelectedCreator(null); return null; }
-    const { profile: prof, subs } = creatorData;
+    const creator = allCreators.find(c => c.userId === selectedCreator);
+    if (!creator) { setSelectedCreator(null); return null; }
+    const prof = creator.profile;
+    const subs = byCreator[selectedCreator] || [];
     const cPending = subs.filter(s => s.status === "pending").length;
     const cAccepted = subs.filter(s => s.status === "accepted").length;
     const cRejected = subs.filter(s => s.status === "rejected").length;
+    const videosLeft = Math.max(0, expectedVideoCount - cAccepted);
 
     return (
       <div>
@@ -125,7 +137,7 @@ const BrandVideoReview = ({ campaignId }: Props) => {
           </Avatar>
           <div>
             <p className="font-semibold text-foreground">{prof.display_name || prof.username || "Creator"}</p>
-            <p className="text-xs text-muted-foreground">{subs.length} submission{subs.length !== 1 ? "s" : ""}</p>
+            <p className="text-xs text-muted-foreground">{subs.length} submission{subs.length !== 1 ? "s" : ""} · {videosLeft} video{videosLeft !== 1 ? "s" : ""} left</p>
           </div>
         </div>
 
@@ -144,32 +156,41 @@ const BrandVideoReview = ({ campaignId }: Props) => {
           </div>
         </div>
 
-        <div className="space-y-2">
-          {subs.map((sub: any) => (
-            <Card key={sub.id} className="border-border/50">
-              <CardContent className="p-4">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="min-w-0 flex-1">
-                    <p className="font-medium text-sm text-foreground truncate">{sub.title}</p>
-                    <p className="text-[11px] text-muted-foreground">{new Date(sub.created_at).toLocaleDateString()}</p>
-                    <div className="mt-1.5">{statusBadge(sub.status)}</div>
-                    {sub.feedback && <div className="mt-2 p-2 rounded bg-secondary/50 text-xs"><span className="text-muted-foreground">Feedback: </span>{sub.feedback}</div>}
-                  </div>
-                  <div className="flex flex-col gap-1.5 shrink-0">
-                    <Button size="sm" variant="outline" className="gap-1 h-7 text-xs" onClick={() => setPlayingVideo({ url: sub.video_url, title: sub.title })}>
-                      <Play className="h-3 w-3" /> View
-                    </Button>
-                    {sub.status === "pending" && (
-                      <Button size="sm" variant="secondary" className="gap-1 h-7 text-xs" onClick={() => { setReviewSub(sub); setFeedback(""); }}>
-                        <MessageSquare className="h-3 w-3" /> Review
+        {subs.length === 0 ? (
+          <Card className="border-border/50 border-dashed">
+            <CardContent className="py-8 text-center">
+              <Video className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+              <p className="text-sm text-muted-foreground">No videos submitted yet</p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-2">
+            {subs.map((sub: any) => (
+              <Card key={sub.id} className="border-border/50">
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium text-sm text-foreground truncate">{sub.title}</p>
+                      <p className="text-[11px] text-muted-foreground">{new Date(sub.created_at).toLocaleDateString()}</p>
+                      <div className="mt-1.5">{statusBadge(sub.status)}</div>
+                      {sub.feedback && <div className="mt-2 p-2 rounded bg-secondary/50 text-xs"><span className="text-muted-foreground">Feedback: </span>{sub.feedback}</div>}
+                    </div>
+                    <div className="flex flex-col gap-1.5 shrink-0">
+                      <Button size="sm" variant="outline" className="gap-1 h-7 text-xs" onClick={() => setPlayingVideo({ url: sub.video_url, title: sub.title })}>
+                        <Play className="h-3 w-3" /> View
                       </Button>
-                    )}
+                      {sub.status === "pending" && (
+                        <Button size="sm" variant="secondary" className="gap-1 h-7 text-xs" onClick={() => { setReviewSub(sub); setFeedback(""); }}>
+                          <MessageSquare className="h-3 w-3" /> Review
+                        </Button>
+                      )}
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
 
         <Dialog open={!!reviewSub} onOpenChange={o => { if (!o) setReviewSub(null); }}>
           <DialogContent>
@@ -196,10 +217,9 @@ const BrandVideoReview = ({ campaignId }: Props) => {
     );
   }
 
-  // Creator grid view
+  // Creator grid view — show ALL creators
   return (
     <div>
-      {/* Stats */}
       <div className="grid grid-cols-3 gap-3 mb-5">
         <div className="rounded-xl bg-yellow-50 dark:bg-yellow-500/10 border border-yellow-200 dark:border-yellow-500/20 p-3 text-center">
           <p className="text-lg font-bold text-foreground">{pendingCount}</p>
@@ -215,35 +235,47 @@ const BrandVideoReview = ({ campaignId }: Props) => {
         </div>
       </div>
 
-      {/* Creator cards */}
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-        {creatorEntries.map(([uid, { profile: prof, subs }]) => {
-          const cPending = subs.filter(s => s.status === "pending").length;
-          return (
-            <Card
-              key={uid}
-              className="border-border/50 hover:border-primary/30 hover:shadow-md transition-all cursor-pointer"
-              onClick={() => setSelectedCreator(uid)}
-            >
-              <CardContent className="p-4 flex flex-col items-center text-center">
-                <div className="relative mb-3">
-                  <Avatar className="h-14 w-14">
-                    <AvatarImage src={prof.avatar_url || undefined} />
-                    <AvatarFallback className="bg-secondary text-lg">{(prof.display_name || prof.username || "C").charAt(0).toUpperCase()}</AvatarFallback>
-                  </Avatar>
-                  {cPending > 0 && (
-                    <span className="absolute -top-1 -right-1 h-5 min-w-[20px] px-1 rounded-full bg-yellow-500 text-white text-[10px] font-bold flex items-center justify-center">
-                      {cPending}
-                    </span>
-                  )}
-                </div>
-                <p className="font-medium text-sm text-foreground truncate max-w-full">{prof.display_name || prof.username || "Creator"}</p>
-                <p className="text-[11px] text-muted-foreground mt-0.5">{subs.length} video{subs.length !== 1 ? "s" : ""}</p>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
+      {allCreators.length === 0 ? (
+        <Card className="border-border/50 border-dashed">
+          <CardContent className="py-12 text-center">
+            <Video className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+            <p className="text-muted-foreground">No creators in this campaign yet.</p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          {allCreators.map(({ userId, profile: prof }) => {
+            const subs = byCreator[userId] || [];
+            const cPending = subs.filter(s => s.status === "pending").length;
+            const cAccepted = subs.filter(s => s.status === "accepted").length;
+            const videosLeft = Math.max(0, expectedVideoCount - cAccepted);
+            return (
+              <Card
+                key={userId}
+                className="border-border/50 hover:border-primary/30 hover:shadow-md transition-all cursor-pointer"
+                onClick={() => setSelectedCreator(userId)}
+              >
+                <CardContent className="p-4 flex flex-col items-center text-center">
+                  <div className="relative mb-3">
+                    <Avatar className="h-14 w-14">
+                      <AvatarImage src={prof.avatar_url || undefined} />
+                      <AvatarFallback className="bg-secondary text-lg">{(prof.display_name || prof.username || "C").charAt(0).toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                    {cPending > 0 && (
+                      <span className="absolute -top-1 -right-1 h-5 min-w-[20px] px-1 rounded-full bg-yellow-500 text-white text-[10px] font-bold flex items-center justify-center">
+                        {cPending}
+                      </span>
+                    )}
+                  </div>
+                  <p className="font-medium text-sm text-foreground truncate max-w-full">{prof.display_name || prof.username || "Creator"}</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">{subs.length} video{subs.length !== 1 ? "s" : ""}</p>
+                  <p className="text-[10px] text-muted-foreground">{videosLeft} left to deliver</p>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
 
       <VideoPlayerDialog videoUrl={playingVideo?.url || null} title={playingVideo?.title} onClose={() => setPlayingVideo(null)} />
     </div>
