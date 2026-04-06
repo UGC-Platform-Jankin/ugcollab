@@ -19,12 +19,12 @@ const BrandCampaignDetail = () => {
 
   const currentTab = location.pathname.endsWith("/posted") ? "posted"
     : location.pathname.endsWith("/schedule") ? "schedule"
-    : location.pathname.endsWith("/settings") ? "settings"
-    : "videos";
+    : location.pathname.endsWith("/videos") ? "videos"
+    : "settings";
 
   const handleTabChange = (val: string) => {
     const base = `/brand/campaigns/${campaignId}`;
-    const suffix = val === "videos" ? "" : `/${val}`;
+    const suffix = val === "settings" ? "" : `/${val}`;
     navigate(base + suffix);
   };
 
