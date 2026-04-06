@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import CreatorOnboarding from "@/components/onboarding/CreatorOnboarding";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Briefcase, User, LogOut, MessageCircle, Shield, LayoutDashboard, Sun, Moon, Sparkles, ChevronDown, ChevronRight, Video, Link2, Calendar, Building2 } from "lucide-react";
+import { Briefcase, User, LogOut, MessageCircle, Shield, LayoutDashboard, Sun, Moon, Sparkles, ChevronDown, ChevronRight, Video, Link2, Calendar, Building2, BookOpen } from "lucide-react";
 import NotificationBell from "@/components/NotificationBell";
 import { supabase } from "@/integrations/supabase/client";
 import { useUnreadMessages } from "@/hooks/useUnreadMessages";
