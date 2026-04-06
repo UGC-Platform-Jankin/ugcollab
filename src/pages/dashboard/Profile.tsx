@@ -140,6 +140,21 @@ const Profile = () => {
   const handleSaveProfile = async () => {
     if (!user) return;
     setSaving(true);
+
+    // Check username uniqueness (exclude current user)
+    if (username.trim()) {
+      const { data: existing } = await supabase
+        .from("profiles")
+        .select("id, user_id")
+        .eq("username", username.trim())
+        .maybeSingle();
+      if (existing && existing.user_id !== user.id) {
+        toast({ title: "Username taken", description: "This username is already in use.", variant: "destructive" });
+        setSaving(false);
+        return;
+      }
+    }
+
     const { error } = await supabase
       .from("profiles")
       .update({ username, display_name: displayName, bio, avatar_url: avatarUrl.split("?")[0], content_types: contentTypes, gender, country })

@@ -44,6 +44,21 @@ const Auth = () => {
       return;
     }
     setLoading(true);
+
+    // Check username uniqueness
+    if (username.trim()) {
+      const { data: existing } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("username", username.trim())
+        .maybeSingle();
+      if (existing) {
+        toast({ title: "Username taken", description: "This username is already in use. Please choose another.", variant: "destructive" });
+        setLoading(false);
+        return;
+      }
+    }
+
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
