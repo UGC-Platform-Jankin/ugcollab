@@ -74,14 +74,16 @@ const CampaignSettings = ({ campaignId }: Props) => {
 
   const loadApplications = async () => {
     setLoadingApps(true);
-    const [appsRes, resourcesRes, sharesRes] = await Promise.all([
+    const [appsRes, resourcesRes, sharesRes, subsRes] = await Promise.all([
       supabase.from("campaign_applications").select("*").eq("campaign_id", campaignId).order("created_at", { ascending: false }),
       supabase.from("campaign_resources" as any).select("*").eq("campaign_id", campaignId).order("display_order"),
       supabase.from("contact_shares" as any).select("*").eq("campaign_id", campaignId),
+      supabase.from("video_submissions").select("*").eq("campaign_id", campaignId),
     ]);
     const apps = (appsRes.data as any) || [];
     setCampaignResources((resourcesRes.data as any) || []);
     setContactShares((sharesRes.data as any) || []);
+    setVideoSubmissions((subsRes.data as any) || []);
     const creatorIds = [...new Set(apps.map((a: any) => a.creator_user_id))];
     if (creatorIds.length > 0) {
       const [profilesRes, socialsRes] = await Promise.all([
