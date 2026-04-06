@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import CreatorOnboarding from "@/components/onboarding/CreatorOnboarding";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Briefcase, User, LogOut, MessageCircle, Shield, LayoutDashboard, Sun, Moon, Sparkles, ChevronDown, ChevronRight, Video, Link2, Calendar } from "lucide-react";
+import { Briefcase, User, LogOut, MessageCircle, Shield, LayoutDashboard, Sun, Moon, Sparkles, ChevronDown, ChevronRight, Video, Link2, Calendar, Building2 } from "lucide-react";
 import NotificationBell from "@/components/NotificationBell";
 import { supabase } from "@/integrations/supabase/client";
 import { useUnreadMessages } from "@/hooks/useUnreadMessages";
@@ -60,13 +60,17 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
       }
     });
 
-    // Load active gigs for sidebar
+    // Load active gigs for sidebar (with brand logos)
     supabase.from("campaign_applications").select("campaign_id").eq("creator_user_id", user.id).eq("status", "accepted").then(async ({ data: apps }) => {
       if (!apps?.length) return;
       const campIds = apps.map((a: any) => a.campaign_id);
-      const { data: camps } = await supabase.from("campaigns").select("id, title").in("id", campIds);
-      setActiveGigs(camps || []);
-      // Auto-expand if currently viewing a gig
+      const { data: camps } = await supabase.from("campaigns").select("id, title, brand_user_id").in("id", campIds);
+      if (!camps?.length) return;
+      const brandIds = [...new Set(camps.map((c: any) => c.brand_user_id))];
+      const { data: brands } = await supabase.from("brand_profiles").select("user_id, logo_url, business_name").in("user_id", brandIds);
+      const brandMap: Record<string, any> = {};
+      (brands || []).forEach((b: any) => { brandMap[b.user_id] = b; });
+      setActiveGigs(camps.map((c: any) => ({ ...c, _brand: brandMap[c.brand_user_id] || null })));
       const match = location.pathname.match(/\/dashboard\/gig\/([^/]+)/);
       if (match) setExpandedGigs(new Set([match[1]]));
     });
@@ -191,7 +195,14 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
                                   isGigActive ? "bg-primary/10 text-primary font-semibold" : "text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground"
                                 )}
                               >
-                                <Briefcase className="w-4 h-4 shrink-0" />
+                                {gig._brand?.logo_url ? (
+                                  <Avatar className="w-5 h-5 shrink-0 rounded">
+                                    <AvatarImage src={gig._brand.logo_url} />
+                                    <AvatarFallback className="rounded bg-primary/10 text-[9px] font-bold">{(gig._brand.business_name || "B").charAt(0)}</AvatarFallback>
+                                  </Avatar>
+                                ) : (
+                                  <Building2 className="w-4 h-4 shrink-0" />
+                                )}
                                 <span className="flex-1 text-[13px] truncate">{gig.title}</span>
                                 {isExpanded ? <ChevronDown className="w-3.5 h-3.5 shrink-0" /> : <ChevronRight className="w-3.5 h-3.5 shrink-0" />}
                               </button>
