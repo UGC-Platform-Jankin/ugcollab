@@ -6,7 +6,7 @@
 
 @layer base {
   :root {
-    --background: 0 0% 98%;
+    --background: 0 0% 99%;
     --foreground: 222 47% 11%;
 
     --card: 0 0% 100%;
@@ -15,40 +15,40 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
 
-    --primary: 12 100% 64%;
+    --primary: 350 80% 56%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 14% 94%;
+    --secondary: 220 14% 96%;
     --secondary-foreground: 222 47% 11%;
 
-    --muted: 220 14% 94%;
+    --muted: 220 14% 96%;
     --muted-foreground: 220 9% 46%;
 
-    --accent: 12 100% 64%;
+    --accent: 350 80% 56%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 13% 89%;
-    --input: 220 13% 89%;
-    --ring: 12 100% 64%;
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 350 80% 56%;
 
     --radius: 0.75rem;
 
-    --gradient-coral: linear-gradient(135deg, hsl(12, 100%, 64%), hsl(30, 100%, 60%));
-    --gradient-card: linear-gradient(135deg, hsl(0, 0%, 100%), hsl(220, 14%, 96%));
-    --gradient-hero: radial-gradient(ellipse at 50% 0%, hsl(12, 100%, 64%, 0.06) 0%, transparent 60%);
-    --shadow-glow: 0 0 60px -10px hsl(12, 100%, 64%, 0.12);
+    --gradient-coral: linear-gradient(135deg, hsl(350, 80%, 56%), hsl(12, 90%, 62%));
+    --gradient-card: linear-gradient(135deg, hsl(0, 0%, 100%), hsl(220, 20%, 97%));
+    --gradient-hero: radial-gradient(ellipse at 50% 0%, hsl(350, 80%, 56%, 0.05) 0%, transparent 60%);
+    --shadow-glow: 0 0 60px -10px hsl(350, 80%, 56%, 0.1);
 
     --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 222 47% 11%;
-    --sidebar-primary: 12 100% 64%;
+    --sidebar-primary: 350 80% 56%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 14% 94%;
+    --sidebar-accent: 220 14% 96%;
     --sidebar-accent-foreground: 222 47% 11%;
-    --sidebar-border: 220 13% 89%;
-    --sidebar-ring: 12 100% 64%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 350 80% 56%;
   }
 
   .dark {
@@ -61,7 +61,7 @@
     --popover: 222 40% 10%;
     --popover-foreground: 210 40% 96%;
 
-    --primary: 12 100% 64%;
+    --primary: 350 80% 56%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 222 30% 14%;
@@ -70,7 +70,7 @@
     --muted: 222 30% 14%;
     --muted-foreground: 215 20% 55%;
 
-    --accent: 12 100% 64%;
+    --accent: 350 80% 56%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84% 60%;
@@ -78,21 +78,21 @@
 
     --border: 222 20% 18%;
     --input: 222 20% 18%;
-    --ring: 12 100% 64%;
+    --ring: 350 80% 56%;
 
-    --gradient-coral: linear-gradient(135deg, hsl(12, 100%, 64%), hsl(30, 100%, 60%));
+    --gradient-coral: linear-gradient(135deg, hsl(350, 80%, 56%), hsl(12, 90%, 62%));
     --gradient-card: linear-gradient(135deg, hsl(222, 40%, 12%), hsl(222, 40%, 8%));
-    --gradient-hero: radial-gradient(ellipse at 50% 0%, hsl(12, 100%, 64%, 0.08) 0%, transparent 60%);
-    --shadow-glow: 0 0 60px -10px hsl(12, 100%, 64%, 0.2);
+    --gradient-hero: radial-gradient(ellipse at 50% 0%, hsl(350, 80%, 56%, 0.08) 0%, transparent 60%);
+    --shadow-glow: 0 0 60px -10px hsl(350, 80%, 56%, 0.2);
 
     --sidebar-background: 222 40% 8%;
     --sidebar-foreground: 210 40% 96%;
-    --sidebar-primary: 12 100% 64%;
+    --sidebar-primary: 350 80% 56%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 222 30% 14%;
     --sidebar-accent-foreground: 210 40% 96%;
     --sidebar-border: 222 20% 18%;
-    --sidebar-ring: 12 100% 64%;
+    --sidebar-ring: 350 80% 56%;
   }
 }
 
@@ -134,12 +134,12 @@
 
   .bg-mesh {
     background-image: 
-      radial-gradient(at 20% 10%, hsl(12, 100%, 64%, 0.06) 0px, transparent 50%),
-      radial-gradient(at 80% 20%, hsl(30, 100%, 60%, 0.05) 0px, transparent 50%),
-      radial-gradient(at 50% 80%, hsl(220, 50%, 50%, 0.04) 0px, transparent 50%);
+      radial-gradient(at 20% 10%, hsl(350, 80%, 56%, 0.03) 0px, transparent 50%),
+      radial-gradient(at 80% 20%, hsl(12, 90%, 62%, 0.03) 0px, transparent 50%),
+      radial-gradient(at 50% 80%, hsl(220, 50%, 50%, 0.02) 0px, transparent 50%);
   }
 
   .shadow-coral {
-    box-shadow: 0 4px 24px -4px hsl(12, 100%, 64%, 0.35);
+    box-shadow: 0 4px 20px -4px hsl(350, 80%, 56%, 0.25);
   }
 }

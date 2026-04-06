@@ -21,7 +21,7 @@ function isPublicRoute(pathname: string) {
 export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
   const [preferredTheme, setPreferredTheme] = useState<Theme>(() => {
     const stored = localStorage.getItem("ugc-theme");
-    return (stored === "light" || stored === "dark") ? stored : "dark";
+    return (stored === "light" || stored === "dark") ? stored : "light";
   });
 
   return (
