@@ -238,7 +238,7 @@ const Gigs = () => {
 
   const tabs: { key: TabFilter; label: string; count: number }[] = [
     { key: "available", label: "Available", count: campaigns.filter(c => !appliedCampaigns.has(c.id)).length },
-    { key: "applied", label: "Applied", count: appliedCampaigns.size },
+    { key: "applied", label: "Applied", count: [...appliedCampaigns].filter(id => campaigns.some(c => c.id === id)).length },
     { key: "active", label: "Active", count: activeMemberships.length },
   ];
 
@@ -257,7 +257,7 @@ const Gigs = () => {
   const filteredCampaigns = applyFilters(
     campaigns.filter((c) => {
       if (activeTab === "available") return !appliedCampaigns.has(c.id);
-      if (activeTab === "applied") return appliedCampaigns.has(c.id) && !activeMemberships.some(m => m.campaign_id === c.id);
+      if (activeTab === "applied") return appliedCampaigns.has(c.id);
       return false;
     })
   ).sort((a, b) => (aiMatches[b.id] || 0) - (aiMatches[a.id] || 0));
