@@ -28,9 +28,21 @@ const BrandAuth = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
       toast({ title: "Login failed", description: error.message, variant: "destructive" });
+      setLoading(false);
+      return;
+    }
+    // Check if a brand profile exists for this user
+    if (data.user) {
+      const { data: bp } = await supabase.from("brand_profiles").select("id").eq("user_id", data.user.id).maybeSingle();
+      if (!bp) {
+        await supabase.auth.signOut();
+        toast({ title: "No business account found", description: "This email doesn't have a business account. Sign up first or use the creator login.", variant: "destructive" });
+        setLoading(false);
+        return;
+      }
     }
     setLoading(false);
   };
