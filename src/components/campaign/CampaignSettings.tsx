@@ -251,9 +251,13 @@ const CampaignSettings = ({ campaignId }: Props) => {
   };
 
   const handleRemoveCreator = async () => {
-    if (!removingCreator || !user || !campaign) return;
+    if (!removingCreator || !user || !campaign || !removalMessage.trim()) {
+      toast({ title: "Please provide a reason for removal", variant: "destructive" });
+      return;
+    }
     setRemovingLoading(true);
     const app = removingCreator;
+    const msg = removalMessage.trim();
     await supabase.from("campaign_applications").update({ status: "removed" } as any).eq("id", app.id);
     const { data: groupRoom } = await supabase.from("chat_rooms").select("id").eq("campaign_id", campaign.id).eq("type", "group").maybeSingle();
     if (groupRoom) {
@@ -270,7 +274,7 @@ const CampaignSettings = ({ campaignId }: Props) => {
         if (pIds.includes(user.id) && pIds.includes(app.creator_user_id)) {
           await supabase.from("messages").insert({
             chat_room_id: room.id, sender_id: user.id,
-            content: `You have been removed from the campaign "${campaign.title}". Videos delivered: ${app.videos_delivered || 0}.`,
+            content: `⚠️ You have been removed from the campaign "${campaign.title}".\n\nReason: ${msg}\n\nVideos delivered: ${app.videos_delivered || 0}`,
           } as any);
           break;
         }
@@ -279,12 +283,13 @@ const CampaignSettings = ({ campaignId }: Props) => {
     await supabase.from("notifications" as any).insert({
       user_id: app.creator_user_id, type: "application_update",
       title: "Removed from Campaign",
-      body: `You have been removed from "${campaign.title}". Videos delivered: ${app.videos_delivered || 0}`,
-      link: "/dashboard",
+      body: `You have been removed from "${campaign.title}". Reason: ${msg}`,
+      link: "/dashboard/messages",
     } as any);
     setApplications((prev) => prev.map((a) => a.id === app.id ? { ...a, status: "removed" } : a));
     toast({ title: "Creator removed from campaign" });
     setRemovingCreator(null);
+    setRemovalMessage("");
     setRemovingLoading(false);
   };
 
