@@ -12,8 +12,13 @@ const CreatorGigDetail = () => {
   const { campaignId } = useParams<{ campaignId: string }>();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [campaign, setCampaign] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+
+  const defaultTab = location.pathname.endsWith("/posted") ? "posted"
+    : location.pathname.endsWith("/schedule") ? "schedule"
+    : "videos";
 
   useEffect(() => {
     if (!user || !campaignId) return;
@@ -48,7 +53,7 @@ const CreatorGigDetail = () => {
         <p className="text-muted-foreground text-sm mt-0.5">Manage your videos and schedule for this gig</p>
       </div>
 
-      <Tabs defaultValue="videos" className="space-y-4">
+      <Tabs defaultValue={defaultTab} className="space-y-4">
         <TabsList>
           <TabsTrigger value="videos" className="gap-1.5"><Video className="h-3.5 w-3.5" /> Videos</TabsTrigger>
           <TabsTrigger value="posted" className="gap-1.5"><Link2 className="h-3.5 w-3.5" /> Posted Videos</TabsTrigger>
