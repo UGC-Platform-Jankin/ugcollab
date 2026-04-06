@@ -118,6 +118,10 @@ const Gigs = () => {
 
       const allApps = (applicationsRes.data as any) || [];
       setAppliedCampaigns(new Set(allApps.map((a: any) => a.campaign_id)));
+      // Track per-campaign application status
+      const statusMap: Record<string, string> = {};
+      allApps.forEach((a: any) => { statusMap[a.campaign_id] = a.status; });
+      setApplicationStatuses(statusMap);
 
       const accepted = allApps.filter((a: any) => a.status === "accepted");
       if (accepted.length > 0) {
