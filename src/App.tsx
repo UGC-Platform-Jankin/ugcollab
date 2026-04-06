@@ -65,6 +65,7 @@ const App = () => (
               <Route path="/dashboard/gig/:campaignId" element={<DashboardLayout><CreatorGigDetail /></DashboardLayout>} />
               <Route path="/dashboard/gig/:campaignId/posted" element={<DashboardLayout><CreatorGigDetail /></DashboardLayout>} />
               <Route path="/dashboard/gig/:campaignId/schedule" element={<DashboardLayout><CreatorGigDetail /></DashboardLayout>} />
+              <Route path="/dashboard/gig/:campaignId/resources" element={<DashboardLayout><CreatorGigDetail /></DashboardLayout>} />
               <Route path="/dashboard/setup" element={<ProfileSetup />} />
               <Route path="/brand/auth" element={<BrandAuth />} />
               <Route path="/brand/setup" element={<BrandSetup />} />

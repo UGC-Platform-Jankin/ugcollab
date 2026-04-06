@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate, useLocation, useSearchParams } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Video, Link2, Calendar } from "lucide-react";
+import { Loader2, Video, Link2, Calendar, BookOpen } from "lucide-react";
 import CreatorVideosForGig from "@/components/campaign/CreatorVideos";
 import CreatorPostedForGig from "@/components/campaign/CreatorPostedVideos";
 import PostingSchedule from "@/components/campaign/PostingSchedule";
+import CreatorResources from "@/components/campaign/CreatorResources";
 
 const CreatorGigDetail = () => {
   const { campaignId } = useParams<{ campaignId: string }>();
@@ -18,19 +19,18 @@ const CreatorGigDetail = () => {
 
   const currentTab = location.pathname.endsWith("/posted") ? "posted"
     : location.pathname.endsWith("/schedule") ? "schedule"
+    : location.pathname.endsWith("/resources") ? "resources"
     : "videos";
 
-  const navigate2 = useNavigate();
   const handleTabChange = (val: string) => {
     const base = `/dashboard/gig/${campaignId}`;
     const suffix = val === "videos" ? "" : `/${val}`;
-    navigate2(base + suffix);
+    navigate(base + suffix);
   };
 
   useEffect(() => {
     if (!user || !campaignId) return;
     const load = async () => {
-      // Verify the creator is accepted to this campaign
       const { data: app } = await supabase
         .from("campaign_applications")
         .select("id")
@@ -67,6 +67,7 @@ const CreatorGigDetail = () => {
           {showSchedule && (
             <TabsTrigger value="schedule" className="gap-1.5"><Calendar className="h-3.5 w-3.5" /> Schedule</TabsTrigger>
           )}
+          <TabsTrigger value="resources" className="gap-1.5"><BookOpen className="h-3.5 w-3.5" /> Resources</TabsTrigger>
         </TabsList>
 
         <TabsContent value="videos">
@@ -80,6 +81,9 @@ const CreatorGigDetail = () => {
             <PostingSchedule campaignId={campaignId!} readOnly />
           </TabsContent>
         )}
+        <TabsContent value="resources">
+          <CreatorResources campaignId={campaignId!} />
+        </TabsContent>
       </Tabs>
     </div>
   );
