@@ -813,6 +813,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_campaign_creator_emails: {
+        Args: { _campaign_id: string }
+        Returns: {
+          email: string
+          user_id: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

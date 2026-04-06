@@ -58,14 +58,16 @@ const AllCreators = ({ campaignId }: Props) => {
     if (apps.length === 0) { setCreators([]); setLoading(false); return; }
 
     const creatorIds = [...new Set(apps.map((a: any) => a.creator_user_id))] as string[];
-    const [profilesRes, socialsRes, subsRes, linksRes] = await Promise.all([
+    const [profilesRes, socialsRes, subsRes, linksRes, emailsRes] = await Promise.all([
       supabase.from("profiles").select("*").in("user_id", creatorIds),
       supabase.from("social_connections").select("*").in("user_id", creatorIds),
       supabase.from("video_submissions").select("*").eq("campaign_id", campaignId).order("created_at", { ascending: false }),
       supabase.from("posted_video_links").select("*, video_submissions!inner(campaign_id, creator_user_id)").eq("video_submissions.campaign_id", campaignId),
+      supabase.rpc("get_campaign_creator_emails", { _campaign_id: campaignId }),
     ]);
 
-    // Get emails from auth - we'll use profiles for now
+    const emailMap: Record<string, string> = {};
+    ((emailsRes.data as any) || []).forEach((e: any) => { emailMap[e.user_id] = e.email; });
     const profileMap: Record<string, any> = {};
     (profilesRes.data || []).forEach((p: any) => { profileMap[p.user_id] = p; });
     const socialMap: Record<string, any[]> = {};
@@ -93,6 +95,7 @@ const AllCreators = ({ campaignId }: Props) => {
       _socials: socialMap[a.creator_user_id] || [],
       _submissions: subMap[a.creator_user_id] || [],
       _links: linkMap[a.creator_user_id] || [],
+      _email: emailMap[a.creator_user_id] || null,
     }));
 
     setCreators(result);
@@ -186,7 +189,8 @@ const AllCreators = ({ campaignId }: Props) => {
       const q = search.toLowerCase();
       const name = (c._profile?.display_name || "").toLowerCase();
       const uname = (c._profile?.username || "").toLowerCase();
-      if (!name.includes(q) && !uname.includes(q)) return false;
+      const email = (c._email || "").toLowerCase();
+      if (!name.includes(q) && !uname.includes(q) && !email.includes(q)) return false;
     }
     return true;
   });
@@ -255,7 +259,7 @@ const AllCreators = ({ campaignId }: Props) => {
                       </div>
                       <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5 flex-wrap">
                         {profile?.username && <span>@{profile.username}</span>}
-                        <span className="flex items-center gap-1"><Mail className="h-3 w-3" /> {profile?.display_name ? `${profile.username || "—"}` : "—"}</span>
+                        {c._email && <span className="flex items-center gap-1"><Mail className="h-3 w-3" /> {c._email}</span>}
                         <span>{accepted} accepted · {pending} pending · {subs.length} total videos</span>
                         <span>{links.length} link{links.length !== 1 ? "s" : ""} posted</span>
                       </div>
