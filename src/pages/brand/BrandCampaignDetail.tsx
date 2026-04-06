@@ -17,10 +17,16 @@ const BrandCampaignDetail = () => {
   const [campaign, setCampaign] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  const defaultTab = location.pathname.endsWith("/posted") ? "posted"
+  const currentTab = location.pathname.endsWith("/posted") ? "posted"
     : location.pathname.endsWith("/schedule") ? "schedule"
     : location.pathname.endsWith("/settings") ? "settings"
     : "videos";
+
+  const handleTabChange = (val: string) => {
+    const base = `/brand/campaigns/${campaignId}`;
+    const suffix = val === "videos" ? "" : `/${val}`;
+    navigate(base + suffix);
+  };
 
   useEffect(() => {
     if (!user || !campaignId) return;
@@ -40,7 +46,7 @@ const BrandCampaignDetail = () => {
         <p className="text-muted-foreground text-sm mt-0.5">Manage videos, schedule, and settings for this campaign</p>
       </div>
 
-      <Tabs defaultValue={defaultTab} className="space-y-4">
+      <Tabs value={currentTab} onValueChange={handleTabChange} className="space-y-4">
         <TabsList>
           <TabsTrigger value="videos" className="gap-1.5"><Video className="h-3.5 w-3.5" /> Video Review</TabsTrigger>
           <TabsTrigger value="posted" className="gap-1.5"><Link2 className="h-3.5 w-3.5" /> Posted Videos</TabsTrigger>

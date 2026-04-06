@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate, useLocation } from "react-router-dom";
+import { useParams, useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -16,9 +16,16 @@ const CreatorGigDetail = () => {
   const [campaign, setCampaign] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  const defaultTab = location.pathname.endsWith("/posted") ? "posted"
+  const currentTab = location.pathname.endsWith("/posted") ? "posted"
     : location.pathname.endsWith("/schedule") ? "schedule"
     : "videos";
+
+  const navigate2 = useNavigate();
+  const handleTabChange = (val: string) => {
+    const base = `/dashboard/gig/${campaignId}`;
+    const suffix = val === "videos" ? "" : `/${val}`;
+    navigate2(base + suffix);
+  };
 
   useEffect(() => {
     if (!user || !campaignId) return;
@@ -53,7 +60,7 @@ const CreatorGigDetail = () => {
         <p className="text-muted-foreground text-sm mt-0.5">Manage your videos and schedule for this gig</p>
       </div>
 
-      <Tabs defaultValue={defaultTab} className="space-y-4">
+      <Tabs value={currentTab} onValueChange={handleTabChange} className="space-y-4">
         <TabsList>
           <TabsTrigger value="videos" className="gap-1.5"><Video className="h-3.5 w-3.5" /> Videos</TabsTrigger>
           <TabsTrigger value="posted" className="gap-1.5"><Link2 className="h-3.5 w-3.5" /> Posted Videos</TabsTrigger>
