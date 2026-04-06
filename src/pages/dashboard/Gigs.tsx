@@ -699,42 +699,36 @@ const Gigs = () => {
       </Dialog>
 
       {/* Leave Campaign Confirmation */}
-      <AlertDialog open={!!leavingCampaign} onOpenChange={(open) => !open && setLeavingCampaign(null)}>
-        <AlertDialogContent className="rounded-2xl">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="font-heading font-bold">Leave this campaign?</AlertDialogTitle>
-            <AlertDialogDescription className="space-y-2">
-              <span className="block">You are about to leave <strong>"{leavingCampaign?._campaign?.title}"</strong>.</span>
-              <span className="block font-medium text-foreground">Videos delivered so far: {leavingCampaign?.videos_delivered || 0} / {leavingCampaign?._campaign?.expected_video_count || 0}</span>
+      <Dialog open={!!leavingCampaign} onOpenChange={(open) => { if (!open) { setLeavingCampaign(null); setLeaveReason(""); } }}>
+        <DialogContent className="max-w-md rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="font-heading font-bold">Leave "{leavingCampaign?._campaign?.title}"</DialogTitle>
+            <DialogDescription className="space-y-2">
+              <span className="block font-medium text-foreground">Videos delivered: {leavingCampaign?.videos_delivered || 0} / {leavingCampaign?._campaign?.expected_video_count || 0}</span>
               <span className="block text-sm">You'll be removed from the group chat but can still message the brand privately. This action cannot be undone.</span>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel className="rounded-full">Stay</AlertDialogCancel>
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="destructive" className="rounded-full">Yes, leave campaign</Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent className="rounded-2xl">
-                <AlertDialogHeader>
-                  <AlertDialogTitle className="font-heading font-bold">Final confirmation</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Are you absolutely sure you want to leave? You have delivered <strong>{leavingCampaign?.videos_delivered || 0}</strong> video{(leavingCampaign?.videos_delivered || 0) !== 1 ? "s" : ""} so far. This is permanent.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel className="rounded-full">Go back</AlertDialogCancel>
-                  <AlertDialogAction
-                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-full"
-                    onClick={handleLeaveCampaign} disabled={leavingLoading}>
-                    {leavingLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Leave permanently"}
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium mb-1.5 block">Reason for leaving <span className="text-destructive">*</span></label>
+              <Textarea
+                placeholder="Let the brand know why you're leaving..."
+                value={leaveReason}
+                onChange={(e) => setLeaveReason(e.target.value)}
+                className="min-h-[100px]"
+              />
+              <p className="text-xs text-muted-foreground mt-1">This will be sent to the brand via private chat.</p>
+            </div>
+            <div className="flex gap-3 justify-end">
+              <Button variant="outline" className="rounded-full" onClick={() => { setLeavingCampaign(null); setLeaveReason(""); }}>Stay</Button>
+              <Button variant="destructive" className="rounded-full" onClick={handleLeaveCampaign} disabled={leavingLoading || !leaveReason.trim()}>
+                {leavingLoading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
+                Leave permanently
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Active Gig Detail Dialog */}
       <Dialog open={!!activeGigDetail} onOpenChange={(open) => !open && setActiveGigDetail(null)}>
