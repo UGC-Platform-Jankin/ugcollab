@@ -273,7 +273,7 @@ const Gigs = () => {
 
   const filteredCampaigns = applyFilters(
     campaigns.filter((c) => {
-      if (activeTab === "available") return !appliedCampaigns.has(c.id);
+      if (activeTab === "available") return c.status === "active" && !appliedCampaigns.has(c.id);
       if (activeTab === "applied") return appliedCampaigns.has(c.id);
       return false;
     })
