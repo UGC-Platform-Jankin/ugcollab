@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Link2, Plus, Trash2, Loader2, ExternalLink } from "lucide-react";
+import { Link2, Plus, Trash2, Loader2, ExternalLink, Play } from "lucide-react";
+import VideoPlayerDialog from "@/components/VideoPlayerDialog";
 
 const PLATFORMS = ["TikTok", "Instagram", "YouTube", "Facebook", "X (Twitter)", "Other"];
 

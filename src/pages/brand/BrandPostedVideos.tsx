@@ -5,7 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, ExternalLink, Link2 } from "lucide-react";
+import { Loader2, ExternalLink, Link2, Play } from "lucide-react";
+import VideoPlayerDialog from "@/components/VideoPlayerDialog";
 
 const BrandPostedVideos = () => {
   const { user } = useAuth();

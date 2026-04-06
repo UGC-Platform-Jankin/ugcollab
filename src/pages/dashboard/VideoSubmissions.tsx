@@ -10,7 +10,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Upload, Loader2, Video, RefreshCw, CheckCircle, XCircle, Clock, ArrowRight } from "lucide-react";
+import { Upload, Loader2, Video, RefreshCw, CheckCircle, XCircle, Clock, ArrowRight, Play } from "lucide-react";
+import VideoPlayerDialog from "@/components/VideoPlayerDialog";
 
 const VideoSubmissions = () => {
   const { user } = useAuth();

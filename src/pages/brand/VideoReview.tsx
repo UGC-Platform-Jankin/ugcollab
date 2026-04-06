@@ -9,7 +9,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Video, CheckCircle, XCircle, Clock, MessageSquare } from "lucide-react";
+import { Loader2, Video, CheckCircle, XCircle, Clock, MessageSquare, Play } from "lucide-react";
+import VideoPlayerDialog from "@/components/VideoPlayerDialog";
 
 const VideoReview = () => {
   const { user } = useAuth();
