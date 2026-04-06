@@ -126,9 +126,17 @@ const Gigs = () => {
       const accepted = allApps.filter((a: any) => a.status === "accepted");
       if (accepted.length > 0) {
         const ids = [...new Set(accepted.map((a: any) => a.campaign_id))] as string[];
-        const { data: campData } = await supabase.from("campaigns").select("id, title, expected_video_count, brand_user_id").in("id", ids);
+        const { data: campData } = await supabase.from("campaigns").select("*").in("id", ids);
         const campMap: Record<string, any> = {};
         (campData || []).forEach((c: any) => { campMap[c.id] = c; });
+        // Also fetch brand profiles for active campaigns that might not be in allCampaigns
+        const activeBrandIds = [...new Set((campData || []).map((c: any) => c.brand_user_id))] as string[];
+        const newBrandIds = activeBrandIds.filter(id => !brandMap[id]);
+        if (newBrandIds.length > 0) {
+          const { data: moreBrands } = await supabase.from("brand_profiles").select("user_id, business_name, logo_url, website_url, instagram_url, tiktok_url").in("user_id", newBrandIds);
+          (moreBrands || []).forEach((b: any) => { brandMap[b.user_id] = b; });
+          setBrandProfiles({ ...brandMap });
+        }
         setActiveMemberships(accepted.map((a: any) => ({
           ...a, _campaign: campMap[a.campaign_id] || { title: "Campaign", expected_video_count: 0 },
         })));
