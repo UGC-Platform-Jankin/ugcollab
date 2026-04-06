@@ -194,10 +194,12 @@ export type Database = {
           description: string | null
           expected_video_count: number
           external_comm_link: string | null
+          group_chat_enabled: boolean
           id: string
           is_free_product: boolean
           max_creators: number
           platforms: string[] | null
+          posting_schedule_enabled: boolean
           price_per_video: number | null
           request_contact_types: string[] | null
           requirements: string | null
@@ -217,10 +219,12 @@ export type Database = {
           description?: string | null
           expected_video_count?: number
           external_comm_link?: string | null
+          group_chat_enabled?: boolean
           id?: string
           is_free_product?: boolean
           max_creators?: number
           platforms?: string[] | null
+          posting_schedule_enabled?: boolean
           price_per_video?: number | null
           request_contact_types?: string[] | null
           requirements?: string | null
@@ -240,10 +244,12 @@ export type Database = {
           description?: string | null
           expected_video_count?: number
           external_comm_link?: string | null
+          group_chat_enabled?: boolean
           id?: string
           is_free_product?: boolean
           max_creators?: number
           platforms?: string[] | null
+          posting_schedule_enabled?: boolean
           price_per_video?: number | null
           request_contact_types?: string[] | null
           requirements?: string | null
@@ -565,6 +571,41 @@ export type Database = {
             columns: ["submission_id"]
             isOneToOne: false
             referencedRelation: "video_submissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      posting_schedule: {
+        Row: {
+          campaign_id: string
+          created_at: string
+          description: string
+          event_date: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          campaign_id: string
+          created_at?: string
+          description: string
+          event_date: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          campaign_id?: string
+          created_at?: string
+          description?: string
+          event_date?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "posting_schedule_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
             referencedColumns: ["id"]
           },
         ]
