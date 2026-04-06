@@ -251,7 +251,7 @@ const AllCreators = ({ campaignId }: Props) => {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <p className="font-medium text-sm text-foreground">{profile?.display_name || profile?.username || "Creator"}</p>
-                        <Badge variant={c.status === "accepted" ? "default" : "destructive"} className="text-[10px] capitalize">{c.status}</Badge>
+                        <Badge variant={c.status === "accepted" ? "default" : "destructive"} className="text-[10px] capitalize">{c.status === "accepted" ? "Active" : "Past"}</Badge>
                       </div>
                       <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5 flex-wrap">
                         {profile?.username && <span>@{profile.username}</span>}
