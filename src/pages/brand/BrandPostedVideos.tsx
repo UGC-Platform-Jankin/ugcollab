@@ -5,7 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, ExternalLink, Link2 } from "lucide-react";
+import { Loader2, ExternalLink, Link2, Play } from "lucide-react";
+import VideoPlayerDialog from "@/components/VideoPlayerDialog";
 
 const BrandPostedVideos = () => {
   const { user } = useAuth();
@@ -14,6 +15,7 @@ const BrandPostedVideos = () => {
   const [data, setData] = useState<any[]>([]);
   const [profiles, setProfiles] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(true);
+  const [playingVideo, setPlayingVideo] = useState<{ url: string; title: string } | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -120,7 +122,17 @@ const BrandPostedVideos = () => {
                       </div>
                       {subs.map((sub: any) => (
                         <div key={sub.id} className="mb-3 last:mb-0">
-                          <p className="text-sm font-medium text-foreground mb-1">{sub.title}</p>
+                          <p className="text-sm font-medium text-foreground mb-1 flex items-center gap-2">
+                            {sub.title}
+                            {sub.video_url && (
+                              <button
+                                onClick={() => setPlayingVideo({ url: sub.video_url, title: sub.title })}
+                                className="text-xs text-primary hover:underline flex items-center gap-1"
+                              >
+                                <Play className="h-3 w-3" /> Watch
+                              </button>
+                            )}
+                          </p>
                           <div className="space-y-1">
                             {sub._links.map((l: any) => (
                               <div key={l.id} className="flex items-center gap-2">
@@ -141,6 +153,12 @@ const BrandPostedVideos = () => {
           ))}
         </div>
       )}
+
+      <VideoPlayerDialog
+        videoUrl={playingVideo?.url || null}
+        title={playingVideo?.title}
+        onClose={() => setPlayingVideo(null)}
+      />
     </div>
   );
 };

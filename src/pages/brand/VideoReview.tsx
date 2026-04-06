@@ -9,7 +9,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Video, CheckCircle, XCircle, Clock, MessageSquare } from "lucide-react";
+import { Loader2, Video, CheckCircle, XCircle, Clock, MessageSquare, Play } from "lucide-react";
+import VideoPlayerDialog from "@/components/VideoPlayerDialog";
 
 const VideoReview = () => {
   const { user } = useAuth();
@@ -22,6 +23,7 @@ const VideoReview = () => {
   const [reviewSub, setReviewSub] = useState<any>(null);
   const [feedback, setFeedback] = useState("");
   const [reviewLoading, setReviewLoading] = useState(false);
+  const [playingVideo, setPlayingVideo] = useState<{ url: string; title: string } | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -150,9 +152,9 @@ const VideoReview = () => {
                       </div>
                     </div>
                     <div className="flex flex-col gap-2 shrink-0">
-                      <a href={sub.video_url} target="_blank" rel="noopener noreferrer">
-                        <Button size="sm" variant="outline" className="gap-1"><Video className="h-3.5 w-3.5" /> View</Button>
-                      </a>
+                      <Button size="sm" variant="outline" className="gap-1" onClick={() => setPlayingVideo({ url: sub.video_url, title: sub.title })}>
+                        <Play className="h-3.5 w-3.5" /> View
+                      </Button>
                       {sub.status === "pending" && (
                         <Button size="sm" variant="secondary" className="gap-1" onClick={() => { setReviewSub(sub); setFeedback(""); }}>
                           <MessageSquare className="h-3.5 w-3.5" /> Review
@@ -172,9 +174,9 @@ const VideoReview = () => {
         <DialogContent>
           <DialogHeader><DialogTitle>Review: {reviewSub?.title}</DialogTitle></DialogHeader>
           <div className="space-y-4">
-            <a href={reviewSub?.video_url} target="_blank" rel="noopener noreferrer">
-              <Button variant="outline" className="w-full gap-2"><Video className="h-4 w-4" /> Watch Video</Button>
-            </a>
+            <Button variant="outline" className="w-full gap-2" onClick={() => setPlayingVideo({ url: reviewSub?.video_url, title: reviewSub?.title })}>
+              <Play className="h-4 w-4" /> Watch Video
+            </Button>
             <Textarea placeholder="Feedback / comments (required for rejection)" value={feedback} onChange={e => setFeedback(e.target.value)} className="min-h-[100px]" />
             <div className="flex gap-3">
               <Button className="flex-1 gap-2 bg-green-600 hover:bg-green-700" onClick={() => handleReview("accepted")} disabled={reviewLoading}>
@@ -187,6 +189,12 @@ const VideoReview = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      <VideoPlayerDialog
+        videoUrl={playingVideo?.url || null}
+        title={playingVideo?.title}
+        onClose={() => setPlayingVideo(null)}
+      />
     </div>
   );
 };
