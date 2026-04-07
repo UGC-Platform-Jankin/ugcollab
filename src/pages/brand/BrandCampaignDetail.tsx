@@ -32,7 +32,7 @@ const BrandCampaignDetail = () => {
 
   const handleTabChange = (val: string) => {
     const base = `/brand/campaigns/${campaignId}`;
-    const suffix = val === "settings" ? "" : `/${val}`;
+    const suffix = `/${val}`;
     navigate(base + suffix);
   };
 

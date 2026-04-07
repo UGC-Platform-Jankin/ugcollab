@@ -106,14 +106,14 @@ const AllCreators = ({ campaignId }: Props) => {
 
   const handleMessageCreator = async (creatorUserId: string) => {
     if (!user) return;
-    // Find or identify existing private chat for this campaign
+    // Find or create private chat for this creator
     const { data: rooms } = await supabase.from("chat_rooms").select("id").eq("campaign_id", campaignId).eq("type", "private");
     if (rooms?.length) {
       for (const room of rooms) {
         const { data: participants } = await supabase.from("chat_participants").select("user_id").eq("chat_room_id", room.id);
         const pIds = (participants || []).map((p: any) => p.user_id);
         if (pIds.includes(user.id) && pIds.includes(creatorUserId)) {
-          navigate("/brand/messages");
+          navigate(`/brand/campaigns/${campaignId}/private`);
           return;
         }
       }
@@ -126,7 +126,7 @@ const AllCreators = ({ campaignId }: Props) => {
         { chat_room_id: newRoom.id, user_id: creatorUserId },
       ] as any);
     }
-    navigate("/brand/messages");
+    navigate(`/brand/campaigns/${campaignId}/private`);
   };
 
   const handleRemoveCreator = async () => {
