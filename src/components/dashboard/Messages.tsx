@@ -801,6 +801,16 @@ const Messages = () => {
                                 } as any);
                                 // Update invite status
                                 await supabase.from("campaign_invites").update({ status: "accepted" } as any).eq("campaign_id", inviteMatch[1]).eq("creator_user_id", user.id);
+                                // Add creator to group chat if exists
+                                const { data: groupRoom } = await supabase.from("chat_rooms").select("id").eq("campaign_id", inviteMatch[1]).eq("type", "group").maybeSingle();
+                                if (groupRoom) {
+                                  await supabase.from("chat_participants").insert({ chat_room_id: groupRoom.id, user_id: user.id } as any);
+                                  const { data: prof2 } = await supabase.from("profiles").select("display_name, username").eq("user_id", user.id).maybeSingle();
+                                  await supabase.from("messages").insert({
+                                    chat_room_id: groupRoom.id, sender_id: user.id,
+                                    content: `📥 ${prof2?.display_name || prof2?.username || "A creator"} joined the chat`,
+                                  } as any);
+                                }
                                 // Notify brand
                                 if (camp) {
                                   const { data: prof } = await supabase.from("profiles").select("display_name").eq("user_id", user.id).maybeSingle();
