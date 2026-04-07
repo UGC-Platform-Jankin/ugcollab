@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Badge } from "@/components/ui/badge";
@@ -11,7 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Briefcase, Clock, DollarSign, MapPin, Send, Loader2, Check, LogOut, Gift, Video, MoreHorizontal, Sparkles, Filter, X, ChevronDown, Globe, Tag, Users, ExternalLink, Calendar } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useAIMatch } from "@/hooks/useAIMatch";
+import { computeCreatorCampaignMatches } from "@/hooks/useSimpleMatch";
 import ActiveGigHub from "@/components/dashboard/ActiveGigHub";
 
 interface Campaign {
@@ -242,15 +242,7 @@ const Gigs = () => {
     setLeavingLoading(false);
   };
 
-  const matchItems = campaigns.map(c => ({
-    id: c.id, title: c.title, description: c.description,
-    platforms: c.platforms, target_regions: c.target_regions, requirements: c.requirements,
-  }));
-
-  const { matches: aiMatches, loading: matchLoading } = useAIMatch(
-    "creator_to_campaigns", creatorProfile, matchItems,
-    dataReady && !!creatorProfile && campaigns.length > 0
-  );
+  const aiMatches = useMemo(() => computeCreatorCampaignMatches(creatorProfile, campaigns), [creatorProfile, campaigns]);
 
   const getMatchColor = (pct: number) => {
     if (pct >= 80) return "bg-emerald-500/15 text-emerald-600 border-emerald-500/30";

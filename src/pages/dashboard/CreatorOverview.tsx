@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
@@ -11,7 +11,7 @@ import {
   Play, TrendingUp, CheckCircle, Clock, ArrowRight, Globe, Users, Calendar, Send, Check
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import { useAIMatch } from "@/hooks/useAIMatch";
+import { computeCreatorCampaignMatches } from "@/hooks/useSimpleMatch";
 
 const CreatorOverview = () => {
   const { user } = useAuth();
@@ -86,12 +86,7 @@ const CreatorOverview = () => {
     load();
   }, [user]);
 
-  const matchItems = campaigns.map(c => ({
-    id: c.id, title: c.title, description: c.description,
-    platforms: c.platforms, target_regions: c.target_regions, requirements: c.requirements,
-  }));
-
-  const { matches, loading: matchLoading } = useAIMatch("creator_to_campaigns", profile, matchItems, dataReady && !!profile && campaigns.length > 0);
+  const matches = useMemo(() => computeCreatorCampaignMatches(profile, campaigns), [profile, campaigns]);
   const sortedCampaigns = [...campaigns].sort((a, b) => (matches[b.id] || 0) - (matches[a.id] || 0));
   const topMatches = sortedCampaigns.filter(c => (matches[c.id] || 0) > 0).slice(0, 6);
 
@@ -152,7 +147,7 @@ const CreatorOverview = () => {
             </div>
             <div>
               <h2 className="text-lg font-heading font-bold text-foreground">Recommended For You</h2>
-              <p className="text-xs text-muted-foreground">AI-matched based on your profile</p>
+              <p className="text-xs text-muted-foreground">Matched based on your profile</p>
             </div>
           </div>
           <Link to="/dashboard/gigs" className="text-sm text-primary hover:underline flex items-center gap-1">
@@ -160,10 +155,10 @@ const CreatorOverview = () => {
           </Link>
         </div>
 
-        {!dataReady || matchLoading ? (
+        {!dataReady ? (
           <div className="flex items-center justify-center py-16 gap-2 text-muted-foreground">
             <Loader2 className="h-5 w-5 animate-spin" />
-            <span className="text-sm">Finding your best matches...</span>
+            <span className="text-sm">Loading gigs...</span>
           </div>
         ) : topMatches.length === 0 ? (
           <Card className="border-border border-dashed">
