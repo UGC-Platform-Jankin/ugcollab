@@ -263,6 +263,7 @@ const Gigs = () => {
     }
 
     toast({ title: "Application sent!", description: "The brand will review your application." });
+    navigate(`/dashboard/gig/${applyingTo.id}/private`);
     setApplyingTo(null);
     setCoverLetter("");
     setSubmitting(false);
@@ -371,6 +372,7 @@ const Gigs = () => {
     }
     setInvites(prev => prev.filter(i => i.id !== invite.id));
     toast({ title: "Invite accepted!", description: "You've joined the campaign." });
+    navigate(`/dashboard/gig/${invite.campaign_id}/private`);
   };
 
   const handleCounterOfferInvite = async () => {
