@@ -263,7 +263,7 @@ const CreatorOverview = () => {
             <div>
               {/* Match Banner */}
               {selectedMatchPct >= 50 && (
-                <div className="bg-primary/10 border-b border-primary/20 px-6 py-3 flex items-center justify-between">
+                <div className="bg-primary/10 border-b border-primary/20 px-6 py-3 flex items-center justify-between pr-12">
                   <div className="flex items-center gap-2">
                     <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
                     <span className="text-sm font-semibold text-primary">
