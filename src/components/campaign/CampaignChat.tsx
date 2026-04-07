@@ -171,16 +171,12 @@ const CampaignChat = ({ campaignId, roomType, isBrandView = false, specificCreat
             .select("user_id")
             .eq("chat_room_id", room.id);
           const userIds = (parts || []).map((p: any) => p.user_id);
-          console.log("[loadRoom] checking room", room.id, "participants:", userIds, "looking for", user.id, "and", otherUserId);
           if (userIds.includes(user.id) && userIds.includes(otherUserId)) {
             targetRoom = room;
-            console.log("[loadRoom] FOUND matching room:", room.id);
             break;
           }
         }
       }
-
-      console.log("[loadRoom] targetRoom after scan:", targetRoom);
 
       if (!targetRoom) {
         // Get creator display name for room name

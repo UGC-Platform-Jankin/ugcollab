@@ -25,14 +25,15 @@ const BrandLayout = ({ children }: { children: React.ReactNode }) => {
   const [onboardingChecked, setOnboardingChecked] = useState(false);
   const [campaigns, setCampaigns] = useState<any[]>([]);
   const [expandedCampaigns, setExpandedCampaigns] = useState<Set<string>>(new Set());
-  const [campaignNotifs, setCampaignNotifs] = useState(0);
   const [perCampaignNotifs, setPerCampaignNotifs] = useState<Record<string, number>>({});
+  const [perCampaignAppNotifs, setPerCampaignAppNotifs] = useState<Record<string, number>>({});
+  const [perCampaignVideoNotifs, setPerCampaignVideoNotifs] = useState<Record<string, number>>({});
   const [pendingInviteCount, setPendingInviteCount] = useState(0);
   const { theme, toggleTheme } = useTheme();
 
   const navItems = [
     { label: "Overview", icon: BarChart3, path: "/brand/dashboard", count: 0 },
-    { label: "Campaigns", icon: Megaphone, path: "/brand/campaigns", count: campaignNotifs },
+    { label: "Campaigns", icon: Megaphone, path: "/brand/campaigns", count: 0 },
     { label: "Find Creators", icon: Search, path: "/brand/creators", count: 0, subItems: [
       { label: "Browse", icon: Users, path: "/brand/creators" },
       { label: "Invites", icon: Send, path: "/brand/creators/invites", count: pendingInviteCount },
@@ -60,21 +61,34 @@ const BrandLayout = ({ children }: { children: React.ReactNode }) => {
         if (match && match[1] !== "new") setExpandedCampaigns(new Set([match[1]]));
       });
 
-      // Load unread notifications for badge counts
+      // Load unread notifications for badge counts — split by type per campaign
       supabase.from("notifications").select("id, type, link, read").eq("user_id", user.id).eq("read", false).then(({ data: notifs }) => {
         if (!notifs) return;
-        // Campaign-level notifs: new applications, video submissions
-        const campTypes = ["application", "video_submission", "video_resubmission"];
-        setCampaignNotifs(notifs.filter((n: any) => campTypes.includes(n.type)).length);
-        // Per-campaign notifs
-        const perCamp: Record<string, number> = {};
+        const campTypes = ["application", "video_submission", "video_resubmission", "video_accepted", "video_rejected"];
+        const appTypes = ["application"];
+        const videoTypes = ["video_submission", "video_resubmission", "video_accepted", "video_rejected"];
+        const perCampApp: Record<string, number> = {};
+        const perCampVideo: Record<string, number> = {};
         notifs.forEach((n: any) => {
+          if (!campTypes.includes(n.type)) return;
           if (n.link) {
             const m = n.link.match(/\/brand\/campaigns\/([^/]+)/);
-            if (m) perCamp[m[1]] = (perCamp[m[1]] || 0) + 1;
+            if (m) {
+              if (appTypes.includes(n.type)) perCampApp[m[1]] = (perCampApp[m[1]] || 0) + 1;
+              if (videoTypes.includes(n.type)) perCampVideo[m[1]] = (perCampVideo[m[1]] || 0) + 1;
+            }
           }
         });
-        setPerCampaignNotifs(perCamp);
+        setPerCampaignNotifs(prev => {
+          const next: Record<string, number> = {};
+          Object.keys(prev).forEach(id => {
+            next[id] = (perCampApp[id] || 0) + (perCampVideo[id] || 0);
+          });
+          return next;
+        });
+        // Store split counts for sub-items
+        setPerCampaignAppNotifs(perCampApp);
+        setPerCampaignVideoNotifs(perCampVideo);
       });
 
       // Load pending invite count for the Invites nav badge
@@ -100,13 +114,14 @@ const BrandLayout = ({ children }: { children: React.ReactNode }) => {
   };
 
   const campaignSubItems = [
-    { label: "Videos", icon: Video, suffix: "" },
-    { label: "Posted", icon: Link2, suffix: "/posted" },
-    { label: "Schedule", icon: Calendar, suffix: "/schedule" },
-    { label: "Chat", icon: MessageCircle, suffix: "/messages" },
-    { label: "Private", icon: MessageCircle, suffix: "/private" },
-    { label: "Pricing", icon: DollarSign, suffix: "/pricing" },
-    { label: "Settings", icon: Settings, suffix: "/settings" },
+    { label: "Applications", icon: Users, suffix: "/applications", notifType: "app" as const },
+    { label: "Videos", icon: Video, suffix: "", notifType: "video" as const },
+    { label: "Posted", icon: Link2, suffix: "/posted", notifType: null },
+    { label: "Schedule", icon: Calendar, suffix: "/schedule", notifType: null },
+    { label: "Chat", icon: MessageCircle, suffix: "/messages", notifType: null },
+    { label: "Private", icon: MessageCircle, suffix: "/private", notifType: null },
+    { label: "Pricing", icon: DollarSign, suffix: "/pricing", notifType: null },
+    { label: "Settings", icon: Settings, suffix: "/settings", notifType: null },
   ];
 
   // Find the current nav icon for header
@@ -286,6 +301,9 @@ const BrandLayout = ({ children }: { children: React.ReactNode }) => {
                                   .map(sub => {
                                   const subPath = `/brand/campaigns/${camp.id}${sub.suffix}`;
                                   const isSubActive = location.pathname === subPath;
+                                  const notifCount = sub.notifType === "app" ? (perCampaignAppNotifs[camp.id] || 0)
+                                    : sub.notifType === "video" ? (perCampaignVideoNotifs[camp.id] || 0)
+                                    : 0;
                                   return (
                                     <SidebarMenuItem key={sub.suffix}>
                                       <SidebarMenuButton asChild>
@@ -298,6 +316,11 @@ const BrandLayout = ({ children }: { children: React.ReactNode }) => {
                                         >
                                           <sub.icon className="w-3.5 h-3.5 shrink-0" />
                                           <span>{sub.label}</span>
+                                          {notifCount > 0 && (
+                                            <Badge className={cn("h-5 min-w-[20px] px-1.5 text-[11px] font-bold border-0", isSubActive ? "bg-primary-foreground/20 text-primary-foreground" : "bg-primary text-primary-foreground")}>
+                                              {notifCount}
+                                            </Badge>
+                                          )}
                                         </NavLink>
                                       </SidebarMenuButton>
                                     </SidebarMenuItem>

@@ -78,6 +78,7 @@ const App = () => (
               <Route path="/brand/campaigns/:campaignId/posted" element={<BrandLayout><BrandCampaignDetail /></BrandLayout>} />
               <Route path="/brand/campaigns/:campaignId/schedule" element={<BrandLayout><BrandCampaignDetail /></BrandLayout>} />
               <Route path="/brand/campaigns/:campaignId/creators" element={<BrandLayout><BrandCampaignDetail /></BrandLayout>} />
+              <Route path="/brand/campaigns/:campaignId/applications" element={<BrandLayout><BrandCampaignDetail /></BrandLayout>} />
               <Route path="/brand/campaigns/:campaignId/pricing" element={<BrandLayout><BrandCampaignDetail /></BrandLayout>} />
               <Route path="/brand/campaigns/:campaignId/messages" element={<BrandLayout><BrandCampaignDetail /></BrandLayout>} />
               <Route path="/brand/campaigns/:campaignId/private" element={<BrandLayout><BrandCampaignDetail /></BrandLayout>} />

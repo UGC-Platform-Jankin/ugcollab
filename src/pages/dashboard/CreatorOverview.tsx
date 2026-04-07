@@ -4,8 +4,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
 import {
   Briefcase, Loader2, Sparkles, Gift, DollarSign, MapPin, Video,
   Play, TrendingUp, CheckCircle, Clock, ArrowRight, Globe, Users, Calendar, Send, Check
@@ -25,6 +27,7 @@ const CreatorOverview = () => {
   const [totalVideos, setTotalVideos] = useState(0);
   const [acceptedVideos, setAcceptedVideos] = useState(0);
   const [selectedCampaign, setSelectedCampaign] = useState<any>(null);
+  const [showApplyDialog, setShowApplyDialog] = useState(false);
   const [appliedCampaignIds, setAppliedCampaignIds] = useState<Set<string>>(new Set());
   const [applicationCounts, setApplicationCounts] = useState<Record<string, number>>({});
   const [acceptedCounts, setAcceptedCounts] = useState<Record<string, number>>({});
@@ -272,7 +275,7 @@ const CreatorOverview = () => {
                     </span>
                   </div>
                   {!appliedCampaignIds.has(selectedCampaign.id) && (
-                    <Button size="sm" className="rounded-full font-bold" onClick={() => { setSelectedCampaign(null); navigate("/dashboard/gigs"); }}>
+                    <Button size="sm" className="rounded-full font-bold" onClick={() => navigate(`/dashboard/gigs?apply=${selectedCampaign.id}`)}>
                       Apply Now
                     </Button>
                   )}
@@ -366,7 +369,7 @@ const CreatorOverview = () => {
                 {appliedCampaignIds.has(selectedCampaign.id) ? (
                   <Button disabled variant="outline" className="w-full gap-1.5 rounded-full"><Check className="h-4 w-4" /> Already Applied</Button>
                 ) : (
-                  <Button className="w-full gap-1.5 rounded-full font-bold" onClick={() => { setSelectedCampaign(null); navigate("/dashboard/gigs"); }}>
+                  <Button className="w-full gap-1.5 rounded-full font-bold" onClick={() => setShowApplyDialog(true)}>
                     <Send className="h-4 w-4" /> Apply Now
                   </Button>
                 )}

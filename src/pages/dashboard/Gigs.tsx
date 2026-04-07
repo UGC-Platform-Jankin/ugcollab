@@ -263,10 +263,10 @@ const Gigs = () => {
     }
 
     toast({ title: "Application sent!", description: "The brand will review your application." });
-    navigate(`/dashboard/gig/${applyingTo.id}/private`);
     setApplyingTo(null);
     setCoverLetter("");
     setSubmitting(false);
+    navigate(`/dashboard/gig/${applyingTo.id}/private`);
   };
 
   const handleAcceptInvite = async (invite: any) => {

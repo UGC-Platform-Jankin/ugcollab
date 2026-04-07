@@ -12,6 +12,7 @@ import AllCreators from "@/components/campaign/AllCreators";
 import CreatorPricingSpreadsheet from "@/components/campaign/CreatorPricingSpreadsheet";
 import BrandVideos from "@/components/campaign/BrandVideos";
 import CampaignChat from "@/components/campaign/CampaignChat";
+import CampaignApplications from "@/components/campaign/CampaignApplications";
 
 const BrandCampaignDetail = () => {
   const { campaignId } = useParams<{ campaignId: string }>();
@@ -28,6 +29,7 @@ const BrandCampaignDetail = () => {
     : location.pathname.endsWith("/schedule") ? "schedule"
     : location.pathname.endsWith("/videos") ? "videos"
     : location.pathname.endsWith("/creators") ? "creators"
+    : location.pathname.endsWith("/applications") ? "applications"
     : location.pathname.endsWith("/pricing") ? "pricing"
     : location.pathname.endsWith("/messages") ? "messages"
     : location.pathname.endsWith("/private") ? "private"
@@ -69,6 +71,7 @@ const BrandCampaignDetail = () => {
             <TabsTrigger value="schedule" className="gap-1.5"><Calendar className="h-3.5 w-3.5" /> Schedule</TabsTrigger>
           )}
           <TabsTrigger value="creators" className="gap-1.5"><Users className="h-3.5 w-3.5" /> All Creators</TabsTrigger>
+          <TabsTrigger value="applications" className="gap-1.5"><Users className="h-3.5 w-3.5" /> Applications</TabsTrigger>
           <TabsTrigger value="pricing" className="gap-1.5"><DollarSign className="h-3.5 w-3.5" /> Pricing</TabsTrigger>
           <TabsTrigger value="messages" className="gap-1.5"><MessageCircle className="h-3.5 w-3.5" /> Chat</TabsTrigger>
           <TabsTrigger value="private" className="gap-1.5"><MessageCircle className="h-3.5 w-3.5" /> Private</TabsTrigger>
@@ -92,6 +95,9 @@ const BrandCampaignDetail = () => {
         )}
         <TabsContent value="creators">
           <AllCreators campaignId={campaignId!} />
+        </TabsContent>
+        <TabsContent value="applications">
+          <CampaignApplications campaignId={campaignId!} />
         </TabsContent>
         <TabsContent value="pricing">
           <CreatorPricingSpreadsheet campaignId={campaignId!} />
