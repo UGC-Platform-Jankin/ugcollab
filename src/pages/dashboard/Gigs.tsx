@@ -242,15 +242,7 @@ const Gigs = () => {
     setLeavingLoading(false);
   };
 
-  const matchItems = campaigns.map(c => ({
-    id: c.id, title: c.title, description: c.description,
-    platforms: c.platforms, target_regions: c.target_regions, requirements: c.requirements,
-  }));
-
-  const { matches: aiMatches, loading: matchLoading } = useAIMatch(
-    "creator_to_campaigns", creatorProfile, matchItems,
-    dataReady && !!creatorProfile && campaigns.length > 0
-  );
+  const aiMatches = useMemo(() => computeCreatorCampaignMatches(creatorProfile, campaigns), [creatorProfile, campaigns]);
 
   const getMatchColor = (pct: number) => {
     if (pct >= 80) return "bg-emerald-500/15 text-emerald-600 border-emerald-500/30";

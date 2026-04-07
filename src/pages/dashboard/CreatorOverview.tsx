@@ -86,12 +86,7 @@ const CreatorOverview = () => {
     load();
   }, [user]);
 
-  const matchItems = campaigns.map(c => ({
-    id: c.id, title: c.title, description: c.description,
-    platforms: c.platforms, target_regions: c.target_regions, requirements: c.requirements,
-  }));
-
-  const { matches, loading: matchLoading } = useAIMatch("creator_to_campaigns", profile, matchItems, dataReady && !!profile && campaigns.length > 0);
+  const matches = useMemo(() => computeCreatorCampaignMatches(profile, campaigns), [profile, campaigns]);
   const sortedCampaigns = [...campaigns].sort((a, b) => (matches[b.id] || 0) - (matches[a.id] || 0));
   const topMatches = sortedCampaigns.filter(c => (matches[c.id] || 0) > 0).slice(0, 6);
 
