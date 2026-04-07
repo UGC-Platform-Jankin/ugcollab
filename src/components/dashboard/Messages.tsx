@@ -129,11 +129,14 @@ const Messages = () => {
   // Fetch rooms + metadata
   useEffect(() => {
     if (!user) return;
+    console.log("[Messages] fetchRooms starting, user:", user.id, "isBrandView:", isBrandView);
     const fetchRooms = async () => {
-      const { data: participantData } = await supabase
+      const { data: participantData, error: partError } = await supabase
         .from("chat_participants")
         .select("chat_room_id")
         .eq("user_id", user.id);
+
+      console.log("[Messages] participantData:", participantData, "error:", partError);
 
       if (!participantData || participantData.length === 0) {
         setLoading(false);
@@ -272,7 +275,8 @@ const Messages = () => {
         event: "INSERT",
         schema: "public",
         table: "chat_rooms",
-      }, () => {
+      }, (payload) => {
+        console.log("[Messages] new room event received:", payload);
         fetchRooms();
       })
       .subscribe();
@@ -285,7 +289,8 @@ const Messages = () => {
         schema: "public",
         table: "chat_participants",
         filter: `user_id=eq.${user.id}`,
-      }, () => {
+      }, (payload) => {
+        console.log("[Messages] new participant event received:", payload);
         fetchRooms();
       })
       .subscribe();
