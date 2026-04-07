@@ -210,8 +210,8 @@ export type Database = {
           calendly_enabled: boolean
           calendly_link: string | null
           campaign_length_days: number | null
-          communication_type: string
           campaign_type: string
+          communication_type: string
           created_at: string
           description: string | null
           expected_video_count: number
@@ -239,8 +239,8 @@ export type Database = {
           calendly_enabled?: boolean
           calendly_link?: string | null
           campaign_length_days?: number | null
-          communication_type?: string
           campaign_type?: string
+          communication_type?: string
           created_at?: string
           description?: string | null
           expected_video_count?: number
@@ -268,8 +268,8 @@ export type Database = {
           calendly_enabled?: boolean
           calendly_link?: string | null
           campaign_length_days?: number | null
-          communication_type?: string
           campaign_type?: string
+          communication_type?: string
           created_at?: string
           description?: string | null
           expected_video_count?: number
