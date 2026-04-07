@@ -120,6 +120,7 @@ const CampaignChat = ({ campaignId, roomType, isBrandView = false, specificCreat
     // For private chats: find or create a per-creator private room
     if (roomType === "private") {
       if (!user) { setLoading(false); return; }
+      console.log("[loadRoom] PRIVATE — campaignId:", campaignId, "specificCreatorId:", specificCreatorId, "user.id:", user.id);
 
       // Get campaign and all accepted creators
       const { data: camp } = await supabase
@@ -127,6 +128,7 @@ const CampaignChat = ({ campaignId, roomType, isBrandView = false, specificCreat
         .select("brand_user_id, title")
         .eq("id", campaignId)
         .maybeSingle();
+      console.log("[loadRoom] camp:", camp);
 
       if (!camp) { setLoading(false); return; }
 
@@ -134,6 +136,7 @@ const CampaignChat = ({ campaignId, roomType, isBrandView = false, specificCreat
       let otherUserId: string | null = null;
       if (specificCreatorId) {
         otherUserId = specificCreatorId;
+        console.log("[loadRoom] using specificCreatorId:", otherUserId);
       } else if (user.id === camp.brand_user_id) {
         // Brand viewing: pick first accepted creator
         const { data: apps } = await supabase
@@ -149,6 +152,7 @@ const CampaignChat = ({ campaignId, roomType, isBrandView = false, specificCreat
       }
 
       if (!otherUserId) { setLoading(false); return; }
+      console.log("[loadRoom] otherUserId:", otherUserId);
 
       // Look for existing private room that has both participants
       const { data: existingRooms } = await supabase
@@ -167,12 +171,16 @@ const CampaignChat = ({ campaignId, roomType, isBrandView = false, specificCreat
             .select("user_id")
             .eq("chat_room_id", room.id);
           const userIds = (parts || []).map((p: any) => p.user_id);
+          console.log("[loadRoom] checking room", room.id, "participants:", userIds, "looking for", user.id, "and", otherUserId);
           if (userIds.includes(user.id) && userIds.includes(otherUserId)) {
             targetRoom = room;
+            console.log("[loadRoom] FOUND matching room:", room.id);
             break;
           }
         }
       }
+
+      console.log("[loadRoom] targetRoom after scan:", targetRoom);
 
       if (!targetRoom) {
         // Get creator display name for room name
@@ -237,8 +245,10 @@ const CampaignChat = ({ campaignId, roomType, isBrandView = false, specificCreat
       }
 
       roomData = targetRoom;
+      console.log("[loadRoom] roomData set to:", roomData);
     }
 
+    console.log("[loadRoom] final roomData:", roomData);
     if (!roomData) { setLoading(false); return; }
     setRoom(roomData);
 
