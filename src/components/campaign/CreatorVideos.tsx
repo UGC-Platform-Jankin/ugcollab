@@ -153,7 +153,7 @@ const CreatorVideos = ({ campaignId, campaignTitle }: Props) => {
       ) : (
       <Card className="border-border/50">
         <CardHeader><CardTitle className="text-lg">Submit a Video</CardTitle></CardHeader>
-        <CardContent className="space-y-4}>
+        <CardContent className="space-y-4">
           <div className="space-y-2">
             <p className="text-sm font-medium text-foreground">Title</p>
             <Input placeholder="e.g. Product Unboxing Take 1" value={title} onChange={e => setTitle(e.target.value)} />
