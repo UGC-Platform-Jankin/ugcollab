@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { Building2, ArrowLeft } from "lucide-react";
+import { Building2, ArrowLeft, LogOut } from "lucide-react";
 
 const BrandAuth = () => {
   const [email, setEmail] = useState("");
@@ -17,7 +17,7 @@ const BrandAuth = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { user, accountType } = useAuth();
+  const { user, accountType, signOut } = useAuth();
 
   useEffect(() => {
     if (!user) return;
@@ -47,6 +47,11 @@ const BrandAuth = () => {
       }
     }
     setLoading(false);
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/brand/auth");
   };
 
   const handleSignup = async (e: React.FormEvent) => {
@@ -148,6 +153,18 @@ const BrandAuth = () => {
           <p className="text-center text-xs text-muted-foreground mt-6">
             Are you a creator? <Link to="/auth" className="text-primary hover:underline">Sign in here</Link>
           </p>
+
+          {user && (
+            <div className="mt-6 border-t border-border pt-4 flex items-center justify-between">
+              <div className="text-xs text-muted-foreground">
+                <p>Logged in as <span className="font-medium text-foreground">{user.email}</span></p>
+                <p className="mt-0.5">Account type: <span className="font-medium">{accountType ?? "loading..."}</span></p>
+              </div>
+              <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={handleSignOut}>
+                <LogOut className="h-3.5 w-3.5" /> Sign Out
+              </Button>
+            </div>
+          )}
         </div>
       </div>
     </div>

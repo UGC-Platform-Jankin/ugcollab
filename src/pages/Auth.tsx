@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { Camera, ArrowLeft } from "lucide-react";
+import { Camera, ArrowLeft, LogOut } from "lucide-react";
 
 const Auth = () => {
   const [email, setEmail] = useState("");
@@ -19,7 +19,7 @@ const Auth = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { user, accountType } = useAuth();
+  const { user, accountType, signOut } = useAuth();
 
   useEffect(() => {
     console.log("[Auth] redirect effect — user:", user?.email, "accountType:", accountType, "loading:", loading);
@@ -31,6 +31,11 @@ const Auth = () => {
       navigate("/brand/dashboard");
     }
   }, [user, accountType, navigate]);
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/auth");
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -160,6 +165,18 @@ const Auth = () => {
           <p className="text-center text-xs text-muted-foreground mt-6">
             Are you a brand? <Link to="/brand/auth" className="text-primary hover:underline">Sign in here</Link>
           </p>
+
+          {user && (
+            <div className="mt-6 border-t border-border pt-4 flex items-center justify-between">
+              <div className="text-xs text-muted-foreground">
+                <p>Logged in as <span className="font-medium text-foreground">{user.email}</span></p>
+                <p className="mt-0.5">Account type: <span className="font-medium">{accountType ?? "loading..."}</span></p>
+              </div>
+              <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={handleSignOut}>
+                <LogOut className="h-3.5 w-3.5" /> Sign Out
+              </Button>
+            </div>
+          )}
         </div>
       </div>
     </div>
