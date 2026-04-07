@@ -27,6 +27,7 @@ const BrandCampaignDetail = () => {
     : location.pathname.endsWith("/creators") ? "creators"
     : location.pathname.endsWith("/pricing") ? "pricing"
     : location.pathname.endsWith("/messages") ? "messages"
+    : location.pathname.endsWith("/private") ? "private"
     : "settings";
 
   const handleTabChange = (val: string) => {
@@ -67,6 +68,7 @@ const BrandCampaignDetail = () => {
           <TabsTrigger value="creators" className="gap-1.5"><Users className="h-3.5 w-3.5" /> All Creators</TabsTrigger>
           <TabsTrigger value="pricing" className="gap-1.5"><DollarSign className="h-3.5 w-3.5" /> Pricing</TabsTrigger>
           <TabsTrigger value="messages" className="gap-1.5"><MessageCircle className="h-3.5 w-3.5" /> Chat</TabsTrigger>
+          <TabsTrigger value="private" className="gap-1.5"><MessageCircle className="h-3.5 w-3.5" /> Private</TabsTrigger>
           <TabsTrigger value="settings" className="gap-1.5"><Settings className="h-3.5 w-3.5" /> Settings</TabsTrigger>
         </TabsList>
 
@@ -93,6 +95,9 @@ const BrandCampaignDetail = () => {
         </TabsContent>
         <TabsContent value="messages">
           <CampaignChat campaignId={campaignId!} roomType="group" isBrandView />
+        </TabsContent>
+        <TabsContent value="private">
+          <CampaignChat campaignId={campaignId!} roomType="private" isBrandView />
         </TabsContent>
         <TabsContent value="settings">
           <CampaignSettings campaignId={campaignId!} />

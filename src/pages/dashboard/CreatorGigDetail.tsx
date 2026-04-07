@@ -33,6 +33,7 @@ const CreatorGigDetail = () => {
     : location.pathname.endsWith("/schedule") ? "schedule"
     : location.pathname.endsWith("/resources") ? "resources"
     : location.pathname.endsWith("/messages") ? "messages"
+    : location.pathname.endsWith("/private") ? "private"
     : "videos";
 
   const handleTabChange = (val: string) => {
@@ -140,6 +141,7 @@ const CreatorGigDetail = () => {
           )}
           <TabsTrigger value="resources" className="gap-1.5"><BookOpen className="h-3.5 w-3.5" /> Resources</TabsTrigger>
           <TabsTrigger value="messages" className="gap-1.5"><MessageCircle className="h-3.5 w-3.5" /> Chat</TabsTrigger>
+          <TabsTrigger value="private" className="gap-1.5"><MessageCircle className="h-3.5 w-3.5" /> Private</TabsTrigger>
         </TabsList>
 
         <TabsContent value="videos">
@@ -158,6 +160,9 @@ const CreatorGigDetail = () => {
         </TabsContent>
         <TabsContent value="messages">
           <CampaignChat campaignId={campaignId!} roomType="group" />
+        </TabsContent>
+        <TabsContent value="private">
+          <CampaignChat campaignId={campaignId!} roomType="private" />
         </TabsContent>
       </Tabs>
 
