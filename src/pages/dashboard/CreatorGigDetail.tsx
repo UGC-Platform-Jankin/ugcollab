@@ -99,7 +99,7 @@ const CreatorGigDetail = () => {
             <h1 className="text-2xl font-heading font-extrabold text-foreground tracking-tight">{campaign.title}</h1>
             <p className="text-muted-foreground text-sm mt-0.5">Manage your videos and schedule for this gig</p>
           </div>
-          {application && (
+                        {application && (
             <div className="flex items-center gap-3 bg-secondary/50 rounded-lg p-3 border border-border/50">
               <div className="text-right">
                 <p className="text-xs text-muted-foreground">Your Agreement</p>
@@ -110,7 +110,7 @@ const CreatorGigDetail = () => {
                   Total: HK${((application.agreed_price_per_video ?? campaign.price_per_video ?? 0) * (application.agreed_video_count ?? campaign.expected_video_count ?? 1)).toLocaleString()}
                 </p>
               </div>
-              {application.pricing_status !== "countered" && (
+              {application.pricing_status !== "countered" && !campaign.is_free_product && campaign.pricing_mode !== "fixed" && (
                 <Button
                   size="sm"
                   variant="outline"

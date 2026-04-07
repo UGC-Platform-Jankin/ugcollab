@@ -371,28 +371,45 @@ const Gigs = () => {
   const handleCounterOfferInvite = async () => {
     if (!counteringInvite || !user || !counterPrice || !counterVideos) return;
     setCountering(true);
+    const brandUserId = counteringInvite.brand_user_id;
+    const campaignId = counteringInvite.campaign_id;
+    // Insert as pending — brand must accept/reject/counter before creator is fully in campaign
     await supabase.from("campaign_applications").insert({
-      campaign_id: counteringInvite.campaign_id,
+      campaign_id: campaignId,
       creator_user_id: user.id,
       cover_letter: "Counter offer submitted",
-      status: "accepted",
+      status: "pending",
       agreed_price_per_video: null,
       agreed_video_count: Number(counterVideos),
       pricing_status: "countered",
       proposed_price_per_video: Number(counterPrice),
       proposed_video_count: Number(counterVideos),
     } as any);
-    await supabase.from("campaign_invites").update({ status: "accepted" }).eq("id", counteringInvite.id);
+    // Keep invite as pending until brand accepts the counter
+    await supabase.from("campaign_invites").update({ status: "pending" }).eq("id", counteringInvite.id);
     const { data: prof } = await supabase.from("profiles").select("display_name").eq("user_id", user.id).maybeSingle();
     await supabase.from("notifications").insert({
-      user_id: counteringInvite.brand_user_id,
+      user_id: brandUserId,
       type: "counter_offer",
       title: "Counter Offer Received",
       body: `${prof?.display_name || "A creator"} sent a counter offer for "${counteringInvite._campaign?.title}"`,
-      link: `/brand/campaigns/${counteringInvite.campaign_id}/pricing`,
+      link: `/brand/campaigns/${campaignId}/pricing`,
     });
+
+    // Send message to brand's private chat
+    const { data: profile } = await supabase.from("profiles").select("display_name").eq("user_id", user.id).maybeSingle();
+    const creatorName = profile?.display_name || "A creator";
+    const { data: privateRoom } = await supabase.from("chat_rooms").select("id").eq("campaign_id", campaignId).eq("type", "private").maybeSingle();
+    if (privateRoom) {
+      await supabase.from("messages").insert({
+        chat_room_id: privateRoom.id,
+        sender_id: user.id,
+        content: `💬 **Counter Offer Sent**\n\nI'd like to propose HK$${counterPrice}/video × ${counterVideos} video(s) for "${counteringInvite._campaign?.title}".\n\n[CAMPAIGN_COUNTER:${campaignId}]`,
+      } as any);
+    }
+
     setInvites(prev => prev.filter(i => i.id !== counteringInvite.id));
-    toast({ title: "Counter offer sent!" });
+    toast({ title: "Counter offer sent! Brand will review your terms." });
     setCounteringInvite(null);
     setCounterPrice("");
     setCounterVideos("");
@@ -402,7 +419,22 @@ const Gigs = () => {
   const handleRejectInvite = async (invite: any) => {
     if (!user) return;
     setRejecting(true);
+    const brandUserId = invite.brand_user_id;
+    const campaignId = invite.campaign_id;
     await supabase.from("campaign_invites").update({ status: "declined" }).eq("id", invite.id);
+
+    // Send message to brand's private chat
+    const { data: profile } = await supabase.from("profiles").select("display_name").eq("user_id", user.id).maybeSingle();
+    const creatorName = profile?.display_name || "A creator";
+    const { data: privateRoom } = await supabase.from("chat_rooms").select("id").eq("campaign_id", campaignId).eq("type", "private").maybeSingle();
+    if (privateRoom) {
+      await supabase.from("messages").insert({
+        chat_room_id: privateRoom.id,
+        sender_id: user.id,
+        content: `👋 ${creatorName} declined the invite for "${invite._campaign?.title}".`,
+      } as any);
+    }
+
     setInvites(prev => prev.filter(i => i.id !== invite.id));
     toast({ title: "Invite declined" });
     setRejectingInvite(null);
@@ -660,6 +692,8 @@ const Gigs = () => {
               const proposedVideos = invite.proposed_video_count ?? camp.expected_video_count;
               const isPrizePool = camp.campaign_type === "prize_pool";
               const isFreeProduct = camp.is_free_product;
+              const isFixedPricing = camp.pricing_mode === "fixed" && camp.videos_mode === "fixed";
+              const canCounter = !isFreeProduct && !isFixedPricing;
               return (
                 <Card key={invite.id} className="border-border/50">
                   <CardContent className="p-5">
@@ -698,14 +732,16 @@ const Gigs = () => {
                           onClick={() => navigate(`/dashboard/gigs?invite=${invite.id}`)}>
                           View Gig
                         </Button>
-                        <Button size="sm" variant="outline" className="gap-1.5"
-                          onClick={() => {
-                            setCounteringInvite(invite);
-                            setCounterPrice((proposedPrice ?? camp.price_per_video ?? "").toString());
-                            setCounterVideos((proposedVideos ?? camp.expected_video_count ?? "1").toString());
-                          }}>
-                          Counter
-                        </Button>
+                        {canCounter && (
+                          <Button size="sm" variant="outline" className="gap-1.5"
+                            onClick={() => {
+                              setCounteringInvite(invite);
+                              setCounterPrice((proposedPrice ?? camp.price_per_video ?? "").toString());
+                              setCounterVideos((proposedVideos ?? camp.expected_video_count ?? "1").toString());
+                            }}>
+                            Counter
+                          </Button>
+                        )}
                         <Button size="sm" className="gap-1.5 bg-emerald-600 hover:bg-emerald-700"
                           onClick={() => handleAcceptInvite(invite)}>
                           <Check className="h-3.5 w-3.5" /> Accept

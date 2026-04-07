@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Building2, LogOut, Users, Megaphone, BarChart3, User, MessageCircle, Sun, Moon, Sparkles, ChevronDown, ChevronRight, Video, Link2, Calendar, Settings, DollarSign } from "lucide-react";
+import { Building2, LogOut, Users, Megaphone, BarChart3, User, MessageCircle, Sun, Moon, Sparkles, ChevronDown, ChevronRight, Video, Link2, Calendar, Settings, DollarSign, Send, Search } from "lucide-react";
 import NotificationBell from "@/components/NotificationBell";
 import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -28,6 +28,7 @@ const BrandLayout = ({ children }: { children: React.ReactNode }) => {
   const [expandedCampaigns, setExpandedCampaigns] = useState<Set<string>>(new Set());
   const [campaignNotifs, setCampaignNotifs] = useState(0);
   const [perCampaignNotifs, setPerCampaignNotifs] = useState<Record<string, number>>({});
+  const [pendingInviteCount, setPendingInviteCount] = useState(0);
   const unread = useUnreadMessages();
   const { theme, toggleTheme } = useTheme();
 
@@ -35,7 +36,10 @@ const BrandLayout = ({ children }: { children: React.ReactNode }) => {
     { label: "Overview", icon: BarChart3, path: "/brand/dashboard", count: 0 },
     { label: "Campaigns", icon: Megaphone, path: "/brand/campaigns", count: campaignNotifs },
     { label: "Messages", icon: MessageCircle, path: "/brand/messages", count: unread.total },
-    { label: "Find Creators", icon: Users, path: "/brand/creators", count: 0 },
+    { label: "Find Creators", icon: Search, path: "/brand/creators", count: 0, subItems: [
+      { label: "Browse", icon: Users, path: "/brand/creators" },
+      { label: "Invites", icon: Send, path: "/brand/creators/invites", count: pendingInviteCount },
+    ]},
     { label: "Profile", icon: User, path: "/brand/profile", count: 0 },
   ];
 
@@ -72,6 +76,11 @@ const BrandLayout = ({ children }: { children: React.ReactNode }) => {
         });
         setPerCampaignNotifs(perCamp);
       });
+
+      // Load pending invite count for the Invites nav badge
+      supabase.from("campaign_invites").select("id", { count: "exact" }).eq("brand_user_id", user.id).eq("status", "pending").then(({ count }) => {
+        setPendingInviteCount(count || 0);
+      });
     }
   }, [user]);
 
@@ -102,6 +111,13 @@ const BrandLayout = ({ children }: { children: React.ReactNode }) => {
   const currentNavItem = (() => {
     const campMatch = location.pathname.match(/\/brand\/campaigns\/([^/]+)/);
     if (campMatch) return null;
+    // Check sub-items first
+    for (const item of navItems) {
+      if (item.subItems) {
+        const sub = item.subItems.find((s: any) => location.pathname === s.path);
+        if (sub) return { icon: sub.icon, label: sub.label, isSub: true };
+      }
+    }
     return navItems.find(n => location.pathname === n.path) || navItems[0];
   })();
 
@@ -112,7 +128,7 @@ const BrandLayout = ({ children }: { children: React.ReactNode }) => {
       return camp?.title || "Campaign";
     }
     if (location.pathname === "/brand/campaigns/new") return "New Campaign";
-    return currentNavItem?.label || "Brand Portal";
+    return currentNavItem && !("isSub" in currentNavItem) ? currentNavItem.label : (currentNavItem as any)?.label || "Brand Portal";
   })();
 
   const activeCampaigns = campaigns.filter(c => c.status === "active");
@@ -161,6 +177,53 @@ const BrandLayout = ({ children }: { children: React.ReactNode }) => {
                 <SidebarMenu className="space-y-1">
                   {navItems.map((item) => {
                     const isActive = location.pathname === item.path;
+                    // If item has subItems, render as expandable header + sub-items
+                    if (item.subItems) {
+                      const hasActiveSub = item.subItems.some((sub: any) => location.pathname === sub.path);
+                      const isItemActive = location.pathname.startsWith(item.path);
+                      return (
+                        <div key={item.label}>
+                          <div className={cn(
+                            "flex items-center gap-2.5 px-3 py-2 rounded-lg transition-all duration-200 cursor-pointer",
+                            isItemActive ? "bg-primary/10 text-primary font-semibold" : "text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                          )}>
+                            <item.icon className="w-4 h-4 shrink-0" />
+                            <span className="flex-1 text-[13px] truncate">{item.label}</span>
+                            {item.count > 0 && (
+                              <Badge className="h-5 min-w-[20px] px-1.5 text-[11px] font-bold border-0 bg-primary text-primary-foreground">
+                                {item.count > 99 ? "99+" : item.count}
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="ml-4 space-y-0.5">
+                            {item.subItems.map((sub: any) => {
+                              const isSubActive = location.pathname === sub.path;
+                              return (
+                                <SidebarMenuItem key={sub.path}>
+                                  <SidebarMenuButton asChild>
+                                    <NavLink
+                                      to={sub.path}
+                                      className={cn(
+                                        "flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all duration-200 text-[12px]",
+                                        isSubActive ? "bg-primary text-primary-foreground font-semibold" : "text-sidebar-foreground/50 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                                      )}
+                                    >
+                                      <sub.icon className="w-3.5 h-3.5 shrink-0" />
+                                      <span className="flex-1">{sub.label}</span>
+                                      {sub.count > 0 && (
+                                        <Badge className={cn("h-5 min-w-[20px] px-1.5 text-[11px] font-bold border-0", isSubActive ? "bg-primary-foreground/20 text-primary-foreground" : "bg-primary text-primary-foreground")}>
+                                          {sub.count > 99 ? "99+" : sub.count}
+                                        </Badge>
+                                      )}
+                                    </NavLink>
+                                  </SidebarMenuButton>
+                                </SidebarMenuItem>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    }
                     return (
                       <SidebarMenuItem key={item.label}>
                         <SidebarMenuButton asChild>

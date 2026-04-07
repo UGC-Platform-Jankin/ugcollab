@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import {
   Loader2, DollarSign, Video, Check, X, AlertCircle, Users, ArrowRightLeft
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface Props {
   campaignId: string;
@@ -43,6 +44,7 @@ const pricingStatusColors: Record<string, string> = {
 const CreatorPricingSpreadsheet = ({ campaignId }: Props) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [campaign, setCampaign] = useState<any>(null);
   const [rows, setRows] = useState<CreatorRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -54,6 +56,8 @@ const CreatorPricingSpreadsheet = ({ campaignId }: Props) => {
   const [counterPrice, setCounterPrice] = useState("");
   const [counterVideos, setCounterVideos] = useState("");
   const [countering, setCountering] = useState(false);
+  const [rejectingApp, setRejectingApp] = useState<any>(null);
+  const [rejecting, setRejecting] = useState(false);
 
   const loadData = async () => {
     setLoading(true);
@@ -62,7 +66,7 @@ const CreatorPricingSpreadsheet = ({ campaignId }: Props) => {
       supabase.from("campaign_applications")
         .select("*")
         .eq("campaign_id", campaignId)
-        .in("status", ["accepted", "removed", "left"])
+        .in("status", ["accepted", "pending", "removed", "left"])
         .order("created_at", { ascending: false }),
     ]);
 
@@ -102,12 +106,28 @@ const CreatorPricingSpreadsheet = ({ campaignId }: Props) => {
 
   const saveEdit = async (appId: string, field: "agreed_price_per_video" | "agreed_video_count", value: string) => {
     setSaving(appId);
+    const app = rows.find(r => r.application.id === appId)?.application;
     const numValue = field === "agreed_price_per_video" ? (value ? Number(value) : null) : (value ? Number(value) : null);
+    const prevApp = app;
     await supabase.from("campaign_applications").update({
       [field]: numValue,
       pricing_status: "agreed",
     } as any).eq("id", appId);
-    toast({ title: "Updated" });
+    // Notify creator via private chat
+    if (app) {
+      const { data: room } = await supabase.from("chat_rooms").select("id").eq("campaign_id", campaignId).eq("type", "private").maybeSingle();
+      if (room) {
+        const { data: brandProfile } = await supabase.from("brand_profiles").select("business_name").eq("user_id", user!.id).maybeSingle();
+        const fieldLabel = field === "agreed_price_per_video" ? "price per video" : "number of videos";
+        const newVal = field === "agreed_price_per_video" ? `HK$${numValue}` : `${numValue} video(s)`;
+        await supabase.from("messages").insert({
+          chat_room_id: room.id,
+          sender_id: user!.id,
+          content: `📝 **Agreement Updated by ${brandProfile?.business_name || "the brand"}**\n\nYour ${fieldLabel} has been updated to ${newVal} for "${campaign?.title}".\n\n[CAMPAIGN_AGREED:${campaignId}]`,
+        } as any);
+      }
+    }
+    toast({ title: "Updated and notified creator" });
     setEditingCell(null);
     setSaving(null);
     loadData();
@@ -126,26 +146,23 @@ const CreatorPricingSpreadsheet = ({ campaignId }: Props) => {
   const handleCounterOffer = async () => {
     if (!counteringCreator) return;
     setCountering(true);
+    const appId = counteringCreator.application.id;
     await supabase.from("campaign_applications").update({
       proposed_price_per_video: counterPrice ? Number(counterPrice) : null,
       proposed_video_count: counterVideos ? Number(counterVideos) : null,
       pricing_status: "countered",
-    } as any).eq("id", counteringCreator.id);
-    // Notify brand
-    const { data: app } = await supabase.from("campaign_applications").select("campaign_id").eq("id", counteringCreator.id).single();
-    if (app) {
-      const { data: camp } = await supabase.from("campaigns").select("id, brand_user_id, title").eq("id", app.campaign_id).single();
-      if (camp) {
-        await supabase.from("notifications").insert({
-          user_id: camp.brand_user_id,
-          type: "counter_offer",
-          title: "Counter Offer Received",
-          body: `A creator has sent a counter offer for "${camp.title}"`,
-          link: `/brand/campaigns/${camp.id}/pricing`,
-        });
-      }
+    } as any).eq("id", appId);
+    // Send message to creator's private chat
+    const { data: room } = await supabase.from("chat_rooms").select("id").eq("campaign_id", campaignId).eq("type", "private").maybeSingle();
+    if (room) {
+      const { data: brandProfile } = await supabase.from("brand_profiles").select("business_name").eq("user_id", user!.id).maybeSingle();
+      await supabase.from("messages").insert({
+        chat_room_id: room.id,
+        sender_id: user!.id,
+        content: `💬 **Counter Offer from ${brandProfile?.business_name || "the brand"}**\n\nWe've proposed HK$${counterPrice || "—"}/video × ${counterVideos || "—"} video(s) for "${campaign?.title}".\n\n[CAMPAIGN_COUNTER:${campaignId}]`,
+      } as any);
     }
-    toast({ title: "Counter offer sent!" });
+    toast({ title: "Counter offer sent to creator!" });
     setCounteringCreator(null);
     setCounterPrice("");
     setCounterVideos("");
@@ -155,13 +172,68 @@ const CreatorPricingSpreadsheet = ({ campaignId }: Props) => {
 
   const acceptCounterOffer = async (appId: string, proposedPrice: number, proposedVideos: number) => {
     setSaving(appId);
+    const app = rows.find(r => r.application.id === appId)?.application;
     await supabase.from("campaign_applications").update({
       agreed_price_per_video: proposedPrice,
       agreed_video_count: proposedVideos,
       pricing_status: "agreed",
+      status: "accepted",
     } as any).eq("id", appId);
+    // Update corresponding invite to accepted if exists
+    if (app) {
+      await supabase.from("campaign_invites").update({ status: "accepted" }).eq("campaign_id", campaignId).eq("creator_user_id", app.creator_user_id);
+    }
+    // Send message to creator's private chat
+    if (app) {
+      const { data: room } = await supabase.from("chat_rooms").select("id").eq("campaign_id", campaignId).eq("type", "private").maybeSingle();
+      if (room) {
+        const { data: brandProfile } = await supabase.from("brand_profiles").select("business_name").eq("user_id", user!.id).maybeSingle();
+        await supabase.from("messages").insert({
+          chat_room_id: room.id,
+          sender_id: user!.id,
+          content: `✅ Your counter offer has been accepted by ${brandProfile?.business_name || "the brand"}!\n\nAgreed terms: HK$${proposedPrice}/video × ${proposedVideos} video(s)\n\n[CAMPAIGN_AGREED:${campaignId}]`,
+        } as any);
+      }
+      // Add creator to group chat
+      const { data: groupRoom } = await supabase.from("chat_rooms").select("id").eq("campaign_id", campaignId).eq("type", "group").maybeSingle();
+      if (groupRoom) {
+        const { data: existingPart } = await supabase.from("chat_participants").select("id").eq("chat_room_id", groupRoom.id).eq("user_id", app.creator_user_id).maybeSingle();
+        if (!existingPart) {
+          await supabase.from("chat_participants").insert({ chat_room_id: groupRoom.id, user_id: app.creator_user_id });
+          const { data: brandProfile } = await supabase.from("brand_profiles").select("business_name").eq("user_id", user!.id).maybeSingle();
+          await supabase.from("messages").insert({
+            chat_room_id: groupRoom.id,
+            sender_id: user!.id,
+            content: `${brandProfile?.business_name || "The brand"} accepted the counter offer — ${app.profile?.display_name || "Creator"} joined!`,
+          } as any);
+        }
+      }
+    }
     toast({ title: "Counter offer accepted" });
     setSaving(null);
+    loadData();
+  };
+
+  const rejectCounterOffer = async (appId: string) => {
+    if (!rejectingApp) return;
+    setRejecting(true);
+    const app = rows.find(r => r.application.id === appId)?.application;
+    await supabase.from("campaign_applications").update({ status: "declined" } as any).eq("id", appId);
+    // Notify creator
+    if (app) {
+      const { data: room } = await supabase.from("chat_rooms").select("id").eq("campaign_id", campaignId).eq("type", "private").maybeSingle();
+      if (room) {
+        const { data: brandProfile } = await supabase.from("brand_profiles").select("business_name").eq("user_id", user!.id).maybeSingle();
+        await supabase.from("messages").insert({
+          chat_room_id: room.id,
+          sender_id: user!.id,
+          content: `❌ ${brandProfile?.business_name || "The brand"} declined your counter offer for "${campaign?.title}".`,
+        } as any);
+      }
+    }
+    toast({ title: "Counter offer declined" });
+    setRejectingApp(null);
+    setRejecting(false);
     loadData();
   };
 
@@ -293,10 +365,11 @@ const CreatorPricingSpreadsheet = ({ campaignId }: Props) => {
                 const isEditing = editingCell?.appId === app.id;
                 const isSavingThis = saving === app.id;
                 const hasCountered = app.pricing_status === "countered";
+                const isPending = app.status === "pending" && app.pricing_status === "countered";
                 const isEditable = app.status === "accepted";
 
                 return (
-                  <tr key={app.id} className={`border-b border-border/30 ${hasCountered ? "bg-orange-500/5" : ""}`}>
+                  <tr key={app.id} className={`border-b border-border/30 ${hasCountered ? "bg-orange-500/5" : isPending ? "bg-yellow-500/5" : ""}`}>
                     {/* Creator */}
                     <td className="p-3">
                       <div className="flex items-center gap-2">
@@ -391,7 +464,39 @@ const CreatorPricingSpreadsheet = ({ campaignId }: Props) => {
                     </td>
                     {/* Actions */}
                     <td className="p-3 text-center">
-                      {hasCountered && isEditable && (
+                      {isPending ? (
+                        <div className="flex items-center gap-1 justify-center">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 px-2 text-xs gap-1"
+                            onClick={() => acceptCounterOffer(app.id, app.proposed_price_per_video, app.proposed_video_count)}
+                            disabled={isSavingThis}
+                          >
+                            <Check className="h-3 w-3" /> Accept
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 px-2 text-xs gap-1"
+                            onClick={() => {
+                              setCounteringCreator({ application: app, profile });
+                              setCounterPrice(app.proposed_price_per_video?.toString() || "");
+                              setCounterVideos(app.proposed_video_count?.toString() || "1");
+                            }}
+                          >
+                            <ArrowRightLeft className="h-3 w-3" /> Counter
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 px-2 text-destructive hover:text-destructive"
+                            onClick={() => setRejectingApp({ application: app, profile })}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ) : hasCountered && isEditable ? (
                         <div className="flex items-center gap-1 justify-center">
                           <Button
                             size="sm"
@@ -411,7 +516,7 @@ const CreatorPricingSpreadsheet = ({ campaignId }: Props) => {
                             <ArrowRightLeft className="h-3 w-3" />
                           </Button>
                         </div>
-                      )}
+                      ) : null}
                     </td>
                   </tr>
                 );
@@ -469,6 +574,31 @@ const CreatorPricingSpreadsheet = ({ campaignId }: Props) => {
                 className="flex-1"
               >
                 Accept Counter
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reject Counter Offer Dialog */}
+      <Dialog open={!!rejectingApp} onOpenChange={(open) => { if (!open) setRejectingApp(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Decline Counter Offer?</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <p className="text-sm text-muted-foreground">
+              Are you sure you want to decline <strong>{rejectingApp?.profile?.display_name}</strong>'s counter offer for "{campaign?.title}"? They will be notified via chat.
+            </p>
+            <div className="flex gap-3">
+              <Button variant="outline" className="flex-1" onClick={() => setRejectingApp(null)}>Cancel</Button>
+              <Button
+                variant="destructive"
+                className="flex-1"
+                disabled={rejecting}
+                onClick={() => rejectCounterOffer(rejectingApp?.application?.id)}
+              >
+                {rejecting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Decline Offer"}
               </Button>
             </div>
           </div>
