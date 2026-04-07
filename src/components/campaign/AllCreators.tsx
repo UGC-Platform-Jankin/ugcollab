@@ -107,15 +107,13 @@ const AllCreators = ({ campaignId }: Props) => {
 
   const handleMessageCreator = async (creatorUserId: string) => {
     if (!user) return;
-    console.log("[AllCreators] handleMessageCreator", { campaignId, userId: user.id, creatorUserId });
     try {
       const roomId = await findOrCreatePrivateRoom(campaignId, user.id, creatorUserId);
-      console.log("[AllCreators] room created:", roomId);
       toast({ title: "Chat opened" });
       navigate(`/brand/campaigns/${campaignId}/private?creator=${creatorUserId}`);
-    } catch (e) {
-      console.error("[AllCreators] handleMessageCreator error:", e);
-      toast({ title: "Failed to open chat", description: "Please try again.", variant: "destructive" });
+    } catch (e: any) {
+      console.error("[AllCreators] handleMessageCreator error:", e?.message, e?.code, JSON.stringify(e));
+      toast({ title: "Failed to open chat", description: e?.message || "Please try again.", variant: "destructive" });
     }
   };
 
