@@ -71,7 +71,7 @@ export type Database = {
           created_at: string
           creator_user_id: string
           id: string
-          pricing_status: string
+          pricing_status: string | null
           proposed_price_per_video: number | null
           proposed_video_count: number | null
           status: string
@@ -86,7 +86,7 @@ export type Database = {
           created_at?: string
           creator_user_id: string
           id?: string
-          pricing_status?: string
+          pricing_status?: string | null
           proposed_price_per_video?: number | null
           proposed_video_count?: number | null
           status?: string
@@ -101,7 +101,7 @@ export type Database = {
           created_at?: string
           creator_user_id?: string
           id?: string
-          pricing_status?: string
+          pricing_status?: string | null
           proposed_price_per_video?: number | null
           proposed_video_count?: number | null
           status?: string
@@ -229,6 +229,7 @@ export type Database = {
           target_regions: string[]
           title: string
           updated_at: string
+          videos_mode: string
         }
         Insert: {
           brand_user_id: string
