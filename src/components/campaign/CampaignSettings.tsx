@@ -35,6 +35,8 @@ const CampaignSettings = ({ campaignId }: Props) => {
   const [campaign, setCampaign] = useState<any>(null);
   const [groupChatEnabled, setGroupChatEnabled] = useState(true);
   const [scheduleEnabled, setScheduleEnabled] = useState(true);
+  const [pricingMode, setPricingMode] = useState<"fixed" | "flexible">("fixed");
+  const [videosMode, setVideosMode] = useState<"fixed" | "flexible">("fixed");
   const [saving, setSaving] = useState(false);
   const [ending, setEnding] = useState(false);
 
@@ -66,6 +68,8 @@ const CampaignSettings = ({ campaignId }: Props) => {
         setCampaign(campData);
         setGroupChatEnabled((campData as any).group_chat_enabled ?? true);
         setScheduleEnabled((campData as any).posting_schedule_enabled ?? true);
+        setPricingMode((campData as any).pricing_mode ?? "fixed");
+        setVideosMode((campData as any).videos_mode ?? "fixed");
       }
       setLoading(false);
       await loadApplications();
@@ -108,6 +112,15 @@ const CampaignSettings = ({ campaignId }: Props) => {
   };
 
   const handleToggle = async (field: string, value: boolean) => {
+    setSaving(true);
+    const update: any = {};
+    update[field] = value;
+    await supabase.from("campaigns").update(update).eq("id", campaignId);
+    toast({ title: "Setting updated" });
+    setSaving(false);
+  };
+
+  const handleModeToggle = async (field: string, value: string) => {
     setSaving(true);
     const update: any = {};
     update[field] = value;
@@ -480,6 +493,38 @@ const CampaignSettings = ({ campaignId }: Props) => {
                 </div>
               </div>
               <Switch checked={scheduleEnabled} onCheckedChange={(v) => { setScheduleEnabled(v); handleToggle("posting_schedule_enabled", v); }} disabled={saving} />
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-border/50">
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+                  <span className="text-emerald-500 font-bold text-sm">$</span>
+                </div>
+                <div>
+                  <Label className="text-sm font-semibold text-foreground">Fixed Price</Label>
+                  <p className="text-xs text-muted-foreground">When off, you can set a different price per creator</p>
+                </div>
+              </div>
+              <Switch checked={pricingMode === "fixed"} onCheckedChange={(v) => { setPricingMode(v ? "fixed" : "flexible"); handleModeToggle("pricing_mode", v ? "fixed" : "flexible"); }} disabled={saving} />
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-border/50">
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                  <Video className="h-5 w-5 text-blue-500" />
+                </div>
+                <div>
+                  <Label className="text-sm font-semibold text-foreground">Fixed Video Count</Label>
+                  <p className="text-xs text-muted-foreground">When off, you can set a different video count per creator</p>
+                </div>
+              </div>
+              <Switch checked={videosMode === "fixed"} onCheckedChange={(v) => { setVideosMode(v ? "fixed" : "flexible"); handleModeToggle("videos_mode", v ? "fixed" : "flexible"); }} disabled={saving} />
             </div>
           </CardContent>
         </Card>

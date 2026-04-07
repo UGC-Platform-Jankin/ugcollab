@@ -784,17 +784,24 @@ const Messages = () => {
                                 if (existing) {
                                   return;
                                 }
+                                // Resolve pricing from invite or fall back to campaign defaults
+                                const { data: invite } = await supabase.from("campaign_invites").select("proposed_price_per_video, proposed_video_count").eq("campaign_id", inviteMatch[1]).eq("creator_user_id", user.id).single();
+                                const { data: camp } = await supabase.from("campaigns").select("brand_user_id, title, price_per_video, expected_video_count, is_free_product").eq("id", inviteMatch[1]).single();
+                                const agreedPrice = invite?.proposed_price_per_video ?? camp?.price_per_video ?? null;
+                                const agreedVideos = invite?.proposed_video_count ?? camp?.expected_video_count ?? 1;
                                 // Auto-accept: create application with accepted status
                                 await supabase.from("campaign_applications").insert({
                                   campaign_id: inviteMatch[1],
                                   creator_user_id: user.id,
                                   cover_letter: "Accepted campaign invite",
                                   status: "accepted",
+                                  agreed_price_per_video: camp?.is_free_product ? null : agreedPrice,
+                                  agreed_video_count: agreedVideos,
+                                  pricing_status: "agreed",
                                 } as any);
                                 // Update invite status
                                 await supabase.from("campaign_invites").update({ status: "accepted" } as any).eq("campaign_id", inviteMatch[1]).eq("creator_user_id", user.id);
                                 // Notify brand
-                                const { data: camp } = await supabase.from("campaigns").select("brand_user_id, title").eq("id", inviteMatch[1]).single();
                                 if (camp) {
                                   const { data: prof } = await supabase.from("profiles").select("display_name").eq("user_id", user.id).maybeSingle();
                                   await supabase.from("notifications").insert({
@@ -807,10 +814,11 @@ const Messages = () => {
                                 }
                                 // Send confirmation message in chat
                                 if (selectedRoom) {
+                                  const priceInfo = agreedPrice ? ` (HK$${agreedPrice}/video × ${agreedVideos} video${agreedVideos > 1 ? 's' : ''})` : '';
                                   await supabase.from("messages").insert({
                                     chat_room_id: selectedRoom.id,
                                     sender_id: user.id,
-                                    content: "✅ I've accepted the campaign invite!",
+                                    content: `✅ I've accepted the campaign invite!${priceInfo}`,
                                   } as any);
                                 }
                               }}

@@ -67,6 +67,8 @@ const FindCreators = () => {
   const [inviteCreator, setInviteCreator] = useState<Creator | null>(null);
   const [selectedCampaignId, setSelectedCampaignId] = useState("");
   const [inviteMessage, setInviteMessage] = useState("");
+  const [invitePrice, setInvitePrice] = useState("");
+  const [inviteVideoCount, setInviteVideoCount] = useState("");
   const [sending, setSending] = useState(false);
   const [viewingCreator, setViewingCreator] = useState<Creator | null>(null);
   const [creatorCollabs, setCreatorCollabs] = useState<any[]>([]);
@@ -79,7 +81,7 @@ const FindCreators = () => {
       const [profilesRes, socialsRes, campaignsRes, collabsRes] = await Promise.all([
         supabase.from("profiles").select("user_id, display_name, username, bio, avatar_url, content_types, gender, country"),
         supabase.from("social_connections").select("user_id, platform, followers_count, average_views, platform_username"),
-        supabase.from("campaigns").select("id, title, description, platforms, target_regions").eq("brand_user_id", user.id).eq("status", "active"),
+        supabase.from("campaigns").select("id, title, description, platforms, target_regions, pricing_mode, videos_mode, price_per_video, expected_video_count, is_free_product").eq("brand_user_id", user.id).eq("status", "active"),
         supabase.from("past_collaborations").select("user_id, brand_name"),
       ]);
 
@@ -183,11 +185,17 @@ const FindCreators = () => {
     if (!user || !inviteCreator || !selectedCampaignId) return;
     setSending(true);
 
+    const selectedCampaign = campaigns.find(c => c.id === selectedCampaignId);
+    const proposedPrice = invitePrice ? Number(invitePrice) : null;
+    const proposedVideos = inviteVideoCount ? Number(inviteVideoCount) : null;
+
     const { error } = await supabase.from("campaign_invites").insert({
       campaign_id: selectedCampaignId,
       brand_user_id: user.id,
       creator_user_id: inviteCreator.user_id,
       message: inviteMessage || null,
+      proposed_price_per_video: proposedPrice,
+      proposed_video_count: proposedVideos,
     } as any);
 
     if (error) {
@@ -209,8 +217,8 @@ const FindCreators = () => {
         { chat_room_id: privateRoom.id, user_id: inviteCreator.user_id },
       ] as any);
 
-      const campaign = campaigns.find((c) => c.id === selectedCampaignId);
-      const msgContent = `🎯 **Campaign Invite: ${campaign?.title || "Campaign"}**\n\n${inviteMessage || "You've been invited to apply to this campaign!"}\n\n[CAMPAIGN_INVITE:${selectedCampaignId}]`;
+      const pricingInfo = proposedPrice ? `\n\n💰 Proposed: HK$${proposedPrice}/video × ${proposedVideos || selectedCampaign?.expected_video_count || 1} video(s)` : "";
+      const msgContent = `🎯 **Campaign Invite: ${selectedCampaign?.title || "Campaign"}**${pricingInfo}\n\n${inviteMessage || "You've been invited to apply to this campaign!"}\n\n[CAMPAIGN_INVITE:${selectedCampaignId}]`;
       await supabase.from("messages").insert({
         chat_room_id: privateRoom.id,
         sender_id: user.id,
@@ -230,6 +238,8 @@ const FindCreators = () => {
     setInviteCreator(null);
     setSelectedCampaignId("");
     setInviteMessage("");
+    setInvitePrice("");
+    setInviteVideoCount("");
     setSending(false);
   };
 
@@ -388,46 +398,67 @@ const FindCreators = () => {
       )}
 
       {/* Invite Dialog */}
-      <Dialog open={!!inviteCreator} onOpenChange={(open) => { if (!open) { setInviteCreator(null); setSelectedCampaignId(""); setInviteMessage(""); } }}>
+      <Dialog open={!!inviteCreator} onOpenChange={(open) => { if (!open) { setInviteCreator(null); setSelectedCampaignId(""); setInviteMessage(""); setInvitePrice(""); setInviteVideoCount(""); } }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Invite {inviteCreator?.display_name || "Creator"}</DialogTitle>
             <DialogDescription>Select a campaign and send an optional message</DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 mt-2">
-            <div>
-              <label className="text-sm font-medium text-foreground mb-1.5 block">Campaign *</label>
-              <Select value={selectedCampaignId} onValueChange={setSelectedCampaignId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a campaign" />
-                </SelectTrigger>
-                <SelectContent>
-                  {campaigns.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {campaigns.length === 0 && (
-                <p className="text-xs text-destructive mt-1">You need an active campaign first</p>
-              )}
-            </div>
-            <div>
-              <label className="text-sm font-medium text-foreground mb-1.5 block">Message (optional)</label>
-              <Textarea
-                placeholder="Hi! We'd love to collaborate with you on our upcoming campaign..."
-                value={inviteMessage}
-                onChange={(e) => setInviteMessage(e.target.value)}
-                className="min-h-[100px]"
-              />
-            </div>
-            <Button
-              onClick={handleInvite}
-              disabled={sending || !selectedCampaignId}
-              className="w-full"
-            >
-              {sending ? <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Sending...</> : "Send Invite"}
-            </Button>
-          </div>
+          {(() => {
+            const selectedCampaign = campaigns.find(c => c.id === selectedCampaignId);
+            const isFlexiblePricing = selectedCampaign?.pricing_mode === 'flexible';
+            const isFreeProduct = selectedCampaign?.is_free_product;
+            return (
+              <div className="space-y-4 mt-2">
+                <div>
+                  <label className="text-sm font-medium text-foreground mb-1.5 block">Campaign *</label>
+                  <Select value={selectedCampaignId} onValueChange={(id) => { setSelectedCampaignId(id); setInvitePrice(""); setInviteVideoCount(""); }}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a campaign" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {campaigns.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {campaigns.length === 0 && (
+                    <p className="text-xs text-destructive mt-1">You need an active campaign first</p>
+                  )}
+                </div>
+                {isFlexiblePricing && !isFreeProduct && (
+                  <>
+                    <div>
+                      <label className="text-sm font-medium text-foreground mb-1.5 block">Proposed Price per Video (HKD)</label>
+                      <Input type="number" min="1" placeholder={selectedCampaign?.price_per_video?.toString() || "e.g. 500"} value={invitePrice} onChange={(e) => setInvitePrice(e.target.value)} />
+                      <p className="text-xs text-muted-foreground mt-1">Leave blank to use campaign default: HK${selectedCampaign?.price_per_video || 0}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-foreground mb-1.5 block">Proposed Number of Videos</label>
+                      <Input type="number" min="1" placeholder={selectedCampaign?.expected_video_count?.toString() || "e.g. 1"} value={inviteVideoCount} onChange={(e) => setInviteVideoCount(e.target.value)} />
+                      <p className="text-xs text-muted-foreground mt-1">Leave blank to use campaign default: {selectedCampaign?.expected_video_count || 1} video(s)</p>
+                    </div>
+                  </>
+                )}
+                <div>
+                  <label className="text-sm font-medium text-foreground mb-1.5 block">Message (optional)</label>
+                  <Textarea
+                    placeholder="Hi! We'd love to collaborate with you on our upcoming campaign..."
+                    value={inviteMessage}
+                    onChange={(e) => setInviteMessage(e.target.value)}
+                    className="min-h-[100px]"
+                  />
+                </div>
+                <Button
+                  onClick={handleInvite}
+                  disabled={sending || !selectedCampaignId}
+                  className="w-full"
+                >
+                  {sending ? <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Sending...</> : "Send Invite"}
+                </Button>
+              </div>
+            );
+          })()}
         </DialogContent>
       </Dialog>
 

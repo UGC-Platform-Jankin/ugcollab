@@ -64,31 +64,46 @@ export type Database = {
       }
       campaign_applications: {
         Row: {
+          agreed_price_per_video: number | null
+          agreed_video_count: number | null
           campaign_id: string
           cover_letter: string
           created_at: string
           creator_user_id: string
           id: string
+          pricing_status: string
+          proposed_price_per_video: number | null
+          proposed_video_count: number | null
           status: string
           updated_at: string
           videos_delivered: number
         }
         Insert: {
+          agreed_price_per_video?: number | null
+          agreed_video_count?: number | null
           campaign_id: string
           cover_letter: string
           created_at?: string
           creator_user_id: string
           id?: string
+          pricing_status?: string
+          proposed_price_per_video?: number | null
+          proposed_video_count?: number | null
           status?: string
           updated_at?: string
           videos_delivered?: number
         }
         Update: {
+          agreed_price_per_video?: number | null
+          agreed_video_count?: number | null
           campaign_id?: string
           cover_letter?: string
           created_at?: string
           creator_user_id?: string
           id?: string
+          pricing_status?: string
+          proposed_price_per_video?: number | null
+          proposed_video_count?: number | null
           status?: string
           updated_at?: string
           videos_delivered?: number
@@ -111,6 +126,8 @@ export type Database = {
           creator_user_id: string
           id: string
           message: string | null
+          proposed_price_per_video: number | null
+          proposed_video_count: number | null
           status: string
         }
         Insert: {
@@ -120,6 +137,8 @@ export type Database = {
           creator_user_id: string
           id?: string
           message?: string | null
+          proposed_price_per_video?: number | null
+          proposed_video_count?: number | null
           status?: string
         }
         Update: {
@@ -129,6 +148,8 @@ export type Database = {
           creator_user_id?: string
           id?: string
           message?: string | null
+          proposed_price_per_video?: number | null
+          proposed_video_count?: number | null
           status?: string
         }
         Relationships: [
@@ -201,6 +222,7 @@ export type Database = {
           platforms: string[] | null
           posting_schedule_enabled: boolean
           price_per_video: number | null
+          pricing_mode: string
           request_contact_types: string[] | null
           requirements: string | null
           status: string
@@ -226,12 +248,14 @@ export type Database = {
           platforms?: string[] | null
           posting_schedule_enabled?: boolean
           price_per_video?: number | null
+          pricing_mode?: string
           request_contact_types?: string[] | null
           requirements?: string | null
           status?: string
           target_regions?: string[]
           title: string
           updated_at?: string
+          videos_mode?: string
         }
         Update: {
           brand_user_id?: string
@@ -251,12 +275,14 @@ export type Database = {
           platforms?: string[] | null
           posting_schedule_enabled?: boolean
           price_per_video?: number | null
+          pricing_mode?: string
           request_contact_types?: string[] | null
           requirements?: string | null
           status?: string
           target_regions?: string[]
           title?: string
           updated_at?: string
+          videos_mode?: string
         }
         Relationships: []
       }
