@@ -179,23 +179,20 @@ const CreateCampaign = () => {
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
-      // Only create group chat if using in-app chat and max_creators > 1
-      if ((insertedCampaign as any)?.communication_type === "in_app_chat" && ((insertedCampaign as any)?.max_creators || 0) > 1) {
-        const { data: groupRoom } = await supabase.from("chat_rooms").insert({
-          type: "group",
-          campaign_id: insertedCampaign!.id,
-          name: insertedCampaign!.title,
-        } as any).select("id").single();
+      const { data: groupRoom } = await supabase.from("chat_rooms").insert({
+        type: "group",
+        campaign_id: insertedCampaign!.id,
+        name: insertedCampaign!.title,
+      } as any).select("id").single();
 
-        if (groupRoom) {
-          await supabase.from("chat_participants").insert({ chat_room_id: groupRoom.id, user_id: user.id } as any);
-          await supabase.from("messages").insert({
-            chat_room_id: groupRoom.id,
-            sender_id: user.id,
-            content: `Welcome to the ${insertedCampaign!.title} campaign group chat. This space is for the brand and accepted creators to coordinate together.`,
-            pinned: true,
-          } as any);
-        }
+      if (groupRoom) {
+        await supabase.from("chat_participants").insert({ chat_room_id: groupRoom.id, user_id: user.id } as any);
+        await supabase.from("messages").insert({
+          chat_room_id: groupRoom.id,
+          sender_id: user.id,
+          content: `Welcome to the ${insertedCampaign!.title} campaign group chat. This space is for the brand and accepted creators to coordinate together.`,
+          pinned: true,
+        } as any);
       }
 
       toast({ title: "Campaign created!", description: "Your campaign is now live." });

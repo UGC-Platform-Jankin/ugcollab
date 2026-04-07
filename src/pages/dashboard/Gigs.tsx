@@ -229,15 +229,17 @@ const Gigs = () => {
     // Create or find private chat with brand and send application message
     const brandUserId = applyingTo.brand_user_id;
     let privateRoomId: string | null = null;
-    const { data: existingRooms } = await supabase.from("chat_rooms")
+    const { data: allPrivateRooms } = await supabase.from("chat_rooms")
       .select("id, chat_participants(user_id)")
       .eq("campaign_id", applyingTo.id)
-      .eq("type", "private")
-      .maybeSingle();
-    if (existingRooms) {
-      const participantIds = ((existingRooms as any).chat_participants || []).map((p: any) => p.user_id);
-      if (participantIds.includes(user.id) && participantIds.includes(brandUserId)) {
-        privateRoomId = existingRooms.id;
+      .eq("type", "private");
+    if (allPrivateRooms && allPrivateRooms.length > 0) {
+      for (const room of allPrivateRooms) {
+        const participantIds = ((room as any).chat_participants || []).map((p: any) => p.user_id);
+        if (participantIds.includes(user.id) && participantIds.includes(brandUserId)) {
+          privateRoomId = room.id;
+          break;
+        }
       }
     }
     if (!privateRoomId) {
@@ -299,53 +301,56 @@ const Gigs = () => {
     // Update invite status
     await supabase.from("campaign_invites").update({ status: "accepted" }).eq("id", invite.id);
 
-    // Add creator to campaign group chat if exists
-    const { data: groupRoom } = await supabase.from("chat_rooms").select("id").eq("campaign_id", invite.campaign_id).eq("type", "group").maybeSingle();
-    console.log("[handleAcceptInvite] Group room found:", groupRoom);
+    // Add creator to group chat (create if not exists)
+    let { data: groupRoom } = await supabase.from("chat_rooms").select("id").eq("campaign_id", invite.campaign_id).eq("type", "group").maybeSingle();
+    if (!groupRoom) {
+      const { data: camp } = await supabase.from("campaigns").select("title, brand_user_id").eq("id", invite.campaign_id).maybeSingle();
+      const { data: newGroupRoom } = await supabase.from("chat_rooms").insert({ type: "group", campaign_id: invite.campaign_id, name: camp?.title || "Group Chat" } as any).select("id").single();
+      groupRoom = newGroupRoom;
+      if (groupRoom && camp?.brand_user_id) {
+        await supabase.from("chat_participants").insert({ chat_room_id: groupRoom.id, user_id: camp.brand_user_id } as any);
+      }
+    }
     if (groupRoom) {
       const { data: existingPart } = await supabase.from("chat_participants").select("id").eq("chat_room_id", groupRoom.id).eq("user_id", user.id).maybeSingle();
       if (!existingPart) {
         await supabase.from("chat_participants").insert({ chat_room_id: groupRoom.id, user_id: user.id });
         const { data: profile } = await supabase.from("profiles").select("display_name").eq("user_id", user.id).maybeSingle();
-        await supabase.from("messages").insert({
-          chat_room_id: groupRoom.id,
-          sender_id: user.id,
-          content: `✅ ${profile?.display_name || "A creator"} joined the campaign!`,
-        } as any);
+        await supabase.from("messages").insert({ chat_room_id: groupRoom.id, sender_id: user.id, content: `✅ ${profile?.display_name || "A creator"} joined the campaign!` } as any);
       }
     }
 
-    // Ensure private chat exists with brand
+    // Ensure private chat exists with brand - find or create
     let privateRoomId: string | null = null;
-    const { data: existingRooms } = await supabase.from("chat_rooms").select("id, chat_participants(user_id)").eq("campaign_id", invite.campaign_id).eq("type", "private").maybeSingle();
-    console.log("[handleAcceptInvite] Existing private rooms:", existingRooms);
-    if (existingRooms) {
-      const participantIds = ((existingRooms as any).chat_participants || []).map((p: any) => p.user_id);
-      if (participantIds.includes(user.id) && participantIds.includes(brandUserId)) {
-        privateRoomId = existingRooms.id;
+    const { data: allPrivateRooms } = await supabase.from("chat_rooms").select("id, chat_participants(user_id)").eq("campaign_id", invite.campaign_id).eq("type", "private");
+    if (allPrivateRooms && allPrivateRooms.length > 0) {
+      for (const room of allPrivateRooms) {
+        const participantIds = ((room as any).chat_participants || []).map((p: any) => p.user_id);
+        if (participantIds.includes(user.id) && participantIds.includes(brandUserId)) {
+          privateRoomId = room.id;
+          break;
+        }
       }
     }
     if (!privateRoomId) {
       const { data: newRoom } = await supabase.from("chat_rooms").insert({ type: "private", campaign_id: invite.campaign_id, name: null } as any).select("id").single();
-      console.log("[handleAcceptInvite] New private room created:", newRoom);
       if (newRoom) {
         await supabase.from("chat_participants").insert([
           { chat_room_id: newRoom.id, user_id: user.id },
           { chat_room_id: newRoom.id, user_id: brandUserId },
         ]);
-        const priceInfo = agreedPrice ? ` (HK$${agreedPrice}/video × ${agreedVideos} video(s))` : "";
         await supabase.from("messages").insert({
           chat_room_id: newRoom.id,
           sender_id: user.id,
-          content: `✅ I've accepted the campaign invite!${priceInfo}`,
+          content: `✅ I've accepted the campaign invite!${agreedPrice ? ` (HK$${agreedPrice}/video × ${agreedVideos} video(s))` : ""}`,
         } as any);
+        privateRoomId = newRoom.id;
       }
     } else {
-      const priceInfo = agreedPrice ? ` (HK$${agreedPrice}/video × ${agreedVideos} video(s))` : "";
       await supabase.from("messages").insert({
         chat_room_id: privateRoomId,
         sender_id: user.id,
-        content: `✅ I've accepted the campaign invite!${priceInfo}`,
+        content: `✅ I've accepted the campaign invite!${agreedPrice ? ` (HK$${agreedPrice}/video × ${agreedVideos} video(s))` : ""}`,
       } as any);
     }
 

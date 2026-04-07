@@ -194,8 +194,13 @@ const CreatorPricingSpreadsheet = ({ campaignId }: Props) => {
           content: `✅ Your counter offer has been accepted by ${brandProfile?.business_name || "the brand"}!\n\nAgreed terms: HK$${proposedPrice}/video × ${proposedVideos} video(s)\n\n[CAMPAIGN_AGREED:${campaignId}]`,
         } as any);
       }
-      // Add creator to group chat
-      const { data: groupRoom } = await supabase.from("chat_rooms").select("id").eq("campaign_id", campaignId).eq("type", "group").maybeSingle();
+      // Add creator to group chat - create if not exists
+      let { data: groupRoom } = await supabase.from("chat_rooms").select("id").eq("campaign_id", campaignId).eq("type", "group").maybeSingle();
+      if (!groupRoom) {
+        const { data: camp } = await supabase.from("campaigns").select("title").eq("id", campaignId).maybeSingle();
+        const { data: newRoom } = await supabase.from("chat_rooms").insert({ type: "group", campaign_id: campaignId, name: camp?.title || "Group Chat" } as any).select("id").single();
+        groupRoom = newRoom;
+      }
       if (groupRoom) {
         const { data: existingPart } = await supabase.from("chat_participants").select("id").eq("chat_room_id", groupRoom.id).eq("user_id", app.creator_user_id).maybeSingle();
         if (!existingPart) {
@@ -206,6 +211,25 @@ const CreatorPricingSpreadsheet = ({ campaignId }: Props) => {
             sender_id: user!.id,
             content: `${brandProfile?.business_name || "The brand"} accepted the counter offer — ${app.profile?.display_name || "Creator"} joined!`,
           } as any);
+        }
+      }
+
+      // Create private chat if needed
+      let privateRoomId: string | null = null;
+      const { data: allPrivateRooms } = await supabase.from("chat_rooms").select("id, chat_participants(user_id)").eq("campaign_id", campaignId).eq("type", "private");
+      if (allPrivateRooms && allPrivateRooms.length > 0) {
+        for (const room of allPrivateRooms) {
+          const pIds = ((room as any).chat_participants || []).map((p: any) => p.user_id);
+          if (pIds.includes(app.creator_user_id)) { privateRoomId = room.id; break; }
+        }
+      }
+      if (!privateRoomId && groupRoom) {
+        const { data: newRoom } = await supabase.from("chat_rooms").insert({ type: "private", campaign_id: campaignId, name: null } as any).select("id").single();
+        if (newRoom) {
+          await supabase.from("chat_participants").insert([
+            { chat_room_id: newRoom.id, user_id: app.creator_user_id },
+            { chat_room_id: newRoom.id, user_id: user!.id },
+          ]);
         }
       }
     }
