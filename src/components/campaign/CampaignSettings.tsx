@@ -177,34 +177,33 @@ const CampaignSettings = ({ campaignId }: Props) => {
       const maxCreators = campaign.max_creators || 10;
       let groupRoomId: string | null = null;
 
-      if (maxCreators > 1) {
-        let { data: existingGroup } = await supabase
-          .from("chat_rooms").select("id")
-          .eq("campaign_id", campaign.id).eq("type", "group").maybeSingle();
+      let { data: existingGroup } = await supabase
+        .from("chat_rooms").select("id")
+        .eq("campaign_id", campaign.id).eq("type", "group").maybeSingle();
 
-        if (!existingGroup) {
-          const { data: newGroup, error: groupError } = await supabase.from("chat_rooms").insert({
-            type: "group", campaign_id: campaign.id, name: campaign.title,
-          } as any).select("id").single();
-          if (!groupError && newGroup) {
-            groupRoomId = newGroup.id;
-            await supabase.from("chat_participants").insert({ chat_room_id: groupRoomId, user_id: user.id } as any);
-            await supabase.from("messages").insert({
-              chat_room_id: groupRoomId, sender_id: user.id, pinned: true,
-              content: `Welcome to the ${campaign.title} campaign group chat. This space is for the brand and accepted creators to coordinate together.`,
-            } as any);
-          }
-        } else {
-          groupRoomId = existingGroup.id;
-        }
-
-        if (groupRoomId) {
-          await supabase.from("chat_participants").upsert({ chat_room_id: groupRoomId, user_id: app.creator_user_id } as any, { onConflict: "chat_room_id,user_id" });
+      if (!existingGroup) {
+        const { data: newGroup, error: groupError } = await supabase.from("chat_rooms").insert({
+          type: "group", campaign_id: campaign.id, name: campaign.title,
+        } as any).select("id").single();
+        if (!groupError && newGroup) {
+          groupRoomId = newGroup.id;
+          // Always add brand as first participant
+          await supabase.from("chat_participants").insert({ chat_room_id: groupRoomId, user_id: user.id } as any);
           await supabase.from("messages").insert({
-            chat_room_id: groupRoomId, sender_id: user.id,
-            content: `📥 ${app._profile?.display_name || app._profile?.username || "A creator"} joined the chat`,
+            chat_room_id: groupRoomId, sender_id: user.id, pinned: true,
+            content: `Welcome to the ${campaign.title} campaign group chat. This space is for the brand and accepted creators to coordinate together.`,
           } as any);
         }
+      } else {
+        groupRoomId = existingGroup.id;
+      }
+
+      if (groupRoomId) {
+        await supabase.from("chat_participants").upsert({ chat_room_id: groupRoomId, user_id: app.creator_user_id } as any, { onConflict: "chat_room_id,user_id" });
+        await supabase.from("messages").insert({
+          chat_room_id: groupRoomId, sender_id: user.id,
+          content: `📥 ${app._profile?.display_name || app._profile?.username || "A creator"} joined the chat`,
+        } as any);
       }
 
       // Private chat
@@ -258,7 +257,7 @@ const CampaignSettings = ({ campaignId }: Props) => {
       type: "application_update",
       title: status === "accepted" ? "Application Accepted!" : "Application Update",
       body: status === "accepted" ? `You've been accepted to "${campaign.title}"` : `Your application to "${campaign.title}" was not selected.`,
-      link: status === "accepted" ? "/dashboard/messages" : "/dashboard",
+      link: status === "accepted" ? `/dashboard/gig/${campaign.id}/private` : "/dashboard",
     } as any);
     toast({ title: status === "accepted" ? "Creator accepted!" : "Application rejected" });
     setUpdatingApp(null);
