@@ -11,7 +11,7 @@ import {
   Play, TrendingUp, CheckCircle, Clock, ArrowRight, Globe, Users, Calendar, Send, Check
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import { useAIMatch } from "@/hooks/useAIMatch";
+import { computeCreatorCampaignMatches } from "@/hooks/useSimpleMatch";
 
 const CreatorOverview = () => {
   const { user } = useAuth();

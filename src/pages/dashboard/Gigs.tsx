@@ -11,7 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Briefcase, Clock, DollarSign, MapPin, Send, Loader2, Check, LogOut, Gift, Video, MoreHorizontal, Sparkles, Filter, X, ChevronDown, Globe, Tag, Users, ExternalLink, Calendar } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useAIMatch } from "@/hooks/useAIMatch";
+import { computeCreatorCampaignMatches } from "@/hooks/useSimpleMatch";
 import ActiveGigHub from "@/components/dashboard/ActiveGigHub";
 
 interface Campaign {
