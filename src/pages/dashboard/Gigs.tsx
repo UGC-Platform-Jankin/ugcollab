@@ -11,6 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Briefcase, Clock, DollarSign, MapPin, Send, Loader2, Check, LogOut, Gift, Video, MoreHorizontal, Sparkles, Filter, X, ChevronDown, Globe, Tag, Users, ExternalLink, Calendar } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
 import { computeCreatorCampaignMatches } from "@/hooks/useSimpleMatch";
 import ActiveGigHub from "@/components/dashboard/ActiveGigHub";
 
@@ -36,7 +37,7 @@ interface Campaign {
   request_contact_types: string[] | null;
 }
 
-type TabFilter = "available" | "applied" | "active";
+type TabFilter = "available" | "applied" | "active" | "invites";
 
 const REGION_OPTIONS = ["Hong Kong", "United Kingdom", "United States", "Worldwide", "Australia", "Canada", "Singapore", "Malaysia", "Japan", "South Korea"];
 const CATEGORY_PLATFORMS = ["instagram", "tiktok", "facebook", "youtube"];
@@ -63,6 +64,13 @@ const Gigs = () => {
   const [acceptedCounts, setAcceptedCounts] = useState<Record<string, number>>({});
   const [applicationStatuses, setApplicationStatuses] = useState<Record<string, string>>({});
   const [activeGigDetail, setActiveGigDetail] = useState<any>(null);
+  const [invites, setInvites] = useState<any[]>([]);
+  const [counteringInvite, setCounteringInvite] = useState<any>(null);
+  const [counterPrice, setCounterPrice] = useState("");
+  const [counterVideos, setCounterVideos] = useState("");
+  const [countering, setCountering] = useState(false);
+  const [rejectingInvite, setRejectingInvite] = useState<any>(null);
+  const [rejecting, setRejecting] = useState(false);
 
   // Filters
   const [showFilters, setShowFilters] = useState(false);
@@ -84,9 +92,10 @@ const Gigs = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      const [campaignsRes, applicationsRes] = await Promise.all([
+      const [campaignsRes, applicationsRes, invitesRes] = await Promise.all([
         supabase.from("campaigns").select("*").eq("status", "active").order("created_at", { ascending: false }),
         user ? supabase.from("campaign_applications").select("*").eq("creator_user_id", user.id) : Promise.resolve({ data: [] }),
+        user ? supabase.from("campaign_invites").select("*").eq("creator_user_id", user.id).eq("status", "pending") : Promise.resolve({ data: [] }),
       ]);
       const allCampaignsRaw = (campaignsRes.data as Campaign[]) || [];
 
@@ -114,6 +123,27 @@ const Gigs = () => {
         (brands || []).forEach((b: any) => { brandMap[b.user_id] = b; });
       }
       setBrandProfiles(brandMap);
+
+      // Process invites
+      const pendingInvites = (invitesRes.data as any) || [];
+      if (pendingInvites.length > 0) {
+        const inviteCampIds = pendingInvites.map((i: any) => i.campaign_id);
+        const { data: inviteCamps } = await supabase.from("campaigns").select("*").in("id", inviteCampIds);
+        const campMap: Record<string, any> = {};
+        (inviteCamps || []).forEach((c: any) => { campMap[c.id] = c; });
+        // Ensure brands are in brandMap
+        const newBrandIds = pendingInvites.map((i: any) => i.brand_user_id).filter((id: string) => !brandMap[id]);
+        if (newBrandIds.length > 0) {
+          const { data: moreBrands } = await supabase.from("brand_profiles").select("user_id, business_name, logo_url").in("user_id", newBrandIds);
+          (moreBrands || []).forEach((b: any) => { brandMap[b.user_id] = b; });
+          setBrandProfiles({ ...brandMap });
+        }
+        setInvites(pendingInvites.map((i: any) => ({
+          ...i,
+          _campaign: campMap[i.campaign_id] || {},
+          _brand: brandMap[i.brand_user_id] || {},
+        })));
+      }
 
       // Only show campaigns where the brand profile still exists
       const allCampaigns = combinedCampaigns.filter(c => brandMap[c.brand_user_id]);
@@ -200,6 +230,143 @@ const Gigs = () => {
     setSubmitting(false);
   };
 
+  const handleAcceptInvite = async (invite: any) => {
+    if (!user) return;
+    const campaign = invite._campaign;
+    const brandUserId = invite.brand_user_id;
+
+    // Resolve agreed pricing from invite or campaign defaults
+    const agreedPrice = invite.proposed_price_per_video ?? campaign.price_per_video ?? null;
+    const agreedVideos = invite.proposed_video_count ?? campaign.expected_video_count ?? 1;
+
+    // Check if application already exists
+    const { data: existing } = await supabase.from("campaign_applications").select("id").eq("campaign_id", invite.campaign_id).eq("creator_user_id", user.id).maybeSingle();
+    if (existing) {
+      toast({ title: "Already applied", variant: "destructive" });
+      return;
+    }
+
+    // Create application
+    await supabase.from("campaign_applications").insert({
+      campaign_id: invite.campaign_id,
+      creator_user_id: user.id,
+      cover_letter: "Accepted campaign invite",
+      status: "accepted",
+      agreed_price_per_video: campaign.is_free_product ? null : agreedPrice,
+      agreed_video_count: agreedVideos,
+      pricing_status: "agreed",
+    } as any);
+
+    // Update invite status
+    await supabase.from("campaign_invites").update({ status: "accepted" }).eq("id", invite.id);
+
+    // Add creator to campaign group chat if exists
+    const { data: groupRoom } = await supabase.from("chat_rooms").select("id").eq("campaign_id", invite.campaign_id).eq("type", "group").maybeSingle();
+    if (groupRoom) {
+      const { data: existingPart } = await supabase.from("chat_participants").select("id").eq("chat_room_id", groupRoom.id).eq("user_id", user.id).maybeSingle();
+      if (!existingPart) {
+        await supabase.from("chat_participants").insert({ chat_room_id: groupRoom.id, user_id: user.id });
+      }
+      const { data: profile } = await supabase.from("profiles").select("display_name").eq("user_id", user.id).maybeSingle();
+      await supabase.from("messages").insert({
+        chat_room_id: groupRoom.id,
+        sender_id: user.id,
+        content: `✅ ${profile?.display_name || "A creator"} joined the campaign!`,
+      } as any);
+    }
+
+    // Ensure private chat exists with brand
+    let privateRoomId: string | null = null;
+    const { data: existingRooms } = await supabase.from("chat_rooms").select("id, chat_participants(user_id)").eq("campaign_id", invite.campaign_id).eq("type", "private").maybeSingle();
+    if (existingRooms) {
+      const participantIds = ((existingRooms as any).chat_participants || []).map((p: any) => p.user_id);
+      if (participantIds.includes(user.id) && participantIds.includes(brandUserId)) {
+        privateRoomId = existingRooms.id;
+      }
+    }
+    if (!privateRoomId) {
+      const { data: newRoom } = await supabase.from("chat_rooms").insert({ type: "private", campaign_id: invite.campaign_id, name: null } as any).select("id").single();
+      if (newRoom) {
+        await supabase.from("chat_participants").insert([
+          { chat_room_id: newRoom.id, user_id: user.id },
+          { chat_room_id: newRoom.id, user_id: brandUserId },
+        ]);
+        const priceInfo = agreedPrice ? ` (HK$${agreedPrice}/video × ${agreedVideos} video(s))` : "";
+        await supabase.from("messages").insert({
+          chat_room_id: newRoom.id,
+          sender_id: user.id,
+          content: `✅ I've accepted the campaign invite!${priceInfo}`,
+        } as any);
+      }
+    } else {
+      const priceInfo = agreedPrice ? ` (HK$${agreedPrice}/video × ${agreedVideos} video(s))` : "";
+      await supabase.from("messages").insert({
+        chat_room_id: privateRoomId,
+        sender_id: user.id,
+        content: `✅ I've accepted the campaign invite!${priceInfo}`,
+      } as any);
+    }
+
+    // Notify brand
+    const { data: prof } = await supabase.from("profiles").select("display_name").eq("user_id", user.id).maybeSingle();
+    await supabase.from("notifications").insert({
+      user_id: brandUserId,
+      type: "invite_accepted",
+      title: "Invite Accepted!",
+      body: `${prof?.display_name || "A creator"} accepted your invite to "${campaign.title}"`,
+      link: `/brand/campaigns/${invite.campaign_id}`,
+    });
+
+    // Move to active memberships
+    const { data: newApp } = await supabase.from("campaign_applications").select("*").eq("campaign_id", invite.campaign_id).eq("creator_user_id", user.id).eq("status", "accepted").maybeSingle();
+    if (newApp) {
+      setActiveMemberships(prev => [...prev, { ...newApp, _campaign: campaign }]);
+    }
+    setInvites(prev => prev.filter(i => i.id !== invite.id));
+    toast({ title: "Invite accepted!", description: "You've joined the campaign." });
+  };
+
+  const handleCounterOfferInvite = async () => {
+    if (!counteringInvite || !user || !counterPrice || !counterVideos) return;
+    setCountering(true);
+    await supabase.from("campaign_applications").insert({
+      campaign_id: counteringInvite.campaign_id,
+      creator_user_id: user.id,
+      cover_letter: "Counter offer submitted",
+      status: "accepted",
+      agreed_price_per_video: null,
+      agreed_video_count: Number(counterVideos),
+      pricing_status: "countered",
+      proposed_price_per_video: Number(counterPrice),
+      proposed_video_count: Number(counterVideos),
+    } as any);
+    await supabase.from("campaign_invites").update({ status: "accepted" }).eq("id", counteringInvite.id);
+    const { data: prof } = await supabase.from("profiles").select("display_name").eq("user_id", user.id).maybeSingle();
+    await supabase.from("notifications").insert({
+      user_id: counteringInvite.brand_user_id,
+      type: "counter_offer",
+      title: "Counter Offer Received",
+      body: `${prof?.display_name || "A creator"} sent a counter offer for "${counteringInvite._campaign?.title}"`,
+      link: `/brand/campaigns/${counteringInvite.campaign_id}/pricing`,
+    });
+    setInvites(prev => prev.filter(i => i.id !== counteringInvite.id));
+    toast({ title: "Counter offer sent!" });
+    setCounteringInvite(null);
+    setCounterPrice("");
+    setCounterVideos("");
+    setCountering(false);
+  };
+
+  const handleRejectInvite = async (invite: any) => {
+    if (!user) return;
+    setRejecting(true);
+    await supabase.from("campaign_invites").update({ status: "declined" }).eq("id", invite.id);
+    setInvites(prev => prev.filter(i => i.id !== invite.id));
+    toast({ title: "Invite declined" });
+    setRejectingInvite(null);
+    setRejecting(false);
+  };
+
   const handleLeaveCampaign = async () => {
     if (!leavingCampaign || !user || !leaveReason.trim()) {
       toast({ title: "Please provide a reason for leaving", variant: "destructive" });
@@ -255,6 +422,7 @@ const Gigs = () => {
     { key: "available", label: "Available", count: campaigns.filter(c => c.status === "active" && !appliedCampaigns.has(c.id)).length },
     { key: "applied", label: "Applied", count: campaigns.filter(c => appliedCampaigns.has(c.id)).length },
     { key: "active", label: "Active", count: activeMemberships.length },
+    { key: "invites", label: "Invites", count: invites.length },
   ];
 
   const applyFilters = (list: Campaign[]) => {
@@ -436,6 +604,80 @@ const Gigs = () => {
                 );
               })}
             </div>
+          </div>
+        )
+      ) : activeTab === "invites" ? (
+        invites.length === 0 ? (
+          <EmptyState icon={Check} title="No invites" subtitle="Invites from brands will appear here" />
+        ) : (
+          <div className="space-y-3">
+            {invites.map(invite => {
+              const brand = invite._brand;
+              const camp = invite._campaign;
+              const proposedPrice = invite.proposed_price_per_video ?? camp.price_per_video;
+              const proposedVideos = invite.proposed_video_count ?? camp.expected_video_count;
+              const isPrizePool = camp.campaign_type === "prize_pool";
+              const isFreeProduct = camp.is_free_product;
+              return (
+                <Card key={invite.id} className="border-border/50">
+                  <CardContent className="p-5">
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-4">
+                        <Avatar className="h-12 w-12 rounded-xl ring-2 ring-border">
+                          <AvatarImage src={brand?.logo_url || undefined} className="rounded-xl object-cover" />
+                          <AvatarFallback className="rounded-xl bg-secondary text-base font-bold">{(brand?.business_name || "B")[0]?.toUpperCase()}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <h3 className="font-heading font-bold text-foreground">{camp.title}</h3>
+                          <p className="text-xs text-muted-foreground">{brand?.business_name}</p>
+                          <div className="flex items-center gap-2 mt-1">
+                            {isFreeProduct ? (
+                              <Badge className="bg-purple-500/10 text-purple-600 border-0 text-[11px]">Free Product</Badge>
+                            ) : isPrizePool ? (
+                              <Badge className="bg-amber-500/10 text-amber-600 border-0 text-[11px]">Prize Pool</Badge>
+                            ) : (
+                              <span className="text-sm font-bold text-foreground">HK${proposedPrice ?? 0}/video</span>
+                            )}
+                            <span className="text-xs text-muted-foreground">×</span>
+                            {!isPrizePool && (
+                              <span className="text-sm font-medium text-foreground">{proposedVideos} video{proposedVideos !== 1 ? "s" : ""}</span>
+                            )}
+                            {isPrizePool && (
+                              <span className="text-sm font-medium text-amber-600">Until pool drains</span>
+                            )}
+                            {!isFreeProduct && proposedPrice && proposedVideos && (
+                              <span className="text-xs text-muted-foreground">· Total: HK${(Number(proposedPrice) * Number(proposedVideos)).toLocaleString()}</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <Button size="sm" variant="outline" className="gap-1.5"
+                          onClick={() => navigate(`/dashboard/gigs?invite=${invite.id}`)}>
+                          View Gig
+                        </Button>
+                        <Button size="sm" variant="outline" className="gap-1.5"
+                          onClick={() => {
+                            setCounteringInvite(invite);
+                            setCounterPrice((proposedPrice ?? camp.price_per_video ?? "").toString());
+                            setCounterVideos((proposedVideos ?? camp.expected_video_count ?? "1").toString());
+                          }}>
+                          Counter
+                        </Button>
+                        <Button size="sm" className="gap-1.5 bg-emerald-600 hover:bg-emerald-700"
+                          onClick={() => handleAcceptInvite(invite)}>
+                          <Check className="h-3.5 w-3.5" /> Accept
+                        </Button>
+                        <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive gap-1.5"
+                          onClick={() => setRejectingInvite(invite)}>
+                          <X className="h-3.5 w-3.5" /> Reject
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         )
       ) : filteredCampaigns.length === 0 ? (
@@ -721,6 +963,60 @@ const Gigs = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Counter Offer Dialog */}
+      <Dialog open={!!counteringInvite} onOpenChange={(open) => { if (!open) { setCounteringInvite(null); setCounterPrice(""); setCounterVideos(""); } }}>
+        <DialogContent className="max-w-md rounded-2xl">
+          <DialogHeader>
+            <DialogTitle>Submit Counter Offer</DialogTitle>
+            <DialogDescription>Propose different terms to the brand for "{counteringInvite?._campaign?.title}"</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="p-3 rounded-lg bg-muted border border-border/50">
+              <p className="text-xs text-muted-foreground mb-1">Brand's original offer:</p>
+              <p className="text-sm font-medium">
+                HK${counteringInvite?.proposed_price_per_video ?? counteringInvite?._campaign?.price_per_video ?? 0}/video × {counteringInvite?.proposed_video_count ?? counteringInvite?._campaign?.expected_video_count ?? 1} video(s)
+              </p>
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1.5 block">Your proposed price per video (HKD)</label>
+              <Input type="number" value={counterPrice} onChange={(e) => setCounterPrice(e.target.value)} placeholder="e.g. 600" />
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1.5 block">Your proposed number of videos</label>
+              <Input type="number" value={counterVideos} onChange={(e) => setCounterVideos(e.target.value)} placeholder="e.g. 2" />
+            </div>
+            {counterPrice && counterVideos && (
+              <div className="p-3 rounded-lg bg-primary/10 border border-primary/20">
+                <p className="text-sm font-medium">Total: HK${(Number(counterPrice) * Number(counterVideos)).toLocaleString()}</p>
+              </div>
+            )}
+            <div className="flex gap-3">
+              <Button variant="outline" className="flex-1 rounded-full" onClick={() => { setCounteringInvite(null); }}>Cancel</Button>
+              <Button className="flex-1 rounded-full" disabled={countering || !counterPrice || !counterVideos} onClick={handleCounterOfferInvite}>
+                {countering ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null} Send Counter
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reject Invite Dialog */}
+      <AlertDialog open={!!rejectingInvite} onOpenChange={(open) => { if (!open) setRejectingInvite(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Decline Invite?</AlertDialogTitle>
+            <AlertDialogDescription>Are you sure you want to decline the invite from "{rejectingInvite?._brand?.business_name}" for "{rejectingInvite?._campaign?.title}"? This cannot be undone.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setRejectingInvite(null)}>Keep Invite</AlertDialogCancel>
+            <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={() => handleRejectInvite(rejectingInvite)} disabled={rejecting}>
+              {rejecting && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
+              Decline Invite
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Active Gig Detail Dialog */}
       <Dialog open={!!activeGigDetail} onOpenChange={(open) => !open && setActiveGigDetail(null)}>
