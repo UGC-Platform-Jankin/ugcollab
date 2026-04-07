@@ -10,9 +10,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Users, Search, Send, Loader2, Instagram, Facebook, Video, Filter, X, Eye, Globe, Briefcase, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAIMatch } from "@/hooks/useAIMatch";
+import BrandInvites from "./BrandInvites";
 
 const platformIcons: Record<string, any> = { instagram: Instagram, facebook: Facebook, tiktok: Video };
 const platformColors: Record<string, string> = { instagram: "text-pink-400", facebook: "text-blue-400", tiktok: "text-cyan-400" };
@@ -281,12 +283,19 @@ const FindCreators = () => {
   }
 
   return (
-    <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-heading font-bold text-foreground">Find Creators</h1>
-        <p className="text-muted-foreground text-sm">Browse creators and invite them to your campaigns</p>
+    <Tabs defaultValue="browse" className="space-y-4">
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-heading font-bold text-foreground">Find Creators</h1>
+          <p className="text-muted-foreground text-sm">Browse creators and invite them to your campaigns</p>
+        </div>
+        <TabsList className="grid grid-cols-2 gap-1 p-1 h-auto bg-muted/50 rounded-xl">
+          <TabsTrigger value="browse" className="text-xs gap-1.5 rounded-lg data-[state=active]:bg-card">Browse</TabsTrigger>
+          <TabsTrigger value="invites" className="text-xs gap-1.5 rounded-lg data-[state=active]:bg-card">Invites</TabsTrigger>
+        </TabsList>
       </div>
 
+      <TabsContent value="browse">
       {/* Search & Filters */}
       <div className="space-y-3 mb-6">
         <div className="relative">
@@ -416,8 +425,7 @@ const FindCreators = () => {
           )})}
         </div>
       )}
-
-      {/* Invite Dialog */}
+      </TabsContent>
       <Dialog open={!!inviteCreator} onOpenChange={(open) => { if (!open) { setInviteCreator(null); setSelectedCampaignId(""); setInviteMessage(""); setInvitePrice(""); setInviteVideoCount(""); } }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
@@ -609,7 +617,12 @@ const FindCreators = () => {
           )}
         </DialogContent>
       </Dialog>
-    </div>
+    </TabsContent>
+
+    <TabsContent value="invites">
+      <BrandInvites />
+    </TabsContent>
+  </Tabs>
   );
 };
 

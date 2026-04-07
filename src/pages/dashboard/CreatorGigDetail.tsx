@@ -3,11 +3,12 @@ import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Video, Link2, Calendar, BookOpen, ArrowRightLeft } from "lucide-react";
+import { Loader2, Video, Link2, Calendar, BookOpen, ArrowRightLeft, MessageCircle } from "lucide-react";
 import CreatorVideosForGig from "@/components/campaign/CreatorVideos";
 import CreatorPostedForGig from "@/components/campaign/CreatorPostedVideos";
 import PostingSchedule from "@/components/campaign/PostingSchedule";
 import CreatorResources from "@/components/campaign/CreatorResources";
+import CampaignChat from "@/components/campaign/CampaignChat";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -31,6 +32,7 @@ const CreatorGigDetail = () => {
   const currentTab = location.pathname.endsWith("/posted") ? "posted"
     : location.pathname.endsWith("/schedule") ? "schedule"
     : location.pathname.endsWith("/resources") ? "resources"
+    : location.pathname.endsWith("/messages") ? "messages"
     : "videos";
 
   const handleTabChange = (val: string) => {
@@ -137,6 +139,7 @@ const CreatorGigDetail = () => {
             <TabsTrigger value="schedule" className="gap-1.5"><Calendar className="h-3.5 w-3.5" /> Schedule</TabsTrigger>
           )}
           <TabsTrigger value="resources" className="gap-1.5"><BookOpen className="h-3.5 w-3.5" /> Resources</TabsTrigger>
+          <TabsTrigger value="messages" className="gap-1.5"><MessageCircle className="h-3.5 w-3.5" /> Chat</TabsTrigger>
         </TabsList>
 
         <TabsContent value="videos">
@@ -152,6 +155,9 @@ const CreatorGigDetail = () => {
         )}
         <TabsContent value="resources">
           <CreatorResources campaignId={campaignId!} />
+        </TabsContent>
+        <TabsContent value="messages">
+          <CampaignChat campaignId={campaignId!} roomType="group" />
         </TabsContent>
       </Tabs>
 
