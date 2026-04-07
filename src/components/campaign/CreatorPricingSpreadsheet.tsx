@@ -120,7 +120,7 @@ const CreatorPricingSpreadsheet = ({ campaignId }: Props) => {
     // Notify brand
     const { data: app } = await supabase.from("campaign_applications").select("campaign_id").eq("id", counteringCreator.id).single();
     if (app) {
-      const { data: camp } = await supabase.from("campaigns").select("brand_user_id, title").eq("id", app.campaign_id).single();
+      const { data: camp } = await supabase.from("campaigns").select("id, brand_user_id, title").eq("id", app.campaign_id).single();
       if (camp) {
         await supabase.from("notifications").insert({
           user_id: camp.brand_user_id,
