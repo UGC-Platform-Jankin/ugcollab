@@ -36,6 +36,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         if (session?.user) {
           const type = session.user.user_metadata?.account_type ?? null;
           setAccountType(type);
+          console.log("[Auth] onAuthStateChange — accountType:", type, "user:", session.user.email);
         } else {
           setAccountType(null);
         }
@@ -49,6 +50,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (session?.user) {
         const type = session.user.user_metadata?.account_type ?? null;
         setAccountType(type);
+        console.log("[Auth] getSession — accountType:", type, "user:", session.user.email);
       } else {
         setAccountType(null);
       }
