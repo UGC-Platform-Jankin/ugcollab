@@ -81,6 +81,7 @@ const App = () => (
               <Route path="/brand/campaigns/:campaignId/pricing" element={<BrandLayout><BrandCampaignDetail /></BrandLayout>} />
               <Route path="/brand/campaigns/:campaignId/messages" element={<BrandLayout><BrandCampaignDetail /></BrandLayout>} />
               <Route path="/brand/campaigns/:campaignId/private" element={<BrandLayout><BrandCampaignDetail /></BrandLayout>} />
+              <Route path="/brand/campaigns/:campaignId/settings" element={<BrandLayout><BrandCampaignDetail /></BrandLayout>} />
               <Route path="/brand/creators" element={<BrandLayout><FindCreators /></BrandLayout>} />
               <Route path="/brand/creators/invites" element={<BrandLayout><BrandInvites /></BrandLayout>} />
               <Route path="/brand/profile" element={<BrandLayout><BrandProfileContent /></BrandLayout>} />
