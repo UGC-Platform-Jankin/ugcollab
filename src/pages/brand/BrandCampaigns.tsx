@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Megaphone, Eye, Loader2 } from "lucide-react";
+import { Megaphone, Eye, Loader2, Plus } from "lucide-react";
 
 const BrandCampaigns = () => {
   const { user } = useAuth();
@@ -96,9 +96,14 @@ const BrandCampaigns = () => {
 
   return (
     <div>
-      <div className="mb-6">
-        <h2 className="text-xl font-heading font-bold text-foreground">Your Campaigns</h2>
-        <p className="text-sm text-muted-foreground">View applications and manage your campaigns</p>
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h2 className="text-xl font-heading font-bold text-foreground">Your Campaigns</h2>
+          <p className="text-sm text-muted-foreground">View applications and manage your campaigns</p>
+        </div>
+        <Button className="gap-2" onClick={() => navigate("/brand/campaigns/new")}>
+          <Plus className="h-4 w-4" /> Create Campaign
+        </Button>
       </div>
       <Tabs value={campaignTab} onValueChange={setCampaignTab}>
         <TabsList className="mb-4">
