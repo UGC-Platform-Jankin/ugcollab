@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Send as SendIcon, Loader2, Paperclip, Image, Mic, X, FileText, Download, Play, Pause, Users } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Check as CheckIcon, CheckCheck } from "lucide-react";
 
@@ -64,7 +63,6 @@ const VoiceMessage = ({ url, isMe }: { url: string; isMe: boolean }) => {
 
 const CampaignChat = ({ campaignId, roomType, isBrandView = false }: Props) => {
   const { user } = useAuth();
-  const navigate = useNavigate();
   const [room, setRoom] = useState<any>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
@@ -93,48 +91,124 @@ const CampaignChat = ({ campaignId, roomType, isBrandView = false }: Props) => {
       .eq("type", roomType)
       .maybeSingle();
 
-    // Auto-create room for private chats if not exists
-    if (!roomData && roomType === "private") {
-      const { data: newRoom } = await supabase
+    // For private chats: find or create a per-creator private room
+    if (roomType === "private") {
+      if (!user) { setLoading(false); return; }
+
+      // Get campaign and all accepted creators
+      const { data: camp } = await supabase
+        .from("campaigns")
+        .select("brand_user_id, title")
+        .eq("id", campaignId)
+        .maybeSingle();
+
+      if (!camp) { setLoading(false); return; }
+
+      // Find the other user's ID (the conversation partner)
+      let otherUserId: string | null = null;
+      if (user.id === camp.brand_user_id) {
+        // Brand viewing: pick first accepted creator
+        const { data: apps } = await supabase
+          .from("campaign_applications")
+          .select("creator_user_id")
+          .eq("campaign_id", campaignId)
+          .eq("status", "accepted")
+          .limit(1);
+        otherUserId = apps?.[0]?.creator_user_id || null;
+      } else {
+        // Creator viewing: the other party is the brand
+        otherUserId = camp.brand_user_id;
+      }
+
+      if (!otherUserId) { setLoading(false); return; }
+
+      // Look for existing private room that has both participants
+      const { data: existingRooms } = await supabase
         .from("chat_rooms")
-        .insert({
-          campaign_id: campaignId,
-          type: "private",
-          name: "Private Chat",
-        } as any)
-        .select()
-        .single();
-      roomData = newRoom;
+        .select("*")
+        .eq("campaign_id", campaignId)
+        .eq("type", "private")
+        .limit(10);
 
-      // Add both brand and creator as participants
-      if (roomData && user) {
-        // Get the other user (brand or creator) from campaign
-        const { data: camp } = await supabase
-          .from("campaigns")
-          .select("brand_user_id")
-          .eq("id", campaignId)
-          .maybeSingle();
-
-        if (camp) {
-          const participantsToAdd = [camp.brand_user_id];
-          if (user.id !== camp.brand_user_id) {
-            participantsToAdd.push(user.id);
-          } else {
-            // Brand viewing - need to find the creator
-            const { data: app } = await supabase
-              .from("campaign_applications")
-              .select("creator_user_id")
-              .eq("campaign_id", campaignId)
-              .eq("status", "accepted")
-              .limit(1)
-              .maybeSingle();
-            if (app) participantsToAdd.push(app.creator_user_id);
+      // Find room where both current user and other user are participants
+      let targetRoom = null;
+      if (existingRooms && existingRooms.length > 0) {
+        for (const room of existingRooms) {
+          const { data: parts } = await supabase
+            .from("chat_participants")
+            .select("user_id")
+            .eq("chat_room_id", room.id);
+          const userIds = (parts || []).map((p: any) => p.user_id);
+          if (userIds.includes(user.id) && userIds.includes(otherUserId)) {
+            targetRoom = room;
+            break;
           }
-          await supabase.from("chat_participants").insert(
-            participantsToAdd.map((uid: string) => ({ chat_room_id: roomData!.id, user_id: uid }))
-          );
         }
       }
+
+      if (!targetRoom) {
+        // Get creator display name for room name
+        let roomName = "Private Chat";
+        if (user.id === camp.brand_user_id && otherUserId) {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("display_name")
+            .eq("user_id", otherUserId)
+            .maybeSingle();
+          roomName = `Chat with ${profile?.display_name || "Creator"}`;
+        } else {
+          const { data: brand } = await supabase
+            .from("brand_profiles")
+            .select("business_name")
+            .eq("user_id", camp.brand_user_id)
+            .maybeSingle();
+          roomName = `Chat with ${brand?.business_name || "Brand"}`;
+        }
+
+        const { data: newRoom } = await supabase
+          .from("chat_rooms")
+          .insert({
+            campaign_id: campaignId,
+            type: "private",
+            name: roomName,
+          } as any)
+          .select()
+          .single();
+
+        targetRoom = newRoom;
+
+        if (targetRoom) {
+          // Add participants
+          await supabase.from("chat_participants").insert([
+            { chat_room_id: targetRoom.id, user_id: user.id },
+            { chat_room_id: targetRoom.id, user_id: otherUserId },
+          ]);
+
+          // Auto-send welcome message from the brand if creator just joined
+          if (user.id === camp.brand_user_id) {
+            // Brand created the room - send brand's welcome
+            const { data: brandProfile } = await supabase
+              .from("brand_profiles")
+              .select("business_name")
+              .eq("user_id", user.id)
+              .maybeSingle();
+            await supabase.from("messages").insert({
+              chat_room_id: targetRoom.id,
+              sender_id: user.id,
+              content: `👋 Welcome! This is your private chat for the campaign "${camp.title}". Feel free to discuss details here.`,
+            } as any);
+          } else {
+            // Creator joined - send a friendly auto message from brand
+            await supabase.from("messages").insert({
+              chat_room_id: targetRoom.id,
+              sender_id: camp.brand_user_id,
+              content: `👋 Welcome to the campaign "${camp.title}"! Excited to work with you. Feel free to ask any questions here.`,
+            } as any);
+          }
+        }
+      }
+
+      roomData = targetRoom;
     }
 
     if (!roomData) { setLoading(false); return; }
