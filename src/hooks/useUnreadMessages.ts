@@ -63,7 +63,7 @@ export const useUnreadMessages = () => {
     fetchUnread();
 
     // Listen for new messages to update count
-    const channelName = `unread-counter-${user.id}`;
+    const channelName = `unread-counter-${user.id}-${Date.now()}`;
     const channel = supabase
       .channel(channelName)
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, (payload) => {
