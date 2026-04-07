@@ -4,16 +4,18 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Send as SendIcon, Loader2, Paperclip, Image, Mic, X, FileText, Download, Play, Pause, Users, ChevronDown } from "lucide-react";
+import { Send as SendIcon, Loader2, Paperclip, X, FileText, Download, Play, Pause, Users, ChevronDown } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
-import { Check as CheckIcon, CheckCheck } from "lucide-react";
+import { Check as CheckIcon } from "lucide-react";
+import { findOrCreatePrivateRoom } from "@/lib/chat";
 
 interface Props {
   campaignId: string;
   roomType: "group" | "private";
   isBrandView?: boolean;
-  specificCreatorId?: string | null;
+  /** For private chats: the other participant's user ID (creator ID for brand view, brand ID for creator view) */
+  otherUserId?: string | null;
 }
 
 interface Message {
@@ -63,7 +65,7 @@ const VoiceMessage = ({ url, isMe }: { url: string; isMe: boolean }) => {
   );
 };
 
-const CampaignChat = ({ campaignId, roomType, isBrandView = false, specificCreatorId = null }: Props) => {
+const CampaignChat = ({ campaignId, roomType, isBrandView = false, otherUserId = null }: Props) => {
   const { user } = useAuth();
   const [room, setRoom] = useState<any>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -74,190 +76,81 @@ const CampaignChat = ({ campaignId, roomType, isBrandView = false, specificCreat
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [attachmentFile, setAttachmentFile] = useState<File | null>(null);
   const [attachmentPreview, setAttachmentPreview] = useState<string | null>(null);
-  const [recording, setRecording] = useState(false);
-  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const [membersOpen, setMembersOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const audioChunksRef = useRef<Blob[]>([]);
-
-  useEffect(() => {
-    if (!user || !campaignId) return;
-    loadRoom();
-  }, [user, campaignId, roomType, specificCreatorId]);
 
   const loadRoom = async () => {
+    if (!user) return;
     setLoading(true);
-    let { data: roomData } = await supabase
-      .from("chat_rooms")
-      .select("*")
-      .eq("campaign_id", campaignId)
-      .eq("type", roomType)
-      .maybeSingle();
 
-    // Auto-create room + add user as participant
-    if (!roomData) {
-      if (roomType === "group") {
-        const { data: camp } = await supabase.from("campaigns").select("title, brand_user_id").eq("id", campaignId).maybeSingle();
-        const { data: newRoom } = await supabase.from("chat_rooms").insert({ type: "group", campaign_id: campaignId, name: camp?.title || "Group Chat" } as any).select().single();
-        roomData = newRoom;
-        if (roomData) {
-          await supabase.from("chat_participants").insert({ chat_room_id: roomData.id, user_id: user.id } as any);
-          if (camp?.brand_user_id && user.id !== camp.brand_user_id) {
-            await supabase.from("chat_participants").insert({ chat_room_id: roomData.id, user_id: camp.brand_user_id } as any);
-          }
-          await supabase.from("messages").insert({ chat_room_id: roomData.id, sender_id: user.id, content: `✅ ${user.id === camp?.brand_user_id ? "Brand" : "Creator"} joined the chat!`, pinned: false } as any);
-        }
-      }
-    } else {
-      // Ensure current user is a participant in existing room
-      const { data: existingPart } = await supabase.from("chat_participants").select("id").eq("chat_room_id", roomData.id).eq("user_id", user.id).maybeSingle();
-      if (!existingPart) {
-        await supabase.from("chat_participants").insert({ chat_room_id: roomData.id, user_id: user.id } as any);
-        await supabase.from("messages").insert({ chat_room_id: roomData.id, sender_id: user.id, content: `✅ User joined the chat!` } as any);
-      }
-    }
+    let roomId: string | null = null;
 
-    // For private chats: find or create a per-creator private room
-    if (roomType === "private") {
-      if (!user) { setLoading(false); return; }
-      console.log("[loadRoom] PRIVATE — campaignId:", campaignId, "specificCreatorId:", specificCreatorId, "user.id:", user.id);
-
-      // Get campaign and all accepted creators
-      const { data: camp } = await supabase
-        .from("campaigns")
-        .select("brand_user_id, title")
-        .eq("id", campaignId)
-        .maybeSingle();
-      console.log("[loadRoom] camp:", camp);
-
-      if (!camp) { setLoading(false); return; }
-
-      // Find the other user's ID (the conversation partner)
-      let otherUserId: string | null = null;
-      if (specificCreatorId) {
-        otherUserId = specificCreatorId;
-        console.log("[loadRoom] using specificCreatorId:", otherUserId);
-      } else if (user.id === camp.brand_user_id) {
-        // Brand viewing: pick first accepted creator
-        const { data: apps } = await supabase
-          .from("campaign_applications")
-          .select("creator_user_id")
-          .eq("campaign_id", campaignId)
-          .eq("status", "accepted")
-          .limit(1);
-        otherUserId = apps?.[0]?.creator_user_id || null;
-      } else {
-        // Creator viewing: the other party is the brand
-        otherUserId = camp.brand_user_id;
-      }
-
-      if (!otherUserId) { setLoading(false); return; }
-      console.log("[loadRoom] otherUserId:", otherUserId);
-
-      // Look for existing private room that has both participants
-      const { data: existingRooms } = await supabase
+    if (roomType === "group") {
+      // Find or create group room for this campaign
+      const { data: existing } = await supabase
         .from("chat_rooms")
-        .select("*")
+        .select("id")
         .eq("campaign_id", campaignId)
-        .eq("type", "private")
-        .limit(10);
+        .eq("type", "group")
+        .maybeSingle();
 
-      // Find room where both current user and other user are participants
-      let targetRoom = null;
-      if (existingRooms && existingRooms.length > 0) {
-        for (const room of existingRooms) {
-          const { data: parts } = await supabase
-            .from("chat_participants")
-            .select("user_id")
-            .eq("chat_room_id", room.id);
-          const userIds = (parts || []).map((p: any) => p.user_id);
-          if (userIds.includes(user.id) && userIds.includes(otherUserId)) {
-            targetRoom = room;
-            break;
-          }
-        }
-      }
-
-      if (!targetRoom) {
-        // Get creator display name for room name
-        let roomName = "Private Chat";
-        if (user.id === camp.brand_user_id && otherUserId) {
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("display_name")
-            .eq("user_id", otherUserId)
-            .maybeSingle();
-          roomName = `Chat with ${profile?.display_name || "Creator"}`;
-        } else {
-          const { data: brand } = await supabase
-            .from("brand_profiles")
-            .select("business_name")
-            .eq("user_id", camp.brand_user_id)
-            .maybeSingle();
-          roomName = `Chat with ${brand?.business_name || "Brand"}`;
-        }
-
+      if (existing) {
+        roomId = existing.id;
+      } else {
+        const { data: camp } = await supabase.from("campaigns").select("title").eq("id", campaignId).maybeSingle();
         const { data: newRoom } = await supabase
           .from("chat_rooms")
-          .insert({
-            campaign_id: campaignId,
-            type: "private",
-            name: roomName,
-          } as any)
-          .select()
+          .insert({ type: "group", campaign_id: campaignId, name: camp?.title || "Group Chat" } as any)
+          .select("id")
           .single();
-
-        targetRoom = newRoom;
-
-        if (targetRoom) {
-          // Add participants
-          await supabase.from("chat_participants").insert([
-            { chat_room_id: targetRoom.id, user_id: user.id },
-            { chat_room_id: targetRoom.id, user_id: otherUserId },
-          ]);
-
-          // Auto-send welcome message from the brand if creator just joined
-          if (user.id === camp.brand_user_id) {
-            // Brand created the room - send brand's welcome
-            const { data: brandProfile } = await supabase
-              .from("brand_profiles")
-              .select("business_name")
-              .eq("user_id", user.id)
-              .maybeSingle();
-            await supabase.from("messages").insert({
-              chat_room_id: targetRoom.id,
-              sender_id: user.id,
-              content: `👋 Welcome! This is your private chat for the campaign "${camp.title}". Feel free to discuss details here.`,
-            } as any);
-          } else {
-            // Creator joined - send a friendly auto message from brand
-            await supabase.from("messages").insert({
-              chat_room_id: targetRoom.id,
-              sender_id: camp.brand_user_id,
-              content: `👋 Welcome to the campaign "${camp.title}"! Excited to work with you. Feel free to ask any questions here.`,
-            } as any);
-          }
-        }
+        roomId = newRoom?.id ?? null;
       }
 
-      roomData = targetRoom;
-      console.log("[loadRoom] roomData set to:", roomData);
+      // Ensure current user is a participant
+      if (roomId) {
+        await supabase.from("chat_participants").upsert(
+          { chat_room_id: roomId, user_id: user.id } as any,
+          { onConflict: "chat_room_id,user_id" }
+        );
+      }
+    } else {
+      // Private chat — find or create with otherUserId
+      if (!otherUserId) {
+        setLoading(false);
+        return;
+      }
+      try {
+        roomId = await findOrCreatePrivateRoom(campaignId, user.id, otherUserId);
+      } catch (e) {
+        console.error("[CampaignChat] findOrCreatePrivateRoom failed:", e);
+        setLoading(false);
+        return;
+      }
     }
 
-    console.log("[loadRoom] final roomData:", roomData);
-    if (!roomData) { setLoading(false); return; }
+    if (!roomId) {
+      setLoading(false);
+      return;
+    }
+
+    // Load room data
+    const { data: roomData } = await supabase
+      .from("chat_rooms")
+      .select("*")
+      .eq("id", roomId)
+      .maybeSingle();
     setRoom(roomData);
 
     // Load messages
     const { data: msgs } = await supabase
       .from("messages")
       .select("*")
-      .eq("chat_room_id", roomData.id)
+      .eq("chat_room_id", roomId)
       .order("created_at", { ascending: true });
     setMessages((msgs as any[]) || []);
 
     // Load participants
-    const { data: parts } = await supabase.from("chat_participants").select("user_id").eq("chat_room_id", roomData.id);
+    const { data: parts } = await supabase.from("chat_participants").select("user_id").eq("chat_room_id", roomId);
     const userIds = (parts || []).map((p: any) => p.user_id);
     if (userIds.length > 0) {
       const [profiles, brands] = await Promise.all([
@@ -269,8 +162,14 @@ const CampaignChat = ({ campaignId, roomType, isBrandView = false, specificCreat
       (brands.data || []).forEach((b: any) => { if (pMap[b.user_id]) pMap[b.user_id] = { ...pMap[b.user_id], ...b }; else pMap[b.user_id] = b; });
       setParticipants(pMap);
     }
+
     setLoading(false);
   };
+
+  useEffect(() => {
+    if (!user || !campaignId) return;
+    loadRoom();
+  }, [user, campaignId, roomType, otherUserId]);
 
   useEffect(() => {
     if (!room) return;
@@ -309,7 +208,7 @@ const CampaignChat = ({ campaignId, roomType, isBrandView = false, specificCreat
       }
     }
     const content = newMessage.trim() || (attachmentFile ? `Sent a file: ${attachmentFile.name}` : "");
-    const { error } = await supabase.from("messages").insert({
+    await supabase.from("messages").insert({
       chat_room_id: room.id,
       sender_id: user.id,
       content,
@@ -317,7 +216,7 @@ const CampaignChat = ({ campaignId, roomType, isBrandView = false, specificCreat
       attachment_type: attachmentType,
       attachment_name: attachmentName,
     } as any);
-    if (!error) setNewMessage("");
+    setNewMessage("");
     setAttachmentFile(null);
     setAttachmentPreview(null);
     setSending(false);
@@ -380,9 +279,11 @@ const CampaignChat = ({ campaignId, roomType, isBrandView = false, specificCreat
         </div>
         <h3 className="text-base font-semibold text-foreground mb-1">No group chat yet</h3>
         <p className="text-sm text-muted-foreground max-w-xs">
-          {isBrandView
-            ? "The group chat will appear here once creators join your campaign."
-            : "The group chat will appear here once you join the campaign."}
+          {roomType === "private"
+            ? "Start a conversation with the other party."
+            : isBrandView
+              ? "The group chat will appear here once creators join your campaign."
+              : "The group chat will appear here once you join the campaign."}
         </p>
       </div>
     );

@@ -109,7 +109,7 @@ const BrandCampaignDetail = () => {
         </TabsContent>
         <TabsContent value="private">
           <div className="h-[580px]">
-            <CampaignChat campaignId={campaignId!} roomType="private" isBrandView specificCreatorId={specificCreatorId} />
+            <CampaignChat campaignId={campaignId!} roomType="private" isBrandView otherUserId={specificCreatorId} />
           </div>
         </TabsContent>
         <TabsContent value="settings">

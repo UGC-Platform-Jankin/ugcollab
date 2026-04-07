@@ -165,7 +165,7 @@ const CreatorGigDetail = () => {
         </TabsContent>
         <TabsContent value="private">
           <div className="h-[580px]">
-            <CampaignChat campaignId={campaignId!} roomType="private" />
+            <CampaignChat campaignId={campaignId!} roomType="private" otherUserId={(campaign as any)?.brand_user_id} />
           </div>
         </TabsContent>
       </Tabs>

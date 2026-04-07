@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import {
   Loader2, DollarSign, Video, Check, X, Users, Pencil
 } from "lucide-react";
+import { findPrivateRoom } from "@/lib/chat";
 
 interface Props {
   campaignId: string;
@@ -80,19 +81,16 @@ const CreatorFinances = ({ campaignId }: Props) => {
 
     // Notify creator via private chat
     if (app) {
-      const { data: allPrivateRooms } = await supabase.from("chat_rooms").select("id, chat_participants(user_id)").eq("campaign_id", campaignId).eq("type", "private");
-      if (allPrivateRooms?.length) {
-        for (const room of allPrivateRooms) {
-          const pIds = ((room as any).chat_participants || []).map((p: any) => p.user_id);
-          if (pIds.includes(user!.id) && pIds.includes(app.creator_user_id)) {
-            const { data: brandProfile } = await supabase.from("brand_profiles").select("business_name").eq("user_id", user!.id).maybeSingle();
-            const fieldLabel = field === "agreed_price_per_video" ? "price per video" : "number of videos";
-            const newVal = field === "agreed_price_per_video" ? `HK$${numValue}` : `${numValue} video(s)`;
-            const oldVal = field === "agreed_price_per_video" ? `HK$${oldPrice}` : `${oldVideos} video(s)`;
-            await supabase.from("messages").insert({
-              chat_room_id: room.id,
-              sender_id: user!.id,
-              content: `💰 **Finances Updated by ${brandProfile?.business_name || "the brand"}**
+      const roomId = await findPrivateRoom(campaignId, user!.id, app.creator_user_id);
+      if (roomId) {
+        const { data: brandProfile } = await supabase.from("brand_profiles").select("business_name").eq("user_id", user!.id).maybeSingle();
+        const fieldLabel = field === "agreed_price_per_video" ? "price per video" : "number of videos";
+        const newVal = field === "agreed_price_per_video" ? `HK$${numValue}` : `${numValue} video(s)`;
+        const oldVal = field === "agreed_price_per_video" ? `HK$${oldPrice}` : `${oldVideos} video(s)`;
+        await supabase.from("messages").insert({
+          chat_room_id: roomId,
+          sender_id: user!.id,
+          content: `💰 **Finances Updated by ${brandProfile?.business_name || "the brand"}**
 
 Your terms for "${campaign?.title}" have been updated:
 • Price per video: HK$${newPrice} (was HK$${oldPrice})
@@ -100,19 +98,16 @@ Your terms for "${campaign?.title}" have been updated:
 • New total: HK$${newTotal.toLocaleString()} (was HK$${oldTotal.toLocaleString()})
 
 [CAMPAIGN_AGREED:${campaignId}]`,
-            } as any);
+        } as any);
 
-            // Also send a notification
-            await supabase.from("notifications").insert({
-              user_id: app.creator_user_id,
-              type: "finances_updated",
-              title: "Campaign Finances Updated",
-              body: `${brandProfile?.business_name || "The brand"} updated your terms for "${campaign?.title}". Total is now HK$${newTotal.toLocaleString()}.`,
-              link: `/dashboard/gig/${campaignId}/finances`,
-            } as any);
-            break;
-          }
-        }
+        // Also send a notification
+        await supabase.from("notifications").insert({
+          user_id: app.creator_user_id,
+          type: "finances_updated",
+          title: "Campaign Finances Updated",
+          body: `${brandProfile?.business_name || "The brand"} updated your terms for "${campaign?.title}". Total is now HK$${newTotal.toLocaleString()}.`,
+          link: `/dashboard/gig/${campaignId}/finances`,
+        } as any);
       }
     }
     toast({ title: "Updated and creator notified" });

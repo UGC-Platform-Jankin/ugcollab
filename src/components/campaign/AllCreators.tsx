@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { findOrCreatePrivateRoom } from "@/lib/chat";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -106,48 +107,12 @@ const AllCreators = ({ campaignId }: Props) => {
 
   const handleMessageCreator = async (creatorUserId: string) => {
     if (!user) return;
-    // Find existing private chat for this specific creator (by participant check)
-    const { data: existingRooms } = await supabase
-      .from("chat_rooms")
-      .select("id, chat_participants(user_id)")
-      .eq("campaign_id", campaignId)
-      .eq("type", "private");
-
-    if (existingRooms?.length) {
-      for (const room of existingRooms) {
-        const pIds = ((room as any).chat_participants || []).map((p: any) => p.user_id);
-        if (pIds.includes(user.id) && pIds.includes(creatorUserId)) {
-          navigate(`/brand/campaigns/${campaignId}/private?creator=${creatorUserId}`);
-          return;
-        }
-      }
+    try {
+      await findOrCreatePrivateRoom(campaignId, user.id, creatorUserId);
+    } catch (e) {
+      console.error("[AllCreators] handleMessageCreator error:", e);
+      toast({ title: "Failed to open chat", description: "Please try again.", variant: "destructive" });
     }
-
-    // Create new private chat
-    const { data: profile } = await supabase.from("profiles").select("display_name, username").eq("user_id", creatorUserId).maybeSingle();
-    const creatorName = profile?.display_name || profile?.username || "Creator";
-    const { data: newRoom } = await supabase.from("chat_rooms").insert({
-      campaign_id: campaignId, type: "private", name: `Chat with ${creatorName}`,
-    } as any).select("id").single();
-
-    if (!newRoom) return;
-
-    // Add participants before navigating
-    await supabase.from("chat_participants").insert([
-      { chat_room_id: newRoom.id, user_id: user.id },
-      { chat_room_id: newRoom.id, user_id: creatorUserId },
-    ] as any);
-
-    // Auto-send welcome from brand
-    const { data: camp } = await supabase.from("campaigns").select("title, brand_user_id").eq("id", campaignId).maybeSingle();
-    if (camp) {
-      await supabase.from("messages").insert({
-        chat_room_id: newRoom.id,
-        sender_id: user.id,
-        content: `👋 Welcome! This is your private chat for the campaign "${camp.title}". Feel free to discuss details here.`,
-      } as any);
-    }
-
     navigate(`/brand/campaigns/${campaignId}/private?creator=${creatorUserId}`);
   };
 

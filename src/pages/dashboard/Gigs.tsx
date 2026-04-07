@@ -13,6 +13,7 @@ import { Briefcase, Clock, DollarSign, MapPin, Send, Loader2, Check, LogOut, Gif
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { computeCreatorCampaignMatches } from "@/hooks/useSimpleMatch";
+import { findOrCreatePrivateRoom } from "@/lib/chat";
 import ActiveGigHub from "@/components/dashboard/ActiveGigHub";
 
 interface Campaign {
@@ -242,28 +243,10 @@ const Gigs = () => {
     // Create or find private chat with brand and send application message
     const brandUserId = applyingTo.brand_user_id;
     let privateRoomId: string | null = null;
-    const { data: allPrivateRooms } = await supabase.from("chat_rooms")
-      .select("id, chat_participants(user_id)")
-      .eq("campaign_id", applyingTo.id)
-      .eq("type", "private");
-    if (allPrivateRooms && allPrivateRooms.length > 0) {
-      for (const room of allPrivateRooms) {
-        const participantIds = ((room as any).chat_participants || []).map((p: any) => p.user_id);
-        if (participantIds.includes(user.id) && participantIds.includes(brandUserId)) {
-          privateRoomId = room.id;
-          break;
-        }
-      }
-    }
-    if (!privateRoomId) {
-      const { data: newRoom } = await supabase.from("chat_rooms").insert({ type: "private", campaign_id: applyingTo.id, name: null } as any).select("id").single();
-      if (newRoom) {
-        privateRoomId = newRoom.id;
-        await supabase.from("chat_participants").insert([
-          { chat_room_id: newRoom.id, user_id: user.id },
-          { chat_room_id: newRoom.id, user_id: brandUserId },
-        ]);
-      }
+    try {
+      privateRoomId = await findOrCreatePrivateRoom(applyingTo.id, user.id, brandUserId);
+    } catch (e) {
+      console.error("[Gigs] handleApply findOrCreatePrivateRoom failed:", e);
     }
     if (privateRoomId) {
       const { data: profile } = await supabase.from("profiles").select("display_name, username").eq("user_id", user.id).maybeSingle();
@@ -336,31 +319,12 @@ const Gigs = () => {
 
     // Ensure private chat exists with brand - find or create
     let privateRoomId: string | null = null;
-    const { data: allPrivateRooms } = await supabase.from("chat_rooms").select("id, chat_participants(user_id)").eq("campaign_id", invite.campaign_id).eq("type", "private");
-    if (allPrivateRooms && allPrivateRooms.length > 0) {
-      for (const room of allPrivateRooms) {
-        const participantIds = ((room as any).chat_participants || []).map((p: any) => p.user_id);
-        if (participantIds.includes(user.id) && participantIds.includes(brandUserId)) {
-          privateRoomId = room.id;
-          break;
-        }
-      }
+    try {
+      privateRoomId = await findOrCreatePrivateRoom(invite.campaign_id, user.id, brandUserId);
+    } catch (e) {
+      console.error("[Gigs] handleAcceptInvite findOrCreatePrivateRoom failed:", e);
     }
-    if (!privateRoomId) {
-      const { data: newRoom } = await supabase.from("chat_rooms").insert({ type: "private", campaign_id: invite.campaign_id, name: null } as any).select("id").single();
-      if (newRoom) {
-        await supabase.from("chat_participants").insert([
-          { chat_room_id: newRoom.id, user_id: user.id },
-          { chat_room_id: newRoom.id, user_id: brandUserId },
-        ]);
-        await supabase.from("messages").insert({
-          chat_room_id: newRoom.id,
-          sender_id: user.id,
-          content: `✅ I've accepted the campaign invite!${agreedPrice ? ` (HK$${agreedPrice}/video × ${agreedVideos} video(s))` : ""}`,
-        } as any);
-        privateRoomId = newRoom.id;
-      }
-    } else {
+    if (privateRoomId) {
       await supabase.from("messages").insert({
         chat_room_id: privateRoomId,
         sender_id: user.id,
@@ -467,47 +431,12 @@ const Gigs = () => {
     const brandUserId = membership._campaign?.brand_user_id;
     if (!brandUserId) return;
 
-    // Find existing private chat with this brand
-    const { data: existingRooms } = await supabase
-      .from("chat_rooms")
-      .select("id, chat_participants(user_id)")
-      .eq("campaign_id", campaignId)
-      .eq("type", "private");
-
-    if (existingRooms?.length) {
-      for (const room of existingRooms) {
-        const pIds = ((room as any).chat_participants || []).map((p: any) => p.user_id);
-        if (pIds.includes(user.id) && pIds.includes(brandUserId)) {
-          navigate(`/dashboard/gig/${campaignId}/private?brand=${brandUserId}`);
-          return;
-        }
-      }
+    try {
+      await findOrCreatePrivateRoom(campaignId, user.id, brandUserId);
+    } catch (e) {
+      console.error("[Gigs] handleMessageBrand error:", e);
+      toast({ title: "Failed to open chat", variant: "destructive" });
     }
-
-    // Create new private chat
-    const { data: brandProfile } = await supabase.from("brand_profiles").select("business_name").eq("user_id", brandUserId).maybeSingle();
-    const brandName = brandProfile?.business_name || "the brand";
-    const { data: newRoom } = await supabase.from("chat_rooms").insert({
-      campaign_id: campaignId, type: "private", name: `Chat with ${brandName}`,
-    } as any).select("id").single();
-
-    if (!newRoom) return;
-
-    // Add participants
-    await supabase.from("chat_participants").insert([
-      { chat_room_id: newRoom.id, user_id: user.id },
-      { chat_room_id: newRoom.id, user_id: brandUserId },
-    ] as any);
-
-    // Send welcome message
-    const { data: profile } = await supabase.from("profiles").select("display_name, username").eq("user_id", user.id).maybeSingle();
-    const creatorName = profile?.display_name || profile?.username || "A creator";
-    await supabase.from("messages").insert({
-      chat_room_id: newRoom.id,
-      sender_id: user.id,
-      content: `👋 Hi! I'd like to discuss the campaign "${membership._campaign?.title || "our collaboration"}".`,
-    } as any);
-
     navigate(`/dashboard/gig/${campaignId}/private?brand=${brandUserId}`);
   };
 
