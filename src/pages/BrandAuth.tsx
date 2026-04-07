@@ -38,13 +38,22 @@ const BrandAuth = () => {
       setLoading(false);
       return;
     }
-    // Check if a brand profile exists for this user
+    // Check account type from metadata — creators should use creator portal
     if (data.user) {
-      const { data: bp } = await supabase.from("brand_profiles").select("id").eq("user_id", data.user.id).maybeSingle();
-      if (!bp) {
-        navigate("/brand/setup");
+      const metaType = data.user.user_metadata?.account_type;
+      if (metaType === "creator") {
+        navigate("/auth", { replace: true });
+        setLoading(false);
         return;
       }
+      // Check if a brand profile exists
+      const { data: bp } = await supabase.from("brand_profiles").select("id").eq("user_id", data.user.id).maybeSingle();
+      if (!bp) {
+        navigate("/brand/setup", { replace: true });
+        setLoading(false);
+        return;
+      }
+      navigate("/brand/dashboard", { replace: true });
     }
     setLoading(false);
   };

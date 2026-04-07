@@ -21,14 +21,13 @@ const Auth = () => {
   const [searchParams] = useSearchParams();
   const { user, accountType, signOut } = useAuth();
 
+  // Redirect when user logs in and accountType is resolved
   useEffect(() => {
-    console.log("[Auth] redirect effect — user:", user?.email, "accountType:", accountType, "loading:", loading);
-    if (!user) return;
-    if (accountType === null) return; // wait for accountType to resolve
+    if (!user || accountType === null) return;
     if (accountType === "creator") {
-      navigate("/dashboard");
-    } else if (accountType === "brand") {
-      navigate("/brand/dashboard");
+      navigate("/dashboard", { replace: true });
+    } else {
+      navigate("/brand/dashboard", { replace: true });
     }
   }, [user, accountType, navigate]);
 
@@ -40,9 +39,21 @@ const Auth = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
       toast({ title: "Login failed", description: error.message, variant: "destructive" });
+      setLoading(false);
+      return;
+    }
+    // Redirect immediately based on account type
+    if (data.user) {
+      const metaType = data.user.user_metadata?.account_type;
+      if (metaType === "creator") {
+        navigate("/dashboard", { replace: true });
+      } else if (metaType === "brand") {
+        navigate("/brand/dashboard", { replace: true });
+      }
+      // If no metadata, AuthContext will handle redirect when it resolves
     }
     setLoading(false);
   };
