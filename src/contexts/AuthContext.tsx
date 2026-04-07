@@ -1,7 +1,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
-import { useNavigate } from "react-router-dom";
 
 interface AuthContextType {
   user: User | null;
@@ -26,55 +25,86 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [accountType, setAccountType] = useState<"creator" | "brand" | null>(null);
-  const navigate = useNavigate();
 
-  // Helper to determine account type from user metadata or profiles table
-  const resolveAccountType = async (user: User): Promise<"creator" | "brand" | null> => {
-    // First check user metadata
+  // Determine account type: fast from metadata, fallback to DB lookup with timeout
+  const resolveAccountType = (user: User): "creator" | "brand" => {
     const metaType = user.user_metadata?.account_type;
-    if (metaType === "creator" || metaType === "brand") {
-      return metaType;
-    }
-    // Fallback: check if user exists in brand_profiles
-    const { data: brandProfile } = await supabase
-      .from("brand_profiles")
-      .select("id")
-      .eq("user_id", user.id)
-      .maybeSingle();
-    if (brandProfile) return "brand";
-    return "creator";
+    if (metaType === "creator") return "creator";
+    if (metaType === "brand") return "brand";
+    return "creator"; // default when metadata missing
   };
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
+    let cancelled = false;
+
+    const initAuth = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (cancelled) return;
+
         setSession(session);
         setUser(session?.user ?? null);
+
         if (session?.user) {
-          const type = await resolveAccountType(session.user);
+          const type = resolveAccountType(session.user);
           setAccountType(type);
-          console.log("[Auth] onAuthStateChange — accountType:", type, "user:", session.user.email);
+
+          // Async DB lookup only to refine the type if metadata is missing
+          if (!session.user.user_metadata?.account_type) {
+            const { data: brandProfile } = await supabase
+              .from("brand_profiles")
+              .select("id")
+              .eq("user_id", session.user.id)
+              .maybeSingle();
+            if (!cancelled && brandProfile) {
+              setAccountType("brand");
+            }
+          }
         } else {
           setAccountType(null);
         }
-        setLoading(false);
+      } catch (e) {
+        console.error("[Auth] init error:", e);
+        if (!cancelled) setAccountType("creator");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    initAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (_event, session) => {
+        if (cancelled) return;
+        setSession(session);
+        setUser(session?.user ?? null);
+
+        if (session?.user) {
+          const type = resolveAccountType(session.user);
+          setAccountType(type);
+
+          // Async DB lookup only to refine the type if metadata is missing
+          if (!session.user.user_metadata?.account_type) {
+            const { data: brandProfile } = await supabase
+              .from("brand_profiles")
+              .select("id")
+              .eq("user_id", session.user.id)
+              .maybeSingle();
+            if (!cancelled && brandProfile) {
+              setAccountType("brand");
+            }
+          }
+        } else {
+          setAccountType(null);
+          setLoading(false);
+        }
       }
     );
 
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        const type = await resolveAccountType(session.user);
-        setAccountType(type);
-        console.log("[Auth] getSession — accountType:", type, "user:", session.user.email);
-      } else {
-        setAccountType(null);
-      }
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
+    return () => {
+      cancelled = true;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signOut = async () => {
