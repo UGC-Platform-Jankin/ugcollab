@@ -40,7 +40,7 @@ export async function getPrivateRoomsForCampaign(
   campaignId: string,
   userId: string
 ): Promise<any[]> {
-  const { data, error } = await supabase.rpc("get_private_rooms", {
+  const { data, error } = await (supabase.rpc as any)("get_private_rooms", {
     _campaign_id: campaignId,
     _user_id: userId,
   });
@@ -72,7 +72,7 @@ export async function findOrCreatePrivateRoom(
   userId: string,
   otherUserId: string
 ): Promise<string> {
-  const { data, error } = await supabase.rpc("find_or_create_private_room", {
+  const { data, error } = await (supabase.rpc as any)("find_or_create_private_room", {
     _campaign_id: campaignId,
     _user_id: userId,
     _other_user_id: otherUserId,
