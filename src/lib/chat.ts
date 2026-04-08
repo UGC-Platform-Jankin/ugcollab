@@ -70,37 +70,24 @@ export async function findOrCreatePrivateRoom(
     }
   }
 
-  // 3. Create new room
-  const { data: newRoom, error: insertError } = await supabase
-    .from("chat_rooms")
-    .insert({
-      campaign_id: campaignId,
-      type: "private",
-      name: null,
-    } as any)
-    .select("id")
-    .single();
+  // 3. Create new room via SECURITY DEFINER function (bypasses RLS on chat_rooms)
+  const { data: newRoom, error: insertError } = await supabase.rpc("create_chat_room", {
+    _campaign_id: campaignId,
+    _type: "private",
+    _name: null,
+  });
 
   if (insertError) {
-    console.error("[findOrCreatePrivateRoom] step3 insertError:", insertError);
+    console.error("[findOrCreatePrivateRoom] create_chat_room error:", insertError);
     throw insertError;
   }
   if (!newRoom) throw new Error("Failed to create room");
 
-  // 4. Add both participants
-  const { error: partInsertError } = await supabase
-    .from("chat_participants")
-    .insert([
-      { chat_room_id: newRoom.id, user_id: userId },
-      { chat_room_id: newRoom.id, user_id: otherUserId },
-    ] as any);
+  // 4. Add both participants via SECURITY DEFINER function (bypasses RLS)
+  await supabase.rpc("add_chat_participant", { _room_id: newRoom, _user_id: userId });
+  await supabase.rpc("add_chat_participant", { _room_id: newRoom, _user_id: otherUserId });
 
-  if (partInsertError) {
-    console.error("[findOrCreatePrivateRoom] step4 partInsertError:", partInsertError);
-    throw partInsertError;
-  }
-
-  return newRoom.id;
+  return newRoom;
 }
 
 /**
