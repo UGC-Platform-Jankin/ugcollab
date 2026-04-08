@@ -344,15 +344,7 @@ export type Database = {
           name?: string | null
           type?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "chat_rooms_campaign_id_fkey"
-            columns: ["campaign_id"]
-            isOneToOne: false
-            referencedRelation: "campaigns"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       contact_shares: {
         Row: {
@@ -846,11 +838,49 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      add_chat_participant: {
+        Args: { _room_id: string; _user_id: string }
+        Returns: undefined
+      }
+      create_chat_room:
+        | {
+            Args: { _campaign_id: string; _name: string; _type: string }
+            Returns: string
+          }
+        | {
+            Args: {
+              _campaign_id: string
+              _other_user_id: string
+              _type: string
+            }
+            Returns: string
+          }
+      find_or_create_private_room: {
+        Args: { _campaign_id: string; _other_user_id: string; _user_id: string }
+        Returns: string
+      }
+      force_insert_chat_room: {
+        Args: { _campaign_id: string; _name: string; _type: string }
+        Returns: string
+      }
       get_campaign_creator_emails: {
         Args: { _campaign_id: string }
         Returns: {
           email: string
           user_id: string
+        }[]
+      }
+      get_private_rooms: {
+        Args: { _campaign_id: string; _user_id: string }
+        Returns: {
+          last_msg_at: string
+          last_msg_content: string
+          other_avatar_url: string
+          other_business_name: string
+          other_display_name: string
+          other_user_id: string
+          room_id: string
+          room_name: string
         }[]
       }
       has_role: {
