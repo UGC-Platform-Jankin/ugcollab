@@ -163,11 +163,20 @@ export async function findOrCreatePrivateRoom(
   }
 
   // 3. Create new room via SECURITY DEFINER function (bypasses RLS on chat_rooms)
-  // Pass otherUserId so the function can look up the other user's name
+  // Look up other user's display name for the room name
+  let roomName = "Chat";
+  const { data: profile } = await supabase.from("profiles").select("display_name").eq("user_id", otherUserId).maybeSingle();
+  if (profile?.display_name) {
+    roomName = profile.display_name;
+  } else {
+    const { data: brand } = await supabase.from("brand_profiles").select("business_name").eq("user_id", otherUserId).maybeSingle();
+    if (brand?.business_name) roomName = brand.business_name;
+  }
+
   const { data: newRoom, error: insertError } = await supabase.rpc("create_chat_room", {
     _campaign_id: campaignId,
     _type: "private",
-    _other_user_id: otherUserId,
+    _name: roomName,
   });
 
   if (insertError) {
