@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Send as SendIcon, Loader2, Paperclip, X, FileText, Download, Play, Pause, MessageSquare } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
-import { findOrCreatePrivateRoom } from "@/lib/chat";
+import { findOrCreatePrivateRoom, getPrivateRoomsForCampaign } from "@/lib/chat";
 
 interface Props {
   campaignId: string;
@@ -87,74 +87,17 @@ const PrivateChatPanel = ({ campaignId, isBrandView = false }: Props) => {
   const [membersOpen, setMembersOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Load all private rooms for this campaign
+  // Load all private rooms for this campaign using single RPC call
   const loadRooms = async () => {
     if (!user) return;
     setLoadingRooms(true);
-
-    const { data: allRooms, error: roomsError } = await supabase
-      .from("chat_rooms")
-      .select("id, name, created_at")
-      .eq("campaign_id", campaignId)
-      .eq("type", "private")
-      .order("created_at", { ascending: false });
-
-    if (roomsError || !allRooms?.length) {
+    try {
+      const rooms = await getPrivateRoomsForCampaign(campaignId, user.id);
+      setRooms(rooms);
+    } catch (e) {
+      console.error("[PrivateChatPanel] loadRooms error:", e);
       setRooms([]);
-      setLoadingRooms(false);
-      return;
     }
-
-    // Only keep rooms where current user is a participant
-    const roomsWithUser: any[] = [];
-    for (const room of allRooms) {
-      const { data: participants } = await supabase
-        .from("chat_participants")
-        .select("user_id")
-        .eq("chat_room_id", room.id);
-      const pIds = (participants ?? []).map((p: any) => p.user_id);
-      if (pIds.includes(user.id)) {
-        roomsWithUser.push(room);
-      }
-    }
-
-    if (roomsWithUser.length === 0) {
-      setRooms([]);
-      setLoadingRooms(false);
-      return;
-    }
-
-    // Get other participant ids for each room
-    const roomsWithOther: Promise<PrivateRoom>[] = roomsWithUser.map(async (room) => {
-      const { data: participants } = await supabase
-        .from("chat_participants")
-        .select("user_id")
-        .eq("chat_room_id", room.id);
-      const pIds = (participants ?? []).map((p: any) => p.user_id);
-      const otherId = pIds.find((id: string) => id !== user.id);
-
-      let otherUser: RoomParticipant = {};
-      if (otherId) {
-        const [profile, brand] = await Promise.all([
-          supabase.from("profiles").select("user_id, display_name, username, avatar_url").eq("user_id", otherId).maybeSingle(),
-          supabase.from("brand_profiles").select("user_id, business_name, logo_url").eq("user_id", otherId).maybeSingle(),
-        ]);
-        otherUser = { ...(profile || {}), ...(brand || {}) };
-      }
-
-      const { data: lastMsg } = await supabase
-        .from("messages")
-        .select("content, created_at, sender_id")
-        .eq("chat_room_id", room.id)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      return { ...room, otherUserId: otherId, otherUser, lastMessage: lastMsg };
-    });
-
-    const resolved = await Promise.all(roomsWithOther);
-    setRooms(resolved);
     setLoadingRooms(false);
   };
 
