@@ -318,13 +318,23 @@ const PrivateChatPanel = ({ campaignId, isBrandView = false }: Props) => {
         <div className="flex-1 flex flex-col min-w-0">
           {/* Chat header */}
           <div className="px-4 py-3 border-b border-border/30 flex items-center gap-3 bg-card/50">
-            <Avatar className="h-9 w-9 shrink-0">
-              <AvatarFallback className="bg-primary/10 text-primary text-sm">{(activeRoom?.name || "C")[0]?.toUpperCase()}</AvatarFallback>
-            </Avatar>
-            <div className="flex-1 min-w-0">
-              <p className="font-medium text-sm text-foreground">{activeRoom?.otherUser?.display_name || activeRoom?.otherUser?.business_name || activeRoom?.name || "Chat"}</p>
-              <p className="text-xs text-muted-foreground">Direct message</p>
-            </div>
+            {(() => {
+              const currentRoom = rooms.find(r => r.id === activeRoomId);
+              const otherUser = currentRoom?.otherUser;
+              const headerName = otherUser?.display_name || otherUser?.business_name || currentRoom?.name || "Chat";
+              return (
+                <>
+                  <Avatar className="h-9 w-9 shrink-0">
+                    <AvatarImage src={otherUser?.avatar_url || otherUser?.logo_url || undefined} />
+                    <AvatarFallback className="bg-primary/10 text-primary text-sm">{(headerName)[0]?.toUpperCase()}</AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-sm text-foreground">{headerName}</p>
+                    <p className="text-xs text-muted-foreground">Direct message</p>
+                  </div>
+                </>
+              );
+            })()}
           </div>
 
           {/* Messages */}
