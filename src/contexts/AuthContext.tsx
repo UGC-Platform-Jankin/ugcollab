@@ -40,12 +40,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setUser(session?.user ?? null);
 
         if (session?.user) {
-          setAccountType(resolveAccountType(session.user));
-          // Async refinement — don't await, just update if different
-          supabase.from("brand_profiles").select("id").eq("user_id", session.user.id).maybeSingle()
-            .then(({ data }) => {
-              if (data) setAccountType("brand");
-            });
+          const metaType = resolveAccountType(session.user);
+          setAccountType(metaType);
+          // Only refine to brand if metadata didn't already say creator
+          if (metaType !== "creator") {
+            supabase.from("brand_profiles").select("id").eq("user_id", session.user.id).maybeSingle()
+              .then(({ data }) => {
+                if (data) setAccountType("brand");
+              });
+          }
         } else {
           setAccountType(null);
         }
