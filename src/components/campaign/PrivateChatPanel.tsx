@@ -322,7 +322,7 @@ const PrivateChatPanel = ({ campaignId, isBrandView = false }: Props) => {
               <AvatarFallback className="bg-primary/10 text-primary text-sm">{(activeRoom?.name || "C")[0]?.toUpperCase()}</AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
-              <p className="font-medium text-sm text-foreground">{activeRoom?.name || "Chat"}</p>
+              <p className="font-medium text-sm text-foreground">{activeRoom?.otherUser?.display_name || activeRoom?.otherUser?.business_name || activeRoom?.name || "Chat"}</p>
               <p className="text-xs text-muted-foreground">Direct message</p>
             </div>
           </div>
