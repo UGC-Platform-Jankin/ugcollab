@@ -21,13 +21,14 @@ const BrandAuth = () => {
 
   useEffect(() => {
     if (!user) return;
-    if (accountType === null) return; // wait for accountType to resolve
-    if (accountType === "brand") {
-      navigate("/brand/dashboard");
-    } else {
-      navigate("/auth"); // creator or unknown — send to creator portal
+    if (accountType === null) return;
+    // If a creator lands here, sign them out so they can use the brand portal
+    if (accountType === "creator") {
+      signOut();
+      return;
     }
-  }, [user, accountType, navigate]);
+    navigate("/brand/dashboard");
+  }, [user, accountType, navigate, signOut]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();

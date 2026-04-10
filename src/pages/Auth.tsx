@@ -24,12 +24,13 @@ const Auth = () => {
   // Redirect when user logs in and accountType is resolved
   useEffect(() => {
     if (!user || accountType === null) return;
-    if (accountType === "creator") {
-      navigate("/dashboard", { replace: true });
-    } else {
-      navigate("/brand/dashboard", { replace: true });
+    // If a brand user lands here, sign them out so they can use the creator portal
+    if (accountType === "brand") {
+      signOut();
+      return;
     }
-  }, [user, accountType, navigate]);
+    navigate("/dashboard", { replace: true });
+  }, [user, accountType, navigate, signOut]);
 
   const handleSignOut = async () => {
     await signOut();
