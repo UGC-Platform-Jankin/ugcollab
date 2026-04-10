@@ -19,35 +19,40 @@ const BrandAuth = () => {
   const [searchParams] = useSearchParams();
   const { user, accountType, signOut } = useAuth();
 
+  const [justLoggedIn, setJustLoggedIn] = useState(false);
+
   useEffect(() => {
-    if (!user) return;
-    if (accountType === null) return;
-    // If a creator lands here, sign them out so they can use the brand portal
+    if (!user || accountType === null) return;
+    // If user just logged in via this page's form, handle redirect
+    if (justLoggedIn) return;
+    // If a creator is already logged in and navigates here, sign them out
     if (accountType === "creator") {
       signOut();
       return;
     }
     navigate("/brand/dashboard");
-  }, [user, accountType, navigate, signOut]);
+  }, [user, accountType, navigate, signOut, justLoggedIn]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setJustLoggedIn(true);
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
       toast({ title: "Login failed", description: error.message, variant: "destructive" });
+      setJustLoggedIn(false);
       setLoading(false);
       return;
     }
-    // Check account type from metadata — creators should use creator portal
     if (data.user) {
       const metaType = data.user.user_metadata?.account_type;
       if (metaType === "creator") {
+        toast({ title: "Wrong portal", description: "This is a creator account. Redirecting to creator login.", variant: "destructive" });
+        await signOut();
         navigate("/auth", { replace: true });
         setLoading(false);
         return;
       }
-      // Check if a brand profile exists
       const { data: bp } = await supabase.from("brand_profiles").select("id").eq("user_id", data.user.id).maybeSingle();
       if (!bp) {
         navigate("/brand/setup", { replace: true });
