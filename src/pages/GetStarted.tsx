@@ -12,9 +12,9 @@ const GetStarted = () => {
           animate={{ opacity: 1, y: 0 }}
           className="text-center mb-10"
         >
-          <Link to="/" className="text-lg font-heading font-bold text-foreground">UGC Zone</Link>
+          <Link to="/" className="text-lg font-heading font-bold text-foreground">UGCollab</Link>
           <h1 className="text-3xl md:text-4xl font-heading font-bold text-foreground mt-6">
-            How would you like to use UGC Zone?
+            How would you like to use UGCollab?
           </h1>
           <p className="text-muted-foreground mt-2">Choose your role to get started</p>
         </motion.div>

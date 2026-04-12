@@ -21,7 +21,7 @@ const PrivacyPage = () => {
               <div>
                 <h2 className="text-2xl font-heading font-semibold mb-3">1. Information We Collect</h2>
                 <p className="text-muted-foreground">
-                  When you register on UGC Zone, we collect information you provide directly, including your name, email address, profile details, and social media account information. We also collect usage data such as pages visited, features used, and interactions within the platform.
+                  When you register on UGCollab, we collect information you provide directly, including your name, email address, profile details, and social media account information. We also collect usage data such as pages visited, features used, and interactions within the platform.
                 </p>
               </div>
 
@@ -29,7 +29,7 @@ const PrivacyPage = () => {
                 <h2 className="text-2xl font-heading font-semibold mb-3">2. How We Use Your Information</h2>
                 <p className="text-muted-foreground mb-3">We use the information we collect to:</p>
                 <ul className="list-disc list-inside space-y-2 text-muted-foreground">
-                  <li>Provide, maintain, and improve the UGC Zone platform</li>
+                  <li>Provide, maintain, and improve the UGCollab platform</li>
                   <li>Match creators with brand campaigns</li>
                   <li>Facilitate communication between brands and creators</li>
                   <li>Process payments and track campaign deliverables</li>

@@ -125,7 +125,7 @@ const BrandSetup = () => {
         <div className="text-center mb-8">
           <div className="flex items-center gap-2 justify-center">
             <Building2 className="h-5 w-5 text-primary" />
-            <span className="text-lg font-heading font-bold text-foreground">UGC Zone</span>
+            <span className="text-lg font-heading font-bold text-foreground">UGCollab</span>
           </div>
           <h1 className="text-2xl font-heading font-bold text-foreground mt-4">Set Up Your Brand</h1>
           <p className="text-muted-foreground mt-1">Step {step} of 2</p>

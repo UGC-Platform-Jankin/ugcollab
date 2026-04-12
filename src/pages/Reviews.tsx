@@ -112,7 +112,7 @@ const ReviewsPage = () => {
             className="text-center mb-12"
           >
             <h1 className="text-4xl md:text-5xl font-heading font-bold mb-4">
-              What people say about <span className="text-gradient">UGC Zone</span>
+              What people say about <span className="text-gradient">UGCollab</span>
             </h1>
             <p className="text-muted-foreground text-lg max-w-lg mx-auto">
               Real reviews from brands and creators on the platform.
@@ -144,7 +144,7 @@ const ReviewsPage = () => {
               <Textarea
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
-                placeholder="Share your experience with UGC Zone..."
+                placeholder="Share your experience with UGCollab..."
                 className="bg-secondary border-border mb-2"
                 rows={4}
                 maxLength={1000}

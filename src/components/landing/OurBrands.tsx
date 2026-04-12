@@ -39,7 +39,7 @@ const OurBrands = () => {
             Trusted by <span className="text-gradient">leading brands</span>
           </h2>
           <p className="text-muted-foreground text-lg max-w-lg mx-auto leading-relaxed">
-            Brands across Hong Kong and London rely on UGC Zone for authentic creator content.
+            Brands across Hong Kong and London rely on UGCollab for authentic creator content.
           </p>
         </motion.div>
 

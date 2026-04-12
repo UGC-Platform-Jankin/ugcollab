@@ -20,12 +20,12 @@ const AboutPage = () => {
             transition={{ duration: 0.6 }}
             className="text-center mb-16"
           >
-            <p className="text-sm font-medium text-primary mb-3 tracking-wider uppercase">About UGC Zone</p>
+            <p className="text-sm font-medium text-primary mb-3 tracking-wider uppercase">About UGCollab</p>
             <h1 className="text-4xl md:text-6xl font-heading font-bold mb-6">
               Built by a creator, <span className="text-gradient">for creators</span>
             </h1>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-              UGC Zone was founded to solve the problems creators and brands face every day when working together on content campaigns.
+              UGCollab was founded to solve the problems creators and brands face every day when working together on content campaigns.
             </p>
           </motion.div>
         </div>
@@ -42,7 +42,7 @@ const AboutPage = () => {
               transition={{ duration: 0.6 }}
             >
               <div className="rounded-2xl overflow-hidden border border-border shadow-glow">
-                <img src={founderImage} alt="Jankin Chan, Founder of UGC Zone" loading="lazy" width={800} height={800} className="w-full h-auto" />
+                <img src={founderImage} alt="Jankin Chan, Founder of UGCollab" loading="lazy" width={800} height={800} className="w-full h-auto" />
               </div>
             </motion.div>
 
@@ -64,7 +64,7 @@ const AboutPage = () => {
               </p>
 
               <p className="text-muted-foreground leading-relaxed">
-                UGC Zone was born from the frustration of managing campaigns across spreadsheets, scattered DMs, and manual invoicing. Jankin built this platform to give both creators and brands a single place to discover, collaborate, and get paid.
+                UGCollab was born from the frustration of managing campaigns across spreadsheets, scattered DMs, and manual invoicing. Jankin built this platform to give both creators and brands a single place to discover, collaborate, and get paid.
               </p>
 
               <div className="flex items-center gap-4 pt-2">
@@ -97,7 +97,7 @@ const AboutPage = () => {
           >
             <p className="text-sm font-medium text-primary mb-3 tracking-wider uppercase">Our Mission</p>
             <h2 className="text-3xl md:text-4xl font-heading font-bold mb-4">
-              Why we built <span className="text-gradient">UGC Zone</span>
+              Why we built <span className="text-gradient">UGCollab</span>
             </h2>
           </motion.div>
 
@@ -116,7 +116,7 @@ const AboutPage = () => {
               {
                 icon: Zap,
                 title: "Built from Experience",
-                description: "UGC Zone was born from running real UGC campaigns. We know the pain points because we've lived them.",
+                description: "UGCollab was born from running real UGC campaigns. We know the pain points because we've lived them.",
               },
             ].map((value, i) => (
               <motion.div
@@ -151,7 +151,7 @@ const AboutPage = () => {
               Ready to get started?
             </h2>
             <p className="text-muted-foreground mb-8">
-              Join UGC Zone today as a creator or brand.
+              Join UGCollab today as a creator or brand.
             </p>
             <Button size="lg" className="bg-gradient-coral text-primary-foreground hover:opacity-90 transition-opacity gap-2 text-base px-8 h-12 shadow-glow" asChild>
               <Link to="/get-started">Get Started <ArrowRight className="h-4 w-4" /></Link>

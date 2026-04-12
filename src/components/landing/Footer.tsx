@@ -7,7 +7,7 @@ const Footer = () => {
         <div className="grid md:grid-cols-4 gap-12">
           <div className="md:col-span-1">
             <div className="flex items-center gap-2 mb-4">
-              <Link to="/" className="text-lg font-heading font-bold">UGC Zone</Link>
+              <Link to="/" className="text-lg font-heading font-bold">UGCollab</Link>
             </div>
             <p className="text-sm text-muted-foreground leading-relaxed">
               The UGC campaign platform for Hong Kong and London.
@@ -43,7 +43,7 @@ const Footer = () => {
 
         <div className="mt-16 pt-8 border-t border-border flex flex-col sm:flex-row justify-between items-center gap-4">
           <p className="text-xs text-muted-foreground">
-            © {new Date().getFullYear()} UGC Zone. All rights reserved.
+            © {new Date().getFullYear()} UGCollab. All rights reserved.
           </p>
           <div className="flex items-center gap-4">
             <span className="text-xs text-muted-foreground">Hong Kong</span>

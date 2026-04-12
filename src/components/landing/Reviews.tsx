@@ -8,7 +8,7 @@ const reviews = [
     role: "Brand Manager",
     company: "Glow Cosmetics",
     initials: "SL",
-    quote: "UGC Zone completely transformed how we run our UGC campaigns. The approval workflow alone saves us hours every week.",
+    quote: "UGCollab completely transformed how we run our UGC campaigns. The approval workflow alone saves us hours every week.",
     rating: 5,
   },
   {
@@ -53,7 +53,7 @@ const Reviews = () => {
             Trusted by <span className="text-gradient">brands & creators</span>
           </h2>
           <p className="text-muted-foreground text-lg max-w-lg mx-auto leading-relaxed">
-            See what our early users have to say about UGC Zone.
+            See what our early users have to say about UGCollab.
           </p>
         </motion.div>
 

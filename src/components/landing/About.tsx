@@ -16,7 +16,7 @@ const values = [
   {
     icon: Zap,
     title: "Built from Experience",
-    description: "UGC Zone was born from running real UGC campaigns. We know the pain points because we've lived them.",
+    description: "UGCollab was born from running real UGC campaigns. We know the pain points because we've lived them.",
   },
 ];
 
@@ -33,7 +33,7 @@ const About = () => {
         >
           <p className="text-sm font-medium text-primary mb-3 tracking-wider uppercase">About Us</p>
           <h2 className="text-4xl md:text-5xl font-heading font-bold mb-4">
-            The team behind <span className="text-gradient">UGC Zone</span>
+            The team behind <span className="text-gradient">UGCollab</span>
           </h2>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto leading-relaxed">
             We're a small team with deep experience in UGC campaigns, influencer marketing, and product development.
@@ -47,7 +47,7 @@ const About = () => {
           transition={{ duration: 0.6 }}
           className="mb-16 rounded-2xl overflow-hidden border border-border shadow-glow"
         >
-          <img src={platformImage} alt="UGC Zone platform dashboard" loading="lazy" width={1280} height={720} className="w-full h-auto" />
+          <img src={platformImage} alt="UGCollab platform dashboard" loading="lazy" width={1280} height={720} className="w-full h-auto" />
         </motion.div>
 
         <div className="grid md:grid-cols-3 gap-6">

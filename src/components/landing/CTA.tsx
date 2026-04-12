@@ -54,7 +54,7 @@ const CTA = () => {
               Ready to transform your <span className="text-gradient">UGC workflow</span>?
             </motion.h2>
             <p className="text-lg text-muted-foreground max-w-lg mb-10">
-              Join the brands and creators already using UGC Zone to streamline campaigns across Hong Kong and London.
+              Join the brands and creators already using UGCollab to streamline campaigns across Hong Kong and London.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
               <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.97 }}>

@@ -112,7 +112,7 @@ const ProfileSetup = () => {
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-lg">
         <div className="text-center mb-8">
-          <span className="text-lg font-heading font-bold text-foreground">UGC Zone</span>
+          <span className="text-lg font-heading font-bold text-foreground">UGCollab</span>
           <h1 className="text-2xl font-heading font-bold text-foreground mt-4">Set Up Your Profile</h1>
           <p className="text-muted-foreground mt-1">Step {step} of 2</p>
           <div className="flex gap-2 justify-center mt-3">

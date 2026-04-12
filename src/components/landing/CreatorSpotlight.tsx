@@ -64,7 +64,7 @@ const CreatorSpotlight = () => {
             Meet our <span className="text-gradient">top creators</span>
           </h2>
           <p className="text-muted-foreground text-lg max-w-lg mx-auto leading-relaxed">
-            Talented creators delivering authentic content for brands on UGC Zone.
+            Talented creators delivering authentic content for brands on UGCollab.
           </p>
         </motion.div>
 

@@ -12,7 +12,7 @@ const Navbar = () => {
     >
       <div className="container flex h-16 items-center justify-between">
         <div className="flex items-center gap-2">
-          <Link to="/" className="text-lg font-heading font-bold text-foreground">UGC Zone</Link>
+          <Link to="/" className="text-lg font-heading font-bold text-foreground">UGCollab</Link>
         </div>
         <div className="hidden md:flex items-center gap-8">
           <a href="/#features" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Features</a>

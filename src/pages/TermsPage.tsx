@@ -21,27 +21,27 @@ const TermsPage = () => {
               <div>
                 <h2 className="text-2xl font-heading font-semibold mb-3">1. Acceptance of Terms</h2>
                 <p className="text-muted-foreground">
-                  By accessing or using UGC Zone, you agree to be bound by these Terms of Service. If you do not agree to these terms, you may not use the platform. UGC Zone reserves the right to update these terms at any time.
+                  By accessing or using UGCollab, you agree to be bound by these Terms of Service. If you do not agree to these terms, you may not use the platform. UGCollab reserves the right to update these terms at any time.
                 </p>
               </div>
 
               <div>
                 <h2 className="text-2xl font-heading font-semibold mb-3">2. Platform Overview</h2>
                 <p className="text-muted-foreground">
-                  UGC Zone is a platform that connects brands with content creators for user-generated content (UGC) campaigns. The platform facilitates campaign creation, creator discovery, content review, messaging, and payment coordination.
+                  UGCollab is a platform that connects brands with content creators for user-generated content (UGC) campaigns. The platform facilitates campaign creation, creator discovery, content review, messaging, and payment coordination.
                 </p>
               </div>
 
               <div>
                 <h2 className="text-2xl font-heading font-semibold mb-3">3. Account Registration</h2>
                 <p className="text-muted-foreground">
-                  You must provide accurate and complete information when creating an account. You are responsible for maintaining the confidentiality of your account credentials. You must be at least 18 years old to use UGC Zone.
+                  You must provide accurate and complete information when creating an account. You are responsible for maintaining the confidentiality of your account credentials. You must be at least 18 years old to use UGCollab.
                 </p>
               </div>
 
               <div>
                 <h2 className="text-2xl font-heading font-semibold mb-3">4. Creator Obligations</h2>
-                <p className="text-muted-foreground mb-3">As a creator on UGC Zone, you agree to:</p>
+                <p className="text-muted-foreground mb-3">As a creator on UGCollab, you agree to:</p>
                 <ul className="list-disc list-inside space-y-2 text-muted-foreground">
                   <li>Provide accurate information about your social media presence and reach</li>
                   <li>Deliver content that meets the campaign brief and requirements</li>
@@ -53,7 +53,7 @@ const TermsPage = () => {
 
               <div>
                 <h2 className="text-2xl font-heading font-semibold mb-3">5. Brand Obligations</h2>
-                <p className="text-muted-foreground mb-3">As a brand on UGC Zone, you agree to:</p>
+                <p className="text-muted-foreground mb-3">As a brand on UGCollab, you agree to:</p>
                 <ul className="list-disc list-inside space-y-2 text-muted-foreground">
                   <li>Provide clear and complete campaign briefs</li>
                   <li>Review submitted content in a timely manner</li>
@@ -73,7 +73,7 @@ const TermsPage = () => {
               <div>
                 <h2 className="text-2xl font-heading font-semibold mb-3">7. Payments</h2>
                 <p className="text-muted-foreground">
-                  Payment terms are defined within each campaign. UGC Zone facilitates payment coordination between brands and creators. UGC Zone may charge service fees as part of the transaction process.
+                  Payment terms are defined within each campaign. UGCollab facilitates payment coordination between brands and creators. UGCollab may charge service fees as part of the transaction process.
                 </p>
               </div>
 
@@ -92,14 +92,14 @@ const TermsPage = () => {
               <div>
                 <h2 className="text-2xl font-heading font-semibold mb-3">9. Termination</h2>
                 <p className="text-muted-foreground">
-                  UGC Zone reserves the right to suspend or terminate accounts that violate these terms. Users may delete their accounts at any time. Active campaign obligations must be fulfilled before account deletion.
+                  UGCollab reserves the right to suspend or terminate accounts that violate these terms. Users may delete their accounts at any time. Active campaign obligations must be fulfilled before account deletion.
                 </p>
               </div>
 
               <div>
                 <h2 className="text-2xl font-heading font-semibold mb-3">10. Limitation of Liability</h2>
                 <p className="text-muted-foreground">
-                  UGC Zone provides the platform "as is" and does not guarantee specific outcomes from campaigns. We are not liable for disputes between brands and creators, content quality, or campaign performance. Our liability is limited to the fees paid to UGC Zone.
+                  UGCollab provides the platform "as is" and does not guarantee specific outcomes from campaigns. We are not liable for disputes between brands and creators, content quality, or campaign performance. Our liability is limited to the fees paid to UGCollab.
                 </p>
               </div>
 

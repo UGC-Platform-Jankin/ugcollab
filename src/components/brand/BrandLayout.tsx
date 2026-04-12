@@ -167,7 +167,7 @@ const BrandLayout = ({ children }: { children: React.ReactNode }) => {
                 </div>
               </div>
               <div>
-                <span className="text-lg font-heading font-bold text-sidebar-foreground">UGC Zone</span>
+                <span className="text-lg font-heading font-bold text-sidebar-foreground">UGCollab</span>
                 <p className="text-xs text-sidebar-foreground/50">Brand Portal</p>
               </div>
             </Link>
